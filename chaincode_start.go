@@ -18,8 +18,9 @@ package main
 
 import (
 	"errors"
+	"encoding/json"
 	"fmt"
-
+	"./entities"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
 
@@ -49,20 +50,20 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 	return nil, nil
 }
 
-func (t *Chaincode) addTestdata(stub shim.ChaincodeStubInterface, testDataAsJson string) error {
+func (t *SimpleChaincode) addTestdata(stub shim.ChaincodeStubInterface, testDataAsJson string) error {
 	var testData entities.TestData
 	err := json.Unmarshal([]byte(testDataAsJson), &testData)
 	if err != nil {
 		return errors.New("Error while unmarshalling testdata")
 	}
 
-	for _, user := range testData.Users {
-		userAsBytes, err := json.Marshal(user);
+	for _, carOwner := range testData.CarOwners {
+		carOwnerAsBytes, err := json.Marshal(carOwner);
 		if err != nil {
-			return errors.New("Error marshalling testUser, reason: " + err.Error())
+			return errors.New("Error marshalling testCarOwner, reason: " + err.Error())
 		}
 
-		err = util.StoreObjectInChain(stub, user.UserID, "_users", userAsBytes)
+		err = StoreObjectInChain(stub, carOwner.OwnerID, "_owners", carOwnerAsBytes)
 		if err != nil {
 			return errors.New("error in storing object, reason: " + err.Error())
 		}
@@ -74,7 +75,7 @@ func (t *Chaincode) addTestdata(stub shim.ChaincodeStubInterface, testDataAsJson
 			return errors.New("Error marshalling testCar, reason: " + err.Error())
 		}
 
-		err = util.StoreObjectInChain(stub, car.CarID, "_cars", carAsBytes)
+		err = StoreObjectInChain(stub, car.CarID, "_cars", carAsBytes)
 		if err != nil {
 			return errors.New("error in storing object, reason: " + err.Error())
 		}
@@ -98,6 +99,42 @@ func StoreObjectInChain(stub shim.ChaincodeStubInterface, objectID string, index
 	}
 
 	return nil
+}
+
+func WriteIDToBlockchainIndex(stub shim.ChaincodeStubInterface, indexName string, id string) ([]byte, error) {
+	index, err := GetIndex(stub, indexName)
+	if err != nil {
+		return nil, err
+	}
+
+	index = append(index, id)
+
+	jsonAsBytes, err := json.Marshal(index)
+	if err != nil {
+		return nil, errors.New("Error marshalling index '" + indexName + "': " + err.Error())
+	}
+
+	err = stub.PutState(indexName, jsonAsBytes)
+	if err != nil {
+		return nil, errors.New("Error storing new " + indexName + " into ledger")
+	}
+
+	return []byte(id), nil
+}
+
+func GetIndex(stub shim.ChaincodeStubInterface, indexName string) ([]string, error) {
+	indexAsBytes, err := stub.GetState(indexName)
+	if err != nil {
+		return nil, errors.New("Failed to get " + indexName)
+	}
+
+	var index []string
+	err = json.Unmarshal(indexAsBytes, &index)
+	if err != nil {
+		return nil, errors.New("Error unmarshalling index '" + indexName + "': " + err.Error())
+	}
+
+	return index, nil
 }
 
 // Invoke is our entry point to invoke a chaincode function
