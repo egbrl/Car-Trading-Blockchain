@@ -262,7 +262,7 @@ func (t *SimpleChaincode) init_car(stub shim.ChaincodeStubInterface, args []stri
 	if len(args[3]) <= 0 {
 		return nil, errors.New("4th argument must be a non-empty string")
 	}
-	if len(args[3]) <= 0 {
+	if len(args[4]) <= 0 {
 		return nil, errors.New("5th argument must be a non-empty string")
 	}
 	name := args[0]
@@ -342,12 +342,21 @@ func (t *SimpleChaincode) update_car(stub shim.ChaincodeStubInterface, args []st
 	if len(args[3]) <= 0 {
 		return nil, errors.New("4th argument (car size) must be a non-empty string")
 	}
+	if len(args[4]) <= 0 {
+		return nil, errors.New("5th argument (car availability) must be a non-empty string")
+	}
 	name := args[0]
 	color := strings.ToLower(args[1])
 	user := strings.ToLower(args[3])
 	size, err := strconv.Atoi(args[2])
 	if err != nil {
 		return nil, errors.New("3rd argument (car owner) must be a numeric string")
+	}
+
+	available, err := strconv.ParseBool(args[4])
+
+	if err != nil {
+		return nil, errors.New("4rd argument must be a boolean string ex. 1, t, T, True, TRUE, true...")
 	}
 
 	// find an existing car
@@ -362,7 +371,7 @@ func (t *SimpleChaincode) update_car(stub shim.ChaincodeStubInterface, args []st
 	if res.Name == name {
 		fmt.Println("Updating car " + name)
 		// build the car json string
-		str := `{"name": "` + name + `", "color": "` + color + `", "size": ` + strconv.Itoa(size) + `, "user": "` + user + `"}`
+		str := `{"name": "` + name + `", "color": "` + color + `", "size": ` + strconv.Itoa(size) + `, "user": "` + user + `, "available": "` + strconv.FormatBool(available) + `"}`
 		err = stub.PutState(name, []byte(str))
 		if err != nil {
 			return nil, err
