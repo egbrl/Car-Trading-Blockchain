@@ -25,6 +25,11 @@ type Car struct {
 	User  string `json:"user"`
 }
 
+type customEvent struct {
+	Type        string `json:"type"`
+	Description string `json:"description"`
+}
+
 type Description struct {
 	Color string `json:"color"`
 	Size  int    `json:"size"`
@@ -262,10 +267,12 @@ func (t *SimpleChaincode) init_car(stub shim.ChaincodeStubInterface, args []stri
 	color := strings.ToLower(args[1])
 	user := strings.ToLower(args[3])
 	size, err := strconv.Atoi(args[2])
+	var event = customEvent{"init_car", "Successfully initiated car with name" + name}
+	eventBytes, err := json.Marshal(&event)
 	if err != nil {
 		return nil, errors.New("3rd argument must be a numeric string")
 	}
-
+	err = stub.SetEvent("evtSender", eventBytes)
 	//check if marble already exists
 	marbleAsBytes, err := stub.GetState(name)
 	if err != nil {
