@@ -39,13 +39,11 @@ func main() {
 }
 
 // Init resets all the things
-func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	if len(args) != 1 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 1")
-	}
-
+func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string, initJson string) ([]byte, error) {
+	fmt.Println(initJson)
+	
 	// Create test cars
-	t.addTestdata(stub, args[0])
+	t.addTestdata(stub, initJson)
 
 	return nil, nil
 }
