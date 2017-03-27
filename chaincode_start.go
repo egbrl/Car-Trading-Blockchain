@@ -175,7 +175,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 		return nil, nil
 	} else if function == "getTestData" {
 		fmt.Println("Starting the function " + function)
-		getTestData(stub, args)
+		return getTestData(stub, args)
 	}
 	fmt.Println("query did not find func: " + function) //error
 
