@@ -44,8 +44,6 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 		return nil, errors.New("Incorrect number of arguments. Expecting 1")
 	}
 
-	return nil, errors.New(args[0])
-
 	// Create test cars
 	t.addTestdata(stub, args[0])
 
