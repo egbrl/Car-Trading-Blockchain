@@ -1,3 +1,23 @@
+
+{
+  "jsonrpc": "2.0",
+  "method": "deploy",
+  "params": {
+    "type": 1,
+    "chaincodeID": {
+      "path": "https://github.com/EGabb/Car_Sharing_Blockchain"
+    },
+    "ctorMsg": {
+      "function": "init",
+      "args": [
+        "{carOwners: {userID: 2345, name: 'testCarOwner'}, cars: {carID: 346456}}"
+      ]
+    },
+    "secureContext": "test_user1"
+  },
+  "id": 1
+}
+
 {
 	"variables": [],
 	"info": {
