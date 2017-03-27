@@ -88,6 +88,8 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 		return nil, err
 	}
 
+	fmt.Println("Init is running: " + function)
+
 	return nil, nil
 }
 
