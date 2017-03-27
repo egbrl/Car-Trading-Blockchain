@@ -17,13 +17,14 @@ type SimpleChaincode struct {
 
 var carIndexStr = "_cars"         //name for the key/value that will store a list of all known cars
 var openTradesStr = "_opentrades" //name for the key/value that will store all open trades
+var bookingIndexStr = "_bookings"
 
 type Car struct {
 	Name      string `json:"name"` //the fieldtags are needed to keep case from bouncing around
 	Color     string `json:"color"`
 	Size      int    `json:"size"`
 	User      string `json:"user"`
-	Available bool   `json:available`
+	Available bool   `json:"available"`
 }
 
 type customEvent struct {
@@ -34,6 +35,13 @@ type customEvent struct {
 type Description struct {
 	Color string `json:"color"`
 	Size  int    `json:"size"`
+}
+
+type Booking struct {
+	CarName   string  `json:"carName"`
+	Start 		int64   `json:"start"`
+	End 			int64   `json:"end"`
+	User		  string	`json:"user"`
 }
 
 type AnOpenTrade struct {
@@ -47,7 +55,7 @@ type AllTrades struct {
 	OpenTrades []AnOpenTrade `json:"open_trades"`
 }
 
-// ============================================================================================================================
+// ======================================================================================================================
 // Main
 // ============================================================================================================================
 func main() {
@@ -83,6 +91,13 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 	var empty []string
 	jsonAsBytes, _ := json.Marshal(empty) //marshal an emtpy array of strings to clear the index
 	err = stub.PutState(carIndexStr, jsonAsBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	var empty2 []string
+	jsonAsBytes2, _ := json.Marshal(empty2) //marshal an emtpy array of strings to clear the index
+	err = stub.PutState(bookingIndexStr, jsonAsBytes2)
 	if err != nil {
 		return nil, err
 	}
@@ -136,6 +151,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		res, err := t.perform_trade(stub, args)
 		cleanTrades(stub) //lets clean just in case
 		return res, err
+	} else if function == "create_booking" {
+		return t.create_booking(stub, args)
 	} else if function == "remove_trade" { //cancel an open trade order
 		return t.remove_trade(stub, args)
 	}
@@ -179,6 +196,42 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 
 	return valAsbytes, nil //send it onward
 }
+
+// ============================================================================================================================
+// Create Booking
+// ============================================================================================================================
+func (t *SimpleChaincode) create_booking(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	if len(args) != 4 {
+		return nil, errors.New("Incorrect number of arguments")
+	}
+
+	var booking Booking
+
+	booking.CarName = args[0]
+	bookingStart, _ := strconv.Atoi(args[1])
+	booking.Start = int64(bookingStart)
+	bookingEnd, _ := strconv.Atoi(args[2])
+	booking.End = int64(bookingEnd)
+	booking.User = args[3]
+
+	bookingAsbytes, err := stub.GetState(bookingIndexStr)
+	if err != nil {
+		var jsonResp string
+		jsonResp = "{\"Error\":\"Failed to get booking index}"
+		return nil, errors.New(jsonResp)
+	}
+
+	var bookingIndex []Booking
+	json.Unmarshal(bookingAsbytes, &bookingIndex) //un stringify it aka JSON.parse()
+
+	bookingIndex = append(bookingIndex, booking)
+	jsonAsBytes, _ := json.Marshal(bookingIndex) //save new index
+
+	stub.PutState(bookingIndexStr, jsonAsBytes)
+
+	return jsonAsBytes, nil //send it onward
+}
+
 
 // ============================================================================================================================
 // Delete - remove a key/value pair from state
