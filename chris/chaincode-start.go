@@ -26,6 +26,11 @@ type Car struct {
 	Available bool   `json:available`
 }
 
+type customEvent struct {
+	Type        string `json:"type"`
+	Description string `json:"description"`
+}
+
 type Description struct {
 	Color string `json:"color"`
 	Size  int    `json:"size"`
@@ -120,7 +125,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 	} else if function == "init_car" { //create a new marble
 		return t.init_car(stub, args)
 	} else if function == "update_car" { //update car
-			return t.update_car(stub, args)
+		return t.update_car(stub, args)
 	} else if function == "set_user" { //change owner of a marble
 		res, err := t.set_user(stub, args)
 		cleanTrades(stub) //lets make sure all open trades are still valid
