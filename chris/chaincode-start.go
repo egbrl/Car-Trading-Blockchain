@@ -116,8 +116,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return res, err
 	} else if function == "write" { //writes a value to the chaincode state
 		return t.Write(stub, args)
-	} else if function == "init_marble" { //create a new marble
-		return t.init_marble(stub, args)
+	} else if function == "init_car" { //create a new marble
+		return t.init_car(stub, args)
 	} else if function == "set_user" { //change owner of a marble
 		res, err := t.set_user(stub, args)
 		cleanTrades(stub) //lets make sure all open trades are still valid
@@ -235,7 +235,7 @@ func (t *SimpleChaincode) Write(stub shim.ChaincodeStubInterface, args []string)
 // ============================================================================================================================
 // Init Marble - create a new marble, store into chaincode state
 // ============================================================================================================================
-func (t *SimpleChaincode) init_marble(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func (t *SimpleChaincode) init_car(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
 
 	//   0       1       2     3
@@ -287,17 +287,17 @@ func (t *SimpleChaincode) init_marble(stub shim.ChaincodeStubInterface, args []s
 	}
 
 	//get the marble index
-	marblesAsBytes, err := stub.GetState(carIndexStr)
+	carAsBytes, err := stub.GetState(carIndexStr)
 	if err != nil {
 		return nil, errors.New("Failed to get marble index")
 	}
-	var marbleIndex []string
-	json.Unmarshal(marblesAsBytes, &marbleIndex) //un stringify it aka JSON.parse()
+	var carIndex []string
+	json.Unmarshal(carAsBytes, &carIndex) //un stringify it aka JSON.parse()
 
 	//append
-	marbleIndex = append(marbleIndex, name) //add marble name to index list
-	fmt.Println("! marble index: ", marbleIndex)
-	jsonAsBytes, _ := json.Marshal(marbleIndex)
+	carIndex = append(carIndex, name) //add marble name to index list
+	fmt.Println("! marble index: ", carIndex)
+	jsonAsBytes, _ := json.Marshal(carIndex)
 	err = stub.PutState(carIndexStr, jsonAsBytes) //store name of marble
 
 	fmt.Println("- end init marble")
@@ -318,13 +318,13 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
 
 	fmt.Println("- start set user")
 	fmt.Println(args[0] + " - " + args[1])
-	marbleAsBytes, err := stub.GetState(args[0])
+	carAsBytes, err := stub.GetState(args[0])
 	if err != nil {
 		return nil, errors.New("Failed to get thing")
 	}
 	res := Car{}
-	json.Unmarshal(marbleAsBytes, &res) //un stringify it aka JSON.parse()
-	res.User = args[1]                  //change the user
+	json.Unmarshal(carAsBytes, &res) //un stringify it aka JSON.parse()
+	res.User = args[1]               //change the user
 
 	jsonAsBytes, _ := json.Marshal(res)
 	err = stub.PutState(args[0], jsonAsBytes) //rewrite the marble with id as key
