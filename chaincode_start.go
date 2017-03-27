@@ -1,38 +1,28 @@
-
 package main
 
 import (
-	"errors"
 	"encoding/json"
+	"errors"
 	"fmt"
+
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
-
-
-
-
 
 // DATA MODEL
 
 type CarOwner struct {
-	OwnerID   	string 	`json:"userID"`
-	Name 			string 	`json:"name"`
+	OwnerID string `json:"userID"`
+	Name    string `json:"name"`
 }
 
 type Car struct {
-	CarID      	string 	`json:"carID"`
+	CarID string `json:"carID"`
 }
 
 type TestData struct {
-	CarOwners	[]CarOwner 	 `json:"carOwners"`
-	Cars 		[]Car  				`json:"cars"`
+	CarOwners []CarOwner `json:"carOwners"`
+	Cars      []Car      `json:"cars"`
 }
-
-
-
-
-
-
 
 // SimpleChaincode example simple Chaincode implementation
 type SimpleChaincode struct {
@@ -68,7 +58,7 @@ func (t *SimpleChaincode) addTestdata(stub shim.ChaincodeStubInterface, testData
 	}
 
 	for _, carOwner := range testData.CarOwners {
-		carOwnerAsBytes, err := json.Marshal(carOwner);
+		carOwnerAsBytes, err := json.Marshal(carOwner)
 		if err != nil {
 			return errors.New("Error marshalling testCarOwner, reason: " + err.Error())
 		}
@@ -80,7 +70,7 @@ func (t *SimpleChaincode) addTestdata(stub shim.ChaincodeStubInterface, testData
 	}
 
 	for _, car := range testData.Cars {
-		carAsBytes, err := json.Marshal(car);
+		carAsBytes, err := json.Marshal(car)
 		if err != nil {
 			return errors.New("Error marshalling testCar, reason: " + err.Error())
 		}
@@ -94,6 +84,22 @@ func (t *SimpleChaincode) addTestdata(stub shim.ChaincodeStubInterface, testData
 	return nil
 }
 
+func getTestData(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	fmt.Println("Retrieving Owner Name")
+
+	if len(args) < 1 {
+		fmt.Println("Invalid number of arguments")
+		return nil, errors.New("Missing owner ID")
+	}
+
+	var ownerID = args[0]
+	bytes, err := stub.GetState(ownerID)
+	if err != nil {
+		fmt.Println("Could not fetch owner id "+ownerID+" from ledger", err)
+		return nil, err
+	}
+	return bytes, nil
+}
 
 func StoreObjectInChain(stub shim.ChaincodeStubInterface, objectID string, indexName string, object []byte) error {
 	ID, err := WriteIDToBlockchainIndex(stub, indexName, objectID)
@@ -152,10 +158,10 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 	fmt.Println("invoke is running " + function)
 
 	// Handle different functions
-	if function == "init" {													//initialize the chaincode state, used as reset
+	if function == "init" { //initialize the chaincode state, used as reset
 		return t.Init(stub, "init", args)
 	}
-	fmt.Println("invoke did not find func: " + function)					//error
+	fmt.Println("invoke did not find func: " + function) //error
 
 	return nil, errors.New("Received unknown function invocation: " + function)
 }
@@ -165,11 +171,11 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 	fmt.Println("query is running " + function)
 
 	// Handle different functions
-	if function == "dummy_query" {											//read a variable
-		fmt.Println("hi there " + function)						//error
-		return nil, nil;
+	if function == "dummy_query" { //read a variable
+		fmt.Println("hi there " + function) //error
+		return nil, nil
 	}
-	fmt.Println("query did not find func: " + function)						//error
+	fmt.Println("query did not find func: " + function) //error
 
 	return nil, errors.New("Received unknown function query: " + function)
 }
