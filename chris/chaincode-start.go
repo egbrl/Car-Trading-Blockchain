@@ -19,10 +19,11 @@ var carIndexStr = "_cars"         //name for the key/value that will store a lis
 var openTradesStr = "_opentrades" //name for the key/value that will store all open trades
 
 type Car struct {
-	Name  string `json:"name"` //the fieldtags are needed to keep case from bouncing around
-	Color string `json:"color"`
-	Size  int    `json:"size"`
-	User  string `json:"user"`
+	Name      string `json:"name"` //the fieldtags are needed to keep case from bouncing around
+	Color     string `json:"color"`
+	Size      int    `json:"size"`
+	User      string `json:"user"`
+	Available bool   `json:available`
 }
 
 type Description struct {
@@ -191,24 +192,24 @@ func (t *SimpleChaincode) Delete(stub shim.ChaincodeStubInterface, args []string
 	//get the marble index
 	marblesAsBytes, err := stub.GetState(carIndexStr)
 	if err != nil {
-		return nil, errors.New("Failed to get marble index")
+		return nil, errors.New("Failed to get car index")
 	}
-	var marbleIndex []string
-	json.Unmarshal(marblesAsBytes, &marbleIndex) //un stringify it aka JSON.parse()
+	var carIndex []string
+	json.Unmarshal(marblesAsBytes, &carIndex) //un stringify it aka JSON.parse()
 
 	//remove marble from index
-	for i, val := range marbleIndex {
+	for i, val := range carIndex {
 		fmt.Println(strconv.Itoa(i) + " - looking at " + val + " for " + name)
 		if val == name { //find the correct marble
-			fmt.Println("found marble")
-			marbleIndex = append(marbleIndex[:i], marbleIndex[i+1:]...) //remove it
-			for x := range marbleIndex {                                //debug prints...
-				fmt.Println(string(x) + " - " + marbleIndex[x])
+			fmt.Println("found car")
+			carIndex = append(carIndex[:i], carIndex[i+1:]...) //remove it
+			for x := range carIndex {                          //debug prints...
+				fmt.Println(string(x) + " - " + carIndex[x])
 			}
 			break
 		}
 	}
-	jsonAsBytes, _ := json.Marshal(marbleIndex) //save new index
+	jsonAsBytes, _ := json.Marshal(carIndex) //save new index
 	err = stub.PutState(carIndexStr, jsonAsBytes)
 	return nil, nil
 }
@@ -240,9 +241,10 @@ func (t *SimpleChaincode) Write(stub shim.ChaincodeStubInterface, args []string)
 func (t *SimpleChaincode) init_car(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
 
-	//   0       1       2     3
-	// "asdf", "blue", "35", "bob"
-	if len(args) != 4 {
+	//   0       1       2     3		4
+	// "asdf", "blue", "35", "bob" 	  "true"
+	// Name    Color   Size  Owner  Availability
+	if len(args) != 5 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 4")
 	}
 
@@ -260,12 +262,22 @@ func (t *SimpleChaincode) init_car(stub shim.ChaincodeStubInterface, args []stri
 	if len(args[3]) <= 0 {
 		return nil, errors.New("4th argument must be a non-empty string")
 	}
+	if len(args[3]) <= 0 {
+		return nil, errors.New("5th argument must be a non-empty string")
+	}
 	name := args[0]
 	color := strings.ToLower(args[1])
 	user := strings.ToLower(args[3])
 	size, err := strconv.Atoi(args[2])
+
 	if err != nil {
 		return nil, errors.New("3rd argument must be a numeric string")
+	}
+
+	available, err := strconv.ParseBool(args[4])
+
+	if err != nil {
+		return nil, errors.New("4rd argument must be a boolean string ex. 1, t, T, True, TRUE, true...")
 	}
 
 	//check if marble already exists
@@ -282,8 +294,8 @@ func (t *SimpleChaincode) init_car(stub shim.ChaincodeStubInterface, args []stri
 	}
 
 	//build the marble json string manually
-	str := `{"name": "` + name + `", "color": "` + color + `", "size": ` + strconv.Itoa(size) + `, "user": "` + user + `"}`
-	err = stub.PutState(name, []byte(str)) //store marble with id as key
+	str := `{"name": "` + name + `", "color": "` + color + `", "size": ` + strconv.Itoa(size) + `, "user": "` + user + `, "available": "` + strconv.FormatBool(available) + `" }`
+	err = stub.PutState(name, []byte(str)) //store car with id as key
 	if err != nil {
 		return nil, err
 	}
