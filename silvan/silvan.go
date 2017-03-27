@@ -114,6 +114,8 @@ func GetCarOwner(stub shim.ChaincodeStubInterface, args []string) ([]byte, error
 	}
 	var carOwnerID = args[0]
 	bytes, err := stub.GetState(carOwnerID)
+	fmt.Println(string(bytes))
+
 	if err != nil {
 		fmt.Println("Could not fetch car owner with id "+carOwnerID+" from ledger", err)
 		return nil, err
