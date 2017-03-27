@@ -118,6 +118,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.Write(stub, args)
 	} else if function == "init_car" { //create a new marble
 		return t.init_car(stub, args)
+	} else if function == "update_car" { //update car
+			return t.update_car(stub, args)
 	} else if function == "set_user" { //change owner of a marble
 		res, err := t.set_user(stub, args)
 		cleanTrades(stub) //lets make sure all open trades are still valid
@@ -301,6 +303,61 @@ func (t *SimpleChaincode) init_car(stub shim.ChaincodeStubInterface, args []stri
 	err = stub.PutState(carIndexStr, jsonAsBytes) //store name of marble
 
 	fmt.Println("- end init marble")
+	return nil, nil
+}
+
+// ============================================================================================================================
+// Update Car - update an existing car, store into chaincode state
+// ============================================================================================================================
+func (t *SimpleChaincode) update_car(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	var err error
+
+	if len(args) != 4 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 4")
+	}
+
+	//input sanitation
+	fmt.Println("- starting car update")
+	if len(args[0]) <= 0 {
+		return nil, errors.New("1st argument (car name) must be a non-empty string")
+	}
+	if len(args[1]) <= 0 {
+		return nil, errors.New("2nd argument (car color) must be a non-empty string")
+	}
+	if len(args[2]) <= 0 {
+		return nil, errors.New("3rd argument (car owner) must be a non-empty string")
+	}
+	if len(args[3]) <= 0 {
+		return nil, errors.New("4th argument (car size) must be a non-empty string")
+	}
+	name := args[0]
+	color := strings.ToLower(args[1])
+	user := strings.ToLower(args[3])
+	size, err := strconv.Atoi(args[2])
+	if err != nil {
+		return nil, errors.New("3rd argument (car owner) must be a numeric string")
+	}
+
+	// find an existing car
+	carAsBytes, err := stub.GetState(name)
+	if err != nil {
+		return nil, errors.New("Car " + name + " does not exist yet")
+	}
+
+	// update car
+	res := Car{}
+	json.Unmarshal(carAsBytes, &res)
+	if res.Name == name {
+		fmt.Println("Updating car " + name)
+		// build the car json string
+		str := `{"name": "` + name + `", "color": "` + color + `", "size": ` + strconv.Itoa(size) + `, "user": "` + user + `"}`
+		err = stub.PutState(name, []byte(str))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	fmt.Println("- end update car")
 	return nil, nil
 }
 
