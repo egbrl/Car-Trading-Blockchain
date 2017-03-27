@@ -53,6 +53,15 @@ func (t *SampleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 }
 
 func (t *SampleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+	if len(args) == 0 {
+		return nil, errors.New("Incorrect number of arguments. Expecting >0")
+	}
+
+	if function == "CreateCarOwner" { //initialize the chaincode state, used as reset
+		return CreateCarOwner(stub, args)
+	}
+	// Create test cars
+
 	return nil, nil
 }
 
@@ -71,7 +80,7 @@ func CreateCarOwner(stub shim.ChaincodeStubInterface, args []string) ([]byte, er
 
 	if len(args) < 2 {
 		fmt.Println("Invalid number of args")
-		return nil, errors.New("Expected at least two arguments for loan application creation")
+		return nil, errors.New("Expected at least two arguments for Car Owner Creation")
 	}
 
 	var OwnerID = args[0]
