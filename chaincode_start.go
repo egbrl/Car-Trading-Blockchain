@@ -160,6 +160,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 	// Handle different functions
 	if function == "init" { //initialize the chaincode state, used as reset
 		return t.Init(stub, "init", args)
+	} else if function == "getTestData" {
+		return t.
 	}
 	fmt.Println("invoke did not find func: " + function) //error
 
@@ -174,6 +176,9 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 	if function == "dummy_query" { //read a variable
 		fmt.Println("hi there " + function) //error
 		return nil, nil
+	}	else if function == "getTestData" {
+		fmt.Println("Starting the function "+function)
+		getTestData(stub,args[0])
 	}
 	fmt.Println("query did not find func: " + function) //error
 
