@@ -43,7 +43,61 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 		return nil, errors.New("Incorrect number of arguments. Expecting 1")
 	}
 
+	// Create test cars
+	t.addTestdata(stub, args[0])
+
 	return nil, nil
+}
+
+func (t *Chaincode) addTestdata(stub shim.ChaincodeStubInterface, testDataAsJson string) error {
+	var testData entities.TestData
+	err := json.Unmarshal([]byte(testDataAsJson), &testData)
+	if err != nil {
+		return errors.New("Error while unmarshalling testdata")
+	}
+
+	for _, user := range testData.Users {
+		userAsBytes, err := json.Marshal(user);
+		if err != nil {
+			return errors.New("Error marshalling testUser, reason: " + err.Error())
+		}
+
+		err = util.StoreObjectInChain(stub, user.UserID, "_users", userAsBytes)
+		if err != nil {
+			return errors.New("error in storing object, reason: " + err.Error())
+		}
+	}
+
+	for _, car := range testData.Cars {
+		carAsBytes, err := json.Marshal(car);
+		if err != nil {
+			return errors.New("Error marshalling testCar, reason: " + err.Error())
+		}
+
+		err = util.StoreObjectInChain(stub, car.CarID, "_cars", carAsBytes)
+		if err != nil {
+			return errors.New("error in storing object, reason: " + err.Error())
+		}
+	}
+
+	return nil
+}
+
+
+func StoreObjectInChain(stub shim.ChaincodeStubInterface, objectID string, indexName string, object []byte) error {
+	ID, err := WriteIDToBlockchainIndex(stub, indexName, objectID)
+	if err != nil {
+		return errors.New("Writing ID to index: " + indexName + "Reason: " + err.Error())
+	}
+
+	fmt.Println("adding: ", string(object))
+
+	err = stub.PutState(string(ID), object)
+	if err != nil {
+		return errors.New("Putstate error: " + err.Error())
+	}
+
+	return nil
 }
 
 // Invoke is our entry point to invoke a chaincode function
