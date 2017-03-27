@@ -49,6 +49,15 @@ func (t *SampleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 }
 
 func (t *SampleChaincode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+	if len(args) == 0 {
+		return nil, errors.New("Incorrect number of arguments. Expecting >0")
+	}
+
+	if function == "GetCarOwner" { //initialize the chaincode state, used as reset
+		return GetCarOwner(stub, args)
+	}
+	// Create test cars
+
 	return nil, nil
 }
 
