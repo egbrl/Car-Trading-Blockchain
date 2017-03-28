@@ -17,10 +17,10 @@ type SimpleChaincode struct {
 
 var carIndexStr = "_cars"         //name for the key/value that will store a list of all known cars
 var openTradesStr = "_opentrades" //name for the key/value that will store all open trades
-var bookingIndexStr = "_bookings"
+var bookingIndexStr = "_bookings" //name for the key/value taht will store a list of all bookings
 
 type Car struct {
-	Name      string `json:"name"` //the fieldtags are needed to keep case from bouncing around
+	Name      string `json:"name"`
 	Color     string `json:"color"`
 	Size      int    `json:"size"`
 	User      string `json:"user"`
@@ -38,17 +38,17 @@ type Description struct {
 }
 
 type Booking struct {
-	CarName   string  `json:"carName"`
-	Start 		int64   `json:"start"`
-	End 			int64   `json:"end"`
-	User		  string	`json:"user"`
+	CarName string `json:"carName"`
+	Start   int64  `json:"start"`
+	End     int64  `json:"end"`
+	User    string `json:"user"`
 }
 
 type AnOpenTrade struct {
 	User      string        `json:"user"`      //user who created the open trade order
 	Timestamp int64         `json:"timestamp"` //utc timestamp of creation
-	Want      Description   `json:"want"`      //description of desired marble
-	Willing   []Description `json:"willing"`   //array of marbles willing to trade away
+	Want      Description   `json:"want"`      //description of desired car
+	Willing   []Description `json:"willing"`   //array of car willing to trade away
 }
 
 type AllTrades struct {
@@ -83,7 +83,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 	}
 
 	// Write the state to the ledger
-	err = stub.PutState("abc", []byte(strconv.Itoa(Aval))) //making a test var "abc", I find it handy to read/write to it right away to test the network
+	err = stub.PutState("abc", []byte(strconv.Itoa(Aval))) //making a test var "abc" in order to able to query it and see if it worked
 	if err != nil {
 		return nil, err
 	}
@@ -115,14 +115,6 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 }
 
 // ============================================================================================================================
-// Run - Our entry point for Invocations - [LEGACY] obc-peer 4/25/2016
-// ============================================================================================================================
-func (t *SimpleChaincode) Run(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	fmt.Println("run is running " + function)
-	return t.Invoke(stub, function, args)
-}
-
-// ============================================================================================================================
 // Invoke - Our entry point for Invocations
 // ============================================================================================================================
 func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
@@ -136,14 +128,14 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		cleanTrades(stub) //lets make sure all open trades are still valid
 		return res, err
 	} else if function == "write" { //writes a value to the chaincode state
-		return t.Write(stub, args)
+		return t.Write(stub, args
 	} else if function == "change_availability" { //writes a value to the chaincode state
 		return t.change_availability(stub, args)
-	} else if function == "init_car" { //create a new marble
+	} else if function == "init_car" { //create a new car
 		return t.init_car(stub, args)
 	} else if function == "update_car" { //update car
 		return t.update_car(stub, args)
-	} else if function == "set_user" { //change owner of a marble
+	} else if function == "set_user" { //change owner of a car
 		res, err := t.set_user(stub, args)
 		cleanTrades(stub) //lets make sure all open trades are still valid
 		return res, err
@@ -234,7 +226,6 @@ func (t *SimpleChaincode) create_booking(stub shim.ChaincodeStubInterface, args 
 	return jsonAsBytes, nil //send it onward
 }
 
-
 // ============================================================================================================================
 // Delete - remove a key/value pair from state
 // ============================================================================================================================
@@ -249,18 +240,18 @@ func (t *SimpleChaincode) Delete(stub shim.ChaincodeStubInterface, args []string
 		return nil, errors.New("Failed to delete state")
 	}
 
-	//get the marble index
-	marblesAsBytes, err := stub.GetState(carIndexStr)
+	//get the car index
+	carAsBytes, err := stub.GetState(carIndexStr)
 	if err != nil {
 		return nil, errors.New("Failed to get car index")
 	}
 	var carIndex []string
-	json.Unmarshal(marblesAsBytes, &carIndex) //un stringify it aka JSON.parse()
+	json.Unmarshal(carAsBytes, &carIndex) //un stringify it aka JSON.parse()
 
-	//remove marble from index
+	//remove car from index
 	for i, val := range carIndex {
 		fmt.Println(strconv.Itoa(i) + " - looking at " + val + " for " + name)
-		if val == name { //find the correct marble
+		if val == name { //find the correct car
 			fmt.Println("found car")
 			carIndex = append(carIndex[:i], carIndex[i+1:]...) //remove it
 			for x := range carIndex {                          //debug prints...
@@ -296,7 +287,7 @@ func (t *SimpleChaincode) Write(stub shim.ChaincodeStubInterface, args []string)
 }
 
 // ============================================================================================================================
-// Init Marble - create a new marble, store into chaincode state
+// Init Car - create a new car, store into chaincode state
 // ============================================================================================================================
 func (t *SimpleChaincode) init_car(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
@@ -309,7 +300,7 @@ func (t *SimpleChaincode) init_car(stub shim.ChaincodeStubInterface, args []stri
 	}
 
 	//input sanitation
-	fmt.Println("- start init marble")
+	fmt.Println("- start init car")
 	if len(args[0]) <= 0 {
 		return nil, errors.New("1st argument must be a non-empty string")
 	}
@@ -340,41 +331,41 @@ func (t *SimpleChaincode) init_car(stub shim.ChaincodeStubInterface, args []stri
 		return nil, errors.New("4rd argument must be a boolean string ex. 1, t, T, True, TRUE, true...")
 	}
 
-	//check if marble already exists
+	//check if car already exists
 	marbleAsBytes, err := stub.GetState(name)
 	if err != nil {
-		return nil, errors.New("Failed to get marble name")
+		return nil, errors.New("Failed to get car name")
 	}
 	res := Car{}
 	json.Unmarshal(marbleAsBytes, &res)
 	if res.Name == name {
-		fmt.Println("This marble arleady exists: " + name)
+		fmt.Println("This car arleady exists: " + name)
 		fmt.Println(res)
-		return nil, errors.New("This marble arleady exists") //all stop a marble by this name exists
+		return nil, errors.New("This car arleady exists") //all stop a car by this name exists
 	}
 
-	//build the marble json string manually
+	//build the car json string manually
 	str := `{"name": "` + name + `", "color": "` + color + `", "size": ` + strconv.Itoa(size) + `, "user": "` + user + `, "available": "` + strconv.FormatBool(available) + `" }`
 	err = stub.PutState(name, []byte(str)) //store car with id as key
 	if err != nil {
 		return nil, err
 	}
 
-	//get the marble index
+	//get the car index
 	carAsBytes, err := stub.GetState(carIndexStr)
 	if err != nil {
-		return nil, errors.New("Failed to get marble index")
+		return nil, errors.New("Failed to get car index")
 	}
 	var carIndex []string
 	json.Unmarshal(carAsBytes, &carIndex) //un stringify it aka JSON.parse()
 
 	//append
-	carIndex = append(carIndex, name) //add marble name to index list
-	fmt.Println("! marble index: ", carIndex)
+	carIndex = append(carIndex, name) //add car name to index list
+	fmt.Println("! car index: ", carIndex)
 	jsonAsBytes, _ := json.Marshal(carIndex)
-	err = stub.PutState(carIndexStr, jsonAsBytes) //store name of marble
+	err = stub.PutState(carIndexStr, jsonAsBytes) //store name of car
 
-	fmt.Println("- end init marble")
+	fmt.Println("- end init car")
 	return nil, nil
 }
 
@@ -481,7 +472,7 @@ func (t *SimpleChaincode) change_availability(stub shim.ChaincodeStubInterface, 
 
 
 // ============================================================================================================================
-// Set User Permission on Marble
+// Set User Permission on car
 // ============================================================================================================================
 func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
@@ -503,7 +494,7 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
 	res.User = args[1]               //change the user
 
 	jsonAsBytes, _ := json.Marshal(res)
-	err = stub.PutState(args[0], jsonAsBytes) //rewrite the marble with id as key
+	err = stub.PutState(args[0], jsonAsBytes) //rewrite the car with id as key
 	if err != nil {
 		return nil, err
 	}
@@ -513,7 +504,7 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
 }
 
 // ============================================================================================================================
-// Open Trade - create an open trade for a marble you want with marbles you have
+// Open Trade - create an open trade for a car you want with cars you have
 // ============================================================================================================================
 func (t *SimpleChaincode) open_trade(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
@@ -622,22 +613,22 @@ func (t *SimpleChaincode) perform_trade(stub shim.ChaincodeStubInterface, args [
 			if err != nil {
 				return nil, errors.New("Failed to get thing")
 			}
-			closersMarble := Car{}
-			json.Unmarshal(marbleAsBytes, &closersMarble) //un stringify it aka JSON.parse()
+			closersCar := Car{}
+			json.Unmarshal(marbleAsBytes, &closersCar) //un stringify it aka JSON.parse()
 
-			//verify if marble meets trade requirements
-			if closersMarble.Color != trades.OpenTrades[i].Want.Color || closersMarble.Size != trades.OpenTrades[i].Want.Size {
-				msg := "marble in input does not meet trade requriements"
+			//verify if car meets trade requirements
+			if closersCar.Color != trades.OpenTrades[i].Want.Color || closersCar.Size != trades.OpenTrades[i].Want.Size {
+				msg := "car in input does not meet trade requriements"
 				fmt.Println(msg)
 				return nil, errors.New(msg)
 			}
 
-			marble, e := findMarble4Trade(stub, trades.OpenTrades[i].User, args[4], size) //find a marble that is suitable from opener
+			marble, e := findMarble4Trade(stub, trades.OpenTrades[i].User, args[4], size) //find a car that is suitable from opener
 			if e == nil {
 				fmt.Println("! no errors, proceeding")
 
-				t.set_user(stub, []string{args[2], trades.OpenTrades[i].User}) //change owner of selected marble, closer -> opener
-				t.set_user(stub, []string{marble.Name, args[1]})               //change owner of selected marble, opener -> closer
+				t.set_user(stub, []string{args[2], trades.OpenTrades[i].User}) //change owner of selected Car, closer -> opener
+				t.set_user(stub, []string{marble.Name, args[1]})               //change owner of selected Car, opener -> closer
 
 				trades.OpenTrades = append(trades.OpenTrades[:i], trades.OpenTrades[i+1:]...) //remove trade
 				jsonAsBytes, _ := json.Marshal(trades)
@@ -653,42 +644,42 @@ func (t *SimpleChaincode) perform_trade(stub shim.ChaincodeStubInterface, args [
 }
 
 // ============================================================================================================================
-// findMarble4Trade - look for a matching marble that this user owns and return it
+// findMarble4Trade - look for a matching car that this user owns and return it
 // ============================================================================================================================
 func findMarble4Trade(stub shim.ChaincodeStubInterface, user string, color string, size int) (m Car, err error) {
 	var fail Car
-	fmt.Println("- start find marble 4 trade")
+	fmt.Println("- start find car 4 trade")
 	fmt.Println("looking for " + user + ", " + color + ", " + strconv.Itoa(size))
 
-	//get the marble index
-	marblesAsBytes, err := stub.GetState(carIndexStr)
+	//get the car index
+	carAsBytes, err := stub.GetState(carIndexStr)
 	if err != nil {
-		return fail, errors.New("Failed to get marble index")
+		return fail, errors.New("Failed to get car index")
 	}
-	var marbleIndex []string
-	json.Unmarshal(marblesAsBytes, &marbleIndex) //un stringify it aka JSON.parse()
+	var carIndex []string
+	json.Unmarshal(carAsBytes, &carIndex) //un stringify it aka JSON.parse()
 
-	for i := range marbleIndex { //iter through all the marbles
-		//fmt.Println("looking @ marble name: " + marbleIndex[i]);
+	for i := range carIndex { //iter through all the car
+		//fmt.Println("looking @ car name: " + carIndex[i]);
 
-		marbleAsBytes, err := stub.GetState(marbleIndex[i]) //grab this marble
+		carAsBytes, err := stub.GetState(carIndex[i]) //grab this car
 		if err != nil {
-			return fail, errors.New("Failed to get marble")
+			return fail, errors.New("Failed to get car")
 		}
 		res := Car{}
-		json.Unmarshal(marbleAsBytes, &res) //un stringify it aka JSON.parse()
+		json.Unmarshal(carAsBytes, &res) //un stringify it aka JSON.parse()
 		//fmt.Println("looking @ " + res.User + ", " + res.Color + ", " + strconv.Itoa(res.Size));
 
 		//check for user && color && size
 		if strings.ToLower(res.User) == strings.ToLower(user) && strings.ToLower(res.Color) == strings.ToLower(color) && res.Size == size {
-			fmt.Println("found a marble: " + res.Name)
-			fmt.Println("! end find marble 4 trade")
+			fmt.Println("found a car: " + res.Name)
+			fmt.Println("! end find car 4 trade")
 			return res, nil
 		}
 	}
 
-	fmt.Println("- end find marble 4 trade - error")
-	return fail, errors.New("Did not find marble to use in this trade")
+	fmt.Println("- end find car 4 trade - error")
+	return fail, errors.New("Did not find car to use in this trade")
 }
 
 // ============================================================================================================================
@@ -762,7 +753,7 @@ func cleanTrades(stub shim.ChaincodeStubInterface) (err error) {
 		fmt.Println(strconv.Itoa(i) + ": looking at trade " + strconv.FormatInt(trades.OpenTrades[i].Timestamp, 10))
 
 		fmt.Println("# options " + strconv.Itoa(len(trades.OpenTrades[i].Willing)))
-		for x := 0; x < len(trades.OpenTrades[i].Willing); { //find a marble that is suitable
+		for x := 0; x < len(trades.OpenTrades[i].Willing); { //find a car that is suitable
 			fmt.Println("! on next option " + strconv.Itoa(i) + ":" + strconv.Itoa(x))
 			_, e := findMarble4Trade(stub, trades.OpenTrades[i].User, trades.OpenTrades[i].Willing[x].Color, trades.OpenTrades[i].Willing[x].Size)
 			if e != nil {
