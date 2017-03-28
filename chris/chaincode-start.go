@@ -128,7 +128,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		cleanTrades(stub) //lets make sure all open trades are still valid
 		return res, err
 	} else if function == "write" { //writes a value to the chaincode state
-		return t.Write(stub, args
+		return t.Write(stub, args)
 	} else if function == "change_availability" { //writes a value to the chaincode state
 		return t.change_availability(stub, args)
 	} else if function == "init_car" { //create a new car
