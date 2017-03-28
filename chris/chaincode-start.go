@@ -465,7 +465,7 @@ func (t *SimpleChaincode) change_availability(stub shim.ChaincodeStubInterface, 
 		} else {
 			str = str + `, "available": "true"}`
 		}
-		fmt.Println(str)
+		fmt.Printf(str)
 		err = stub.PutState(name, []byte(str))
 		if err != nil {
 			return nil, err
