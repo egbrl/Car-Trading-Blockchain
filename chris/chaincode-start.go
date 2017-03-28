@@ -456,19 +456,20 @@ func (t *SimpleChaincode) change_availability(stub shim.ChaincodeStubInterface, 
 	// update car
 	res := Car{}
 	json.Unmarshal(carAsBytes, &res)
-	if res.Name == name {
-		fmt.Println("Updating car " + name)
+	fmt.Println("Updating car " + name)
 
-		res.Available = !res.Available
-
-		jsonAsBytes, _ := json.Marshal(res)
-		err = stub.PutState(args[0], jsonAsBytes) //rewrite the car with id as key
-
-		if err != nil {
-			return nil, err
-		}
+	if (res.Available) {
+		res.Available = false
+	} else {
+		res.Available = true
 	}
+	
+	jsonAsBytes, _ := json.Marshal(res)
+	err = stub.PutState(args[0], jsonAsBytes) //rewrite the car with id as key
 
+	if err != nil {
+		return nil, err
+	}
 	return nil, nil
 }
 
