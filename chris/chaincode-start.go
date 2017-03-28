@@ -137,6 +137,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return res, err
 	} else if function == "write" { //writes a value to the chaincode state
 		return t.Write(stub, args)
+	} else if function == "change_availability" { //writes a value to the chaincode state
+		return t.change_availability(stub, args)
 	} else if function == "init_car" { //create a new marble
 		return t.init_car(stub, args)
 	} else if function == "update_car" { //update car
@@ -439,6 +441,44 @@ func (t *SimpleChaincode) update_car(stub shim.ChaincodeStubInterface, args []st
 	fmt.Println("- end update car")
 	return nil, nil
 }
+
+// ============================================================================================================================
+// Change availability of cars
+// ============================================================================================================================
+func (t *SimpleChaincode) change_availability(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	if len(args) != 1 {
+		return nil, errors.New("Incorrect number of arguments. Expecting car name")
+	}
+
+	if len(args[0]) <= 0 {
+		return nil, errors.New("Car name must be a non-empty string")
+	}
+
+	name := args[0]
+
+	// find an existing car
+	carAsBytes, err := stub.GetState(name)
+	if err != nil {
+		return nil, errors.New("Car " + name + " does not exist yet")
+	}
+
+	// update car
+	res := Car{}
+	json.Unmarshal(carAsBytes, &res)
+	if res.Name == name {
+		fmt.Println("Updating car " + name)
+		// build the car json string
+		str := `{"name": "` + name + `", "color": "` + res.Color + `", "size": ` + strconv.Itoa(res.Size) + `, "user": "` + res.User
+		str = str + `, "available": "`+strconv.FormatBool(!res.Available)+`"}`
+		err = stub.PutState(name, []byte(str))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, nil
+}
+
 
 // ============================================================================================================================
 // Set User Permission on Marble
