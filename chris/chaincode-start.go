@@ -461,6 +461,7 @@ func (t *SimpleChaincode) change_availability(stub shim.ChaincodeStubInterface, 
 		// build the car json string
 		str := `{"name": "` + name + `", "color": "` + res.Color + `", "size": ` + strconv.Itoa(res.Size) + `, "user": "` + res.User
 		str = str + `, "available": "`+strconv.FormatBool(!res.Available)+`"}`
+		fmt.Println(str)
 		err = stub.PutState(name, []byte(str))
 		if err != nil {
 			return nil, err
