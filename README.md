@@ -6,6 +6,7 @@ To test if cc builds locally with most recent fabric-preview.:
 local$    go get github.com/hyperledger/fabric
 local$    cd $GOPATH/src/github.com/hyperledger/fabric
 local$    git checkout -b v1.0.0-preview origin/v1.0.0-preview
+```
 
 ## CC Development
 To see if the cc actually builds, clone this repo and execute from that folder:
