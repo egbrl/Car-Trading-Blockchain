@@ -6,10 +6,10 @@ package main
 type Certificate struct {
     User            string `json:"user"`            // the name of a user (garage or private person)
     Insurer         string `json:"insurer"`         // the name of an insurance company
-    Number_Plate    string `json:"number_plate"`    // number plate like 'AG 104 739'
-    Serial_Number   string `json:"serial_number"`   // serial number like 'WVW ZZZ 6RZ HY26 0780'
+    Number_Plate    string `json:"number_plate"`    // number plate ('AG 104 739')
+    Vin             string `json:"vin"`             // vehicle identification number ('WVW ZZZ 6RZ HY26 0780')
     Color           string `json:"color"`
-    Type            string `json:"type"`            // type, like 'passenger car' or 'truck'
+    Type            string `json:"type"`            // type: 'passenger car', 'truck', ...
     Brand           string `json:"brand"`
 }
 
