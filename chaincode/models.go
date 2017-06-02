@@ -17,16 +17,17 @@ type Certificate struct {
  * Pruefungsbericht
  * (Form. 13.20 A)
  */
-type CarAudit struct {
-    Car                     Car `json:"car"`
-    Number_of_Doors         string `json:"number_of_doors"`      // '4+1' for a standard passenger car
-    Number_of_Cylinders     int `json:"number_of_cylinders"`     // 3, 4, 6, 8 ?
-    Number_of_Axis          int `json:"number_of_axis"`          // typically 2
-    Max_Speed               int `json:"max_speed"`               // maximum speed as tested
+type Car_Audit struct {
+    Car                   Car     `json:"car"`
+    NumberOfDoors         string  `json:"number_of_doors"`     // '4+1' for a passenger car
+    NumberOfCylinders     int     `json:"number_of_cylinders"` // 3, 4, 6, 8 ?
+    NumberOfAxis          int     `json:"number_of_axis"`      // typically 2
+    MaxSpeed              int     `json:"max_speed"`           // maximum speed as tested
 }
 
 type Car struct {
-    Certificate     Certificate `json:"certificate"`
+    Certificate    *Certificate   `json:"certificate"`
+    CreatedTs      int64          `json:"created_ts"`          // birth date
     Name      string `json:"name"`
     Color     string `json:"color"`
     Size      int    `json:"size"`

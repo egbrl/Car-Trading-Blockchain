@@ -2,30 +2,23 @@ package main
 
 import (
     "fmt"
+    "encoding/json"
     "strconv"
     "strings"
     "time"
     "errors"
-    "encoding/json"
 
     "github.com/hyperledger/fabric/core/chaincode/shim"
     pb "github.com/hyperledger/fabric/protos/peer"
 )
 
-type SimpleChaincode struct {
+type CarChaincode struct {
 }
 
 var carIndexStr = "_cars"         //name for the key/value that will store a list of all known cars
 var openTradesStr = "_opentrades" //name for the key/value that will store all open trades
 
-func main() {
-    err := shim.Start(new(SimpleChaincode))
-    if err != nil {
-        fmt.Printf("Error starting Simple chaincode: %s", err)
-    }
-}
-
-func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
+func (t *CarChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
     fmt.Println("Car demo Init")
     
     var Aval int
@@ -62,12 +55,14 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
     return shim.Success(nil)
 }
 
-func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
+func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
     function, args := stub.GetFunctionAndParameters()
-    fmt.Println("Invoke is running " + function + " with args: " + strings.Join(args, ", "))
+    fmt.Println("Invoke is running function '" + function + "' with args: " + strings.Join(args, ", "))
 
     // Handle different functions
-    if function == "delete" {
+    if function == "create" {
+        return t.create(stub, args)
+    } else if function == "delete" {
         res := t.Delete(stub, args)
         cleanTrades(stub)
         return res
@@ -97,7 +92,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
     return shim.Error("Received unknown function invocation")
 }
 
-func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *CarChaincode) read(stub shim.ChaincodeStubInterface, args []string) pb.Response {
     var name, jsonResp string
     var err error
 
@@ -115,7 +110,7 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
     return shim.Success(valAsbytes)
 }
 
-func (t *SimpleChaincode) Delete(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *CarChaincode) Delete(stub shim.ChaincodeStubInterface, args []string) pb.Response {
     if len(args) != 1 {
         return shim.Error("Incorrect number of arguments. Expecting 1")
     }
@@ -151,7 +146,7 @@ func (t *SimpleChaincode) Delete(stub shim.ChaincodeStubInterface, args []string
     return shim.Success(nil)
 }
 
-func (t *SimpleChaincode) Write(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *CarChaincode) Write(stub shim.ChaincodeStubInterface, args []string) pb.Response {
     var name, value string // Entities
     var err error
     fmt.Println("running write()")
@@ -169,7 +164,7 @@ func (t *SimpleChaincode) Write(stub shim.ChaincodeStubInterface, args []string)
     return shim.Success(nil)
 }
 
-func (t *SimpleChaincode) init_car(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *CarChaincode) init_car(stub shim.ChaincodeStubInterface, args []string) pb.Response {
     var err error
 
     //   0       1       2     3        4
@@ -249,7 +244,7 @@ func (t *SimpleChaincode) init_car(stub shim.ChaincodeStubInterface, args []stri
     return shim.Success(nil)
 }
 
-func (t *SimpleChaincode) update_car(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *CarChaincode) update_car(stub shim.ChaincodeStubInterface, args []string) pb.Response {
     var err error
 
     if len(args) != 4 {
@@ -310,7 +305,7 @@ func (t *SimpleChaincode) update_car(stub shim.ChaincodeStubInterface, args []st
     return shim.Success(nil)
 }
 
-func (t *SimpleChaincode) change_availability(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *CarChaincode) change_availability(stub shim.ChaincodeStubInterface, args []string) pb.Response {
     if len(args) != 1 {
         return shim.Error("Incorrect number of arguments. Expecting car name")
     }
@@ -347,7 +342,7 @@ func (t *SimpleChaincode) change_availability(stub shim.ChaincodeStubInterface, 
     return shim.Success(nil)
 }
 
-func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *CarChaincode) set_user(stub shim.ChaincodeStubInterface, args []string) pb.Response {
     var err error
 
     //   0       1
@@ -376,7 +371,7 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
     return shim.Success(nil)
 }
 
-func (t *SimpleChaincode) open_trade(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *CarChaincode) open_trade(stub shim.ChaincodeStubInterface, args []string) pb.Response {
     var err error
     var will_size int
     var trade_away Description
@@ -443,7 +438,7 @@ func (t *SimpleChaincode) open_trade(stub shim.ChaincodeStubInterface, args []st
     return shim.Success(nil)
 }
 
-func (t *SimpleChaincode) perform_trade(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *CarChaincode) perform_trade(stub shim.ChaincodeStubInterface, args []string) pb.Response {
     var err error
 
     //  0       1                   2                   3               4                   5
@@ -550,7 +545,7 @@ func makeTimestamp() int64 {
     return time.Now().UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
 }
 
-func (t *SimpleChaincode) remove_trade(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *CarChaincode) remove_trade(stub shim.ChaincodeStubInterface, args []string) pb.Response {
     var err error
 
     //  0
@@ -654,4 +649,14 @@ func cleanTrades(stub shim.ChaincodeStubInterface) (err error) {
 
     fmt.Println("- end clean trades")
     return nil
+}
+
+
+
+
+func main() {
+    err := shim.Start(new(CarChaincode))
+    if err != nil {
+        fmt.Printf("Error starting Simple chaincode: %s", err)
+    }
 }
