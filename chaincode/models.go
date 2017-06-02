@@ -6,7 +6,7 @@ package main
 type Certificate struct {
     User            string `json:"user"`            // the name of a user (garage or private person)
     Insurer         string `json:"insurer"`         // the name of an insurance company
-    Number_Plate    string `json:"number_plate"`    // number plate ('AG 104 739')
+    Numberplate     string `json:"numberplate"`     // number plate ('AG 104 739')
     Vin             string `json:"vin"`             // vehicle identification number ('WVW ZZZ 6RZ HY26 0780')
     Color           string `json:"color"`
     Type            string `json:"type"`            // type: 'passenger car', 'truck', ...
@@ -18,7 +18,7 @@ type Certificate struct {
  * (Form. 13.20 A)
  */
 type Car_Audit struct {
-    Car                   Car     `json:"car"`
+    Car                   *Car     `json:"car"`
     NumberOfDoors         string  `json:"number_of_doors"`     // '4+1' for a passenger car
     NumberOfCylinders     int     `json:"number_of_cylinders"` // 3, 4, 6, 8 ?
     NumberOfAxis          int     `json:"number_of_axis"`      // typically 2
@@ -26,12 +26,13 @@ type Car_Audit struct {
 }
 
 type Car struct {
-    Certificate    *Certificate   `json:"certificate"`
+    Certificate    *Certificate   `json:"certificate"`         // vehicle certificate issued by the DOT
     CreatedTs      int64          `json:"created_ts"`          // birth date
+    Vin            string         `json:"vin"`                 // vehicle identification number
+    User           string         `json:"user"`                // garage name
     Name      string `json:"name"`
     Color     string `json:"color"`
     Size      int    `json:"size"`
-    User      string `json:"user"`
     Available bool   `json:"available"`
 }
 

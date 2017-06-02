@@ -3,7 +3,6 @@ package main
 import (
     "fmt"
     "encoding/json"
-    "strconv"
     "testing"
 
     "github.com/hyperledger/fabric/core/chaincode/shim"
@@ -27,7 +26,8 @@ func TestCreate(t *testing.T) {
     stub := shim.NewMockStub("car", carChaincode)
 
     // create a new car
-    response := stub.MockInvoke(uuid, util.ToChaincodeArgs("create"))
+    carData := `{"vin": "WVW ZZZ 6RZ HY26 0780", "user": "amag"}`
+    response := stub.MockInvoke(uuid, util.ToChaincodeArgs("create", carData))
 
     // payload should contain the car index with the newly created car
     var carIndex []int64
@@ -37,10 +37,10 @@ func TestCreate(t *testing.T) {
     }
 
     // print the car and the car index
-    fmt.Println("CAR_TEST:\tSuccessfully created car with ts '" + strconv.FormatInt(carIndex[len(carIndex) - 1], 10) + "'")
+    fmt.Printf("CAR_TEST:\tSuccessfully created car with ts '%d'\n", carIndex[0])
     fmt.Println("CAR_TEST:\tCar index:")
     for i, carCreatedTs := range carIndex {
-        fmt.Println("CAR_TEST:\t [" + strconv.Itoa(i) + "] " + strconv.FormatInt(carCreatedTs, 10))
+        fmt.Printf("CAR_TEST:\t [%d] %d\n", i, carCreatedTs)
     }
 
     // the car index should only contain one car
