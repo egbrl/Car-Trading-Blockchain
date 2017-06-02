@@ -15,6 +15,11 @@ local$    cd chaincode
 local$    go build
 ```
 
+To run all tests:
+```
+local$    go test
+```
+
 ## Run CC
 Use the fabric-cli to create a directory and deploy the cc:
 ```
