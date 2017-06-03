@@ -9,7 +9,6 @@ type Car struct {
 type User struct {
     Name           string            `json:"name"`
     KeyringEntries []KeyringEntry    `json:"keyring_entries"`
-    Certificate    Certificate       `json:"certificate"`
 }
 
 type KeyringEntry struct {
