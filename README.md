@@ -9,9 +9,11 @@ sudo rm -rf /var/lib/docker/
 sudo systemctl start docker
 ```
 
-Grab [yeasy(v1.0) docker-compose.yml](https://github.com/yeasy/docker-compose-files/tree/master/hyperledger/1.0) (careful, depends on peer.yml) and install the docker images with this script: [yeasy(download_images.sh)](https://raw.githubusercontent.com/yeasy/docker-compose-files/c984ad3f477795ff6beb7a5146aa28d48a329942/hyperledger/1.0/scripts/download_images.sh)
+Install the docker images with this script: [yeasy(download_images.sh)](https://raw.githubusercontent.com/yeasy/docker-compose-files/c984ad3f477795ff6beb7a5146aa28d48a329942/hyperledger/1.0/scripts/download_images.sh)
 
 In the latest version where `IMG_VERSION=0.9.4` I encountered [this](https://github.com/yeasy/docker-compose-files/issues/48) error. So just use the link given above to download the exact version of the script where `IMG_VERSION=0.9.3` is used.
+
+Then do `docker-compose up` from the project root folder.
 
 ## CC Development
 To test if cc builds locally with most recent fabric-preview.:
