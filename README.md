@@ -52,7 +52,12 @@ root@cli# peer chaincode instantiate -v 1.0 -n car_cc -c '{"Args":["init", "999"
 root@cli# peer chaincode query -n car_cc -c '{"Args":["read", "abc"]}'
 ```
 
-`Query Result: 999` your good to go.
+`Query Result: 999` your good to go. You can do other intersting stuff now, such as creating cars:
+```
+root@cli# peer chaincode invoke -n car_cc -c '{"Args":["create", "{\"vin\": \"WVW ZZZ 6RZ HY26 0780\"}", "{\"name\": \"amag\"}", "my-secret-key-00"]}'
+```
+
+If you are lucky you should see the keys of your new car flashing over the screen, congrats! See the test files for some more ideas or head over to the [specification](https://docs.google.com/document/d/1U7C9dJmDg_-l5gKeseZEKqc5ooru2wMxZ8BwhkbjIbk/edit?usp=sharing).
 
 ## References
 Docker setup from [yeasy(v1.0)](https://github.com/yeasy/docker-compose-files/tree/master/hyperledger/1.0).
