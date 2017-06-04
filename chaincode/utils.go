@@ -6,11 +6,29 @@ import (
 )
 
 /*
- * Clears an index on the ledger
+ * Clears an index of type 'map[string]string' on the ledger
  */
-func clearIndex(indexStr string, stub shim.ChaincodeStubInterface) error {
-    index := make(map[int64]string)
+func clearCarIndex(indexStr string, stub shim.ChaincodeStubInterface) error {
+    index := make(map[string]string)
 
-    jsonAsBytes, _ := json.Marshal(index)
+    jsonAsBytes, err := json.Marshal(index)
+    if err != nil {
+        return err
+    }
+
+    return stub.PutState(indexStr, jsonAsBytes)
+}
+
+/*
+ * Clears an index of type 'map[string][]byte' on the ledger
+ */
+func clearKeyIndex(indexStr string, stub shim.ChaincodeStubInterface) error {
+    index := make(map[string][]byte)
+
+    jsonAsBytes, err := json.Marshal(index)
+    if err != nil {
+        return err
+    }
+
     return stub.PutState(indexStr, jsonAsBytes)
 }
