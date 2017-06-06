@@ -1,7 +1,5 @@
 package main
 
-import "crypto/rsa"
-
 type Car struct {
     Certificate    *Certificate          `json:"certificate"`  // vehicle certificate issued by the DOT
     CreatedTs      int64                 `json:"created_ts"`   // birth date
@@ -10,13 +8,7 @@ type Car struct {
 
 type User struct {
     Name           string                `json:"name"`
-    KeyringEntries []KeyringEntry        `json:"keyring_entries"`
-}
-
-type KeyringEntry struct {
-    PublicKey       rsa.PublicKey        `json:"public_key"`
-    PrivateKey      rsa.PrivateKey       `json:"private_key"`
-    CarTs           int64                `json:"car_ts"`
+    Cars           []int64               `json:"cars"`
 }
 
 /*

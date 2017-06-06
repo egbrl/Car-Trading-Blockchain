@@ -5,11 +5,7 @@ import (
     "encoding/json"
     "time"
     "strconv"
-    "crypto/rsa"
-    "crypto/rand"
-    "crypto/sha256"
 
-    "github.com/minio/minio-go/pkg/encrypt"
     "github.com/hyperledger/fabric/core/chaincode/shim"
     pb "github.com/hyperledger/fabric/protos/peer"
 )
@@ -125,23 +121,13 @@ func (t *CarChaincode) read(stub shim.ChaincodeStubInterface, key string) pb.Res
  * Expects arguments:
  *  [1] Car                             []byte
  *  [2] User                            []byte
- *  [3] car key (16, 24, or 32 bytes)   string
  * 
  * On success,
- * returns the car keys to lock and unlock.
- *
- * Note: The car secret needs to be 16, 24, or 32 bytes long,
- *       because EAS key has this restriction, see:
- *       https://golang.org/src/crypto/aes/cipher.go
+ * returns the car.
  */
 func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-    if len(args) != 3 {
-        return shim.Error("'create' expects Car, User and secret")
-    }
-
-    secret := args[2]
-    if secret == "" {
-        return shim.Error("Car secret / key should not be empty")
+    if len(args) != 2 {
+        return shim.Error("'create' expects Car and User")
     }
 
     // create car from arguments
@@ -170,55 +156,10 @@ func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, args []string) p
         user = existingUser
     }
 
-    // build symmetric key and asymmetric keys
-    secretAsBytes := []byte(secret)
-    symmetricKey := encrypt.NewSymmetricKey(secretAsBytes)
-    priv, _ := rsa.GenerateKey(rand.Reader, 1024)
-
-    // create a copy of the keys
-    // for the keyring of garage user
-    keyringEntry := KeyringEntry { PrivateKey:   *priv,
-                                   PublicKey:     priv.PublicKey,
-                                   CarTs:         car.CreatedTs }
-
-    // encrypt the car secret for use in hybrid encryption scheme
-    cryptedKey, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, &priv.PublicKey, secretAsBytes, nil)
-    if err != nil {
-        return shim.Error("Error encrypting car key")
-    }
-
-    // store the crypted car key
-    response = t.read(stub, keyIndexStr)
-    keyIndex := make(map[string][]byte)
-
-    err = json.Unmarshal(response.Payload, &keyIndex)
-    if (err != nil) {
-        return shim.Error("Error parsing key index")
-    }
-
-    keyIndex[strconv.FormatInt(car.CreatedTs, 10)] = cryptedKey
-    fmt.Printf("Updated key index with crypted key for car at ts '%d'\n", car.CreatedTs)
-
-    // write udpated key index back to ledger
-    indexAsBytes, _ := json.Marshal(keyIndex)
-    err = stub.PutState(keyIndexStr, indexAsBytes)
-    if err != nil {
-        return shim.Error("Error writing key index")
-    }
-
-    // lock the car
-    carAsBytes, _ := json.Marshal(car)
-    cryptedCar, err := symmetricKey.Encrypt(carAsBytes)
-    if err != nil {
-        fmt.Printf("Car secret '%s' has '%d' bytes\n", secret, len(secret))
-        fmt.Printf("Car AES secret must be either 16, 24, or 32 bytes long")
-        return shim.Error(err.Error())
-    }
-
     // save car to ledger, the car ts serves
     // as the index to find the car again
-    cryptedCarAsBytes, _ := json.Marshal(cryptedCar)
-    err = stub.PutState(strconv.FormatInt(car.CreatedTs, 10), cryptedCarAsBytes)
+    carAsBytes, _ := json.Marshal(car)
+    err = stub.PutState(strconv.FormatInt(car.CreatedTs, 10), carAsBytes)
     if err != nil {
         return shim.Error("Error writing car")
     }
@@ -232,14 +173,14 @@ func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, args []string) p
                 car.Vin, car.CreatedTs, user.Name)
 
     // write udpated car index back to ledger
-    indexAsBytes, _ = json.Marshal(carIndex)
+    indexAsBytes, _ := json.Marshal(carIndex)
     err = stub.PutState(carIndexStr, indexAsBytes)
     if err != nil {
         return shim.Error("Error writing car index")
     }
 
-    // hand over the keys and write user to ledger
-    user.KeyringEntries = append(user.KeyringEntries, keyringEntry)
+    // hand over the car and write user to ledger
+    user.Cars = append(user.Cars, car.CreatedTs)
     userAsBytes, _ := json.Marshal(user)
     err = stub.PutState(user.Name, userAsBytes)
     if err != nil {
@@ -247,7 +188,6 @@ func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, args []string) p
     }
 
     // car creation successfull,
-    // return the car keys
-    keysAsBytes, _ := json.Marshal(keyringEntry)
-    return shim.Success(keysAsBytes)
+    // return the car
+    return shim.Success(carAsBytes)
 }

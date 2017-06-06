@@ -13,7 +13,6 @@ type CarChaincode struct {
 }
 
 const carIndexStr string = "_cars"
-const keyIndexStr string = "_keys"
 
 func (t *CarChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
     fmt.Println("Car demo Init")
@@ -39,17 +38,13 @@ func (t *CarChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
         return shim.Error(err.Error())
     }
  
-    // clear the indexes
+    // clear the car index
     err = clearCarIndex(carIndexStr, stub)
     if err != nil {
         return shim.Error(err.Error())
     }
-    err = clearKeyIndex(keyIndexStr, stub)
-    if err != nil {
-        return shim.Error(err.Error())
-    }
 
-    fmt.Println("Indexes clean")
+    fmt.Println("Car index clean")
     fmt.Println("Init terminated")
     return shim.Success(nil)
 }
