@@ -92,14 +92,15 @@ func isInsured(car *Car) bool {
 }
 
 /*
- * Reads ledger state from 'key'.
+ * Reads ledger state from position 'key'.
  *
  * Can be any of:
  *  - Car   (expects car timestamp as key)
  *  - User  (expects user name as key)
+ *  - or an index like '_cars'
  *
  * On success,
- * returns bytes at ledger 'key'
+ * returns ledger state in bytes at position 'key'.
  */
 func (t *CarChaincode) read(stub shim.ChaincodeStubInterface, key string) pb.Response {
     if key == "" {
