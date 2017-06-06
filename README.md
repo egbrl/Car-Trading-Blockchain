@@ -49,7 +49,7 @@ root@cli# peer chaincode install -v 1.0 -n car_cc -p github.com/EGabb/Car_Sharin
 root@cli# peer chaincode instantiate -v 1.0 -n car_cc -c '{"Args":["init", "999"]}'
 ```
 
-`Query Result: 999` your good to go. You can do other intersting stuff now, such as creating cars:
+You can do other intersting stuff now, such as creating cars:
 ```
 root@cli# peer chaincode invoke -n car_cc -c '{"Args":["create", "amage", "garage", "{\"vin\": \"WVW ZZZ 6RZ HY26 0780\"}"]}'
 ```
