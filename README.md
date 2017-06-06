@@ -18,7 +18,6 @@ Then do `docker-compose up` from the project root folder.
 ## CC Development
 To test if cc builds locally with most recent fabric-preview.:
 ```
-local$    go get github.com/minio/minio-go/pkg/encrypt
 local$    go get github.com/hyperledger/fabric
 local$    cd $GOPATH/src/github.com/hyperledger/fabric
 local$    git checkout -b v1.0.0-preview origin/v1.0.0-preview
@@ -46,15 +45,13 @@ root@cli# mkdir -p /go/src/github.com/EGabb/Car_Sharing_Blockchain
 Copy the cc from the local machine (project root folder) into the container, install and execute:
 ```
 local$    docker cp chaincode/ fabric-cli:/go/src/github.com/EGabb/Car_Sharing_Blockchain/
-root@cli# go get github.com/minio/minio-go/pkg/encrypt
 root@cli# peer chaincode install -v 1.0 -n car_cc -p github.com/EGabb/Car_Sharing_Blockchain/chaincode
 root@cli# peer chaincode instantiate -v 1.0 -n car_cc -c '{"Args":["init", "999"]}'
-root@cli# peer chaincode query -n car_cc -c '{"Args":["read", "abc"]}'
 ```
 
 `Query Result: 999` your good to go. You can do other intersting stuff now, such as creating cars:
 ```
-root@cli# peer chaincode invoke -n car_cc -c '{"Args":["create", "{\"vin\": \"WVW ZZZ 6RZ HY26 0780\"}", "{\"name\": \"amag\"}"]}'
+root@cli# peer chaincode invoke -n car_cc -c '{"Args":["create", "test_user", "garage", "{\"vin\": \"WVW ZZZ 6RZ HY26 0780\"}", "{\"name\": \"amag\"}"]}'
 ```
 
 If you are lucky you should see your new car flashing over the screen, congrats! See the test files for some more ideas or head over to the [specification](https://docs.google.com/document/d/1U7C9dJmDg_-l5gKeseZEKqc5ooru2wMxZ8BwhkbjIbk/edit?usp=sharing).
