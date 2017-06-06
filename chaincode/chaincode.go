@@ -74,7 +74,7 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
         if role != "garage" {
             return shim.Error("'create' expects you to be a garage user")
         }
-        return t.create(stub, args)
+        return t.create(stub, username, args)
     } else if function == "read" {
         if len(args) != 1 {
             return shim.Error("'read' expects a key to do the look up")

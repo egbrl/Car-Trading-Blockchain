@@ -78,8 +78,7 @@ func TestCreateAndReadCar(t *testing.T) {
 
     // create a new car
     carData := `{ "vin": "` + vin + `" }`
-    userData := `{ "name": "` + username + `" }`
-    response := stub.MockInvoke(uuid, util.ToChaincodeArgs("create", "amag", "garage", carData, userData))
+    response := stub.MockInvoke(uuid, util.ToChaincodeArgs("create", "amag", "garage", carData))
 
     // payload should contain the car
     car := Car {}

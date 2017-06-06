@@ -95,23 +95,22 @@ func isInsured(car *Car) bool {
  * Creates a new, unregistered car with the current timestamp
  * and appends it to the car index.
  *
- * Expects arguments:
- *  [1] Car                             []byte
- *  [2] User                            []byte
- * 
+ * Expects 'args':
+ *  Car with VIN        json
+ *
  * On success,
  * returns the car.
  */
-func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-    if len(args) != 2 {
-        return shim.Error("'create' expects Car and User")
+func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, username string, args []string) pb.Response {
+    if len(args) != 1 {
+        return shim.Error("'create' expects Car with VIN as json")
     }
 
     // create car from arguments
     car := Car {}
     err := json.Unmarshal([]byte(args[0]), &car)
     if err != nil {
-        return shim.Error("Error parsing car data")
+        return shim.Error("Error parsing car data. Expecting Car with VIN as json.")
     }
 
     // add car birth date
@@ -119,18 +118,15 @@ func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, args []string) p
 
     // create user from arguments
     user := User {}
-    err = json.Unmarshal([]byte(args[1]), &user)
-    if err != nil {
-        return shim.Error("Error parsing user data")
-    }
 
-    // find existing garage user with that name
-    response := t.read(stub, user.Name)
+    // check for existing garage user with that name
+    response := t.read(stub, username)
     existingUser := User {}
     err = json.Unmarshal(response.Payload, &existingUser)
     if err == nil {
-        // use existing garage user
         user = existingUser
+    } else {
+        user.Name = username
     }
 
     // save car to ledger, the car ts serves

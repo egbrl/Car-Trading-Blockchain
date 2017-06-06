@@ -51,7 +51,7 @@ root@cli# peer chaincode instantiate -v 1.0 -n car_cc -c '{"Args":["init", "999"
 
 `Query Result: 999` your good to go. You can do other intersting stuff now, such as creating cars:
 ```
-root@cli# peer chaincode invoke -n car_cc -c '{"Args":["create", "test_user", "garage", "{\"vin\": \"WVW ZZZ 6RZ HY26 0780\"}", "{\"name\": \"amag\"}"]}'
+root@cli# peer chaincode invoke -n car_cc -c '{"Args":["create", "amage", "garage", "{\"vin\": \"WVW ZZZ 6RZ HY26 0780\"}"]}'
 ```
 
 If you are lucky you should see your new car flashing over the screen, congrats! See the test files for some more ideas or head over to the [specification](https://docs.google.com/document/d/1U7C9dJmDg_-l5gKeseZEKqc5ooru2wMxZ8BwhkbjIbk/edit?usp=sharing).
