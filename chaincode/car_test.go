@@ -33,7 +33,7 @@ func ccSetup(t *testing.T, stub *shim.MockStub) {
     }
 
     // check out the empty car index
-    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", carIndexStr))
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", carIndexStr))
     carIndex := make(map[string]string)
     err = json.Unmarshal(response.Payload, &carIndex)
 
@@ -79,7 +79,7 @@ func TestCreateAndReadCar(t *testing.T) {
     // create a new car
     carData := `{ "vin": "` + vin + `" }`
     userData := `{ "name": "` + username + `" }`
-    response := stub.MockInvoke(uuid, util.ToChaincodeArgs("create", carData, userData))
+    response := stub.MockInvoke(uuid, util.ToChaincodeArgs("create", "amag", "garage", carData, userData))
 
     // payload should contain the car
     car := Car {}
@@ -91,7 +91,7 @@ func TestCreateAndReadCar(t *testing.T) {
     fmt.Printf("Successfully created car with ts '%d'\n", car.CreatedTs)
 
     // fetch car again to check if the car was saved correctly
-    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", strconv.FormatInt(car.CreatedTs, 10)))
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", strconv.FormatInt(car.CreatedTs, 10)))
     err = json.Unmarshal(response.Payload, &car)
     if err != nil {
         t.Error("Failed to fetch car")
@@ -103,7 +103,7 @@ func TestCreateAndReadCar(t *testing.T) {
     }
 
     // check out the car index, should contain one car
-    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", carIndexStr))
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", carIndexStr))
     carIndex := make(map[string]string)
     err = json.Unmarshal(response.Payload, &carIndex)
 
@@ -116,7 +116,7 @@ func TestCreateAndReadCar(t *testing.T) {
     }
 
     // the user should only have one car by now
-    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", username))
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", username))
     user := User {}
     err = json.Unmarshal(response.Payload, &user)
     if err != nil {

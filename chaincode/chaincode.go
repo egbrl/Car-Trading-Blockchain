@@ -4,6 +4,7 @@ import (
     "fmt"
     "strconv"
     "strings"
+    "reflect"
 
     "github.com/hyperledger/fabric/core/chaincode/shim"
     pb "github.com/hyperledger/fabric/protos/peer"
@@ -49,15 +50,37 @@ func (t *CarChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
     return shim.Success(nil)
 }
 
+/*
+ * Invokes an action on the ledger.
+ *
+ * Expects 'username' and 'role' as first two parameters.
+ * Unrestricted queries can only be done from test files.
+ */
 func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
     function, args := stub.GetFunctionAndParameters()
-    fmt.Println("Invoke is running function '" + function + "' with args: " + strings.Join(args, ", "))
+
+    if len(args) < 2 {
+        return shim.Error("Invoke expects 'username' and 'role' as first two args.")
+    }
+
+    username := args[0]
+    role     := args[1]
+    args = args[2:]
+
+    fmt.Printf("Invoke is running as user '%s' with role '%s'\n", username, role)
+    fmt.Printf("Invoke is running function '%s' with args: %s\n", function, strings.Join(args, ", "))
 
     if function == "create" {
+        if role != "garage" {
+            return shim.Error("'create' expects you to be a garage user")
+        }
         return t.create(stub, args)
     } else if function == "read" {
         if len(args) != 1 {
-            return shim.Error("'read' expects exactly one key to do the look up")
+            return shim.Error("'read' expects a key to do the look up")
+        } else if (reflect.TypeOf(stub).String() != "*shim.MockStub") {
+            // only allow unrestricted queries from the test files
+            return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to do unrestricted queries on the ledger.", role))
         } else {
             return t.read(stub, args[0])
         }
