@@ -66,6 +66,30 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
     return shim.Error("Invoke did not find function: " + function)
 }
 
+/*
+ * Reads ledger state from position 'key'.
+ *
+ * Can be any of:
+ *  - Car   (expects car timestamp as key)
+ *  - User  (expects user name as key)
+ *  - or an index like '_cars'
+ *
+ * On success,
+ * returns ledger state in bytes at position 'key'.
+ */
+func (t *CarChaincode) read(stub shim.ChaincodeStubInterface, key string) pb.Response {
+    if key == "" {
+        return shim.Error("'read' expects a non-empty key to do the look up")
+    }
+
+    valAsBytes, err := stub.GetState(key)
+    if err != nil {
+        return shim.Error("Failed to fetch value at key '" + key + "' from ledger")
+    }
+
+    return shim.Success(valAsBytes)
+}
+
 func main() {
     err := shim.Start(new(CarChaincode))
     if err != nil {
