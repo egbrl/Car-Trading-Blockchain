@@ -164,3 +164,35 @@ func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, username string,
     // return the car
     return shim.Success(carAsBytes)
 }
+
+/*
+ * Reads a car.
+ *
+ * Only the car owner can read the car.
+ *
+ * On success,
+ * returns the car.
+ */
+func (t *CarChaincode) read_car(stub shim.ChaincodeStubInterface, username string, carTs string) pb.Response {
+    if carTs == "" {
+        return shim.Error("'read_car' expects a non-empty car ts to do the look up")
+    }
+
+    // fetch the car from the ledger
+    carResponse := t.read(stub, carTs)
+    car := Car {}
+    err := json.Unmarshal(carResponse.Payload, &car)
+    if err != nil {
+        return shim.Error("Failed to fetch car with ts '" + carTs + "' from ledger")
+    }
+
+    // fetch the car index to check if the user owns the car
+    indexResponse := t.read(stub, carIndexStr)
+    carIndex := make(map[string]string)
+    err = json.Unmarshal(indexResponse.Payload, &carIndex)
+    if carIndex[carTs] != username {
+        return shim.Error("Forbidden: this is not your car")
+    }
+
+    return shim.Success(carResponse.Payload)
+}

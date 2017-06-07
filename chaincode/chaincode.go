@@ -84,6 +84,12 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
         } else {
             return t.read(stub, args[0])
         }
+    } else if function == "read_car" {
+        if len(args) != 1 {
+            return shim.Error("'read' expects a car timestamp to do the look up")
+        } else {
+            return t.read_car(stub, username, args[0])
+        }
     }
 
     return shim.Error("Invoke did not find function: " + function)

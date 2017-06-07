@@ -78,28 +78,16 @@ func TestCreateAndReadCar(t *testing.T) {
 
     // create a new car
     carData := `{ "vin": "` + vin + `" }`
-    response := stub.MockInvoke(uuid, util.ToChaincodeArgs("create", "amag", "garage", carData))
+    response := stub.MockInvoke(uuid, util.ToChaincodeArgs("create", username, "garage", carData))
 
     // payload should contain the car
-    car := Car {}
-    err := json.Unmarshal(response.Payload, &car)
+    carCreated := Car {}
+    err := json.Unmarshal(response.Payload, &carCreated)
     if (err != nil) {
         t.Error(err.Error())
     }
 
-    fmt.Printf("Successfully created car with ts '%d'\n", car.CreatedTs)
-
-    // fetch car again to check if the car was saved correctly
-    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", strconv.FormatInt(car.CreatedTs, 10)))
-    err = json.Unmarshal(response.Payload, &car)
-    if err != nil {
-        t.Error("Failed to fetch car")
-    }
-
-    fmt.Println(car)
-    if (car.Vin != vin) {
-        t.Error("Car VIN does not match")
-    }
+    fmt.Printf("Successfully created car with ts '%d'\n", carCreated.CreatedTs)
 
     // check out the car index, should contain one car
     response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", carIndexStr))
@@ -108,21 +96,23 @@ func TestCreateAndReadCar(t *testing.T) {
 
     if err != nil {
         t.Error("Failed to fetch car index")
-    }
-
-    if (carIndex[strconv.FormatInt(car.CreatedTs, 10)] != username) {
+    } else if len(carIndex) > 1 {
+        t.Error("The car index should only contain one car by now")
+    } else if (carIndex[strconv.FormatInt(carCreated.CreatedTs, 10)] != username) {
         t.Error("This is not the car '" + username + "' created")
     }
 
     // the user should only have one car by now
-    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", username))
-    user := User {}
-    err = json.Unmarshal(response.Payload, &user)
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read_car", username, "TESTING", strconv.FormatInt(carCreated.CreatedTs, 10)))
+    carFetched := Car {}
+    err = json.Unmarshal(response.Payload, &carFetched)
     if err != nil {
-        t.Error("Failed to fetch user")
+        t.Error("Failed to fetch car")
+    } else if (carFetched.Vin != carCreated.Vin) {
+        t.Error("Car VIN does not match")
+    } else if (carFetched.CreatedTs != carCreated.CreatedTs) {
+        t.Error("This is not the car you created before")
     }
 
-    if (user.Cars[0] != car.CreatedTs) {
-        t.Error("There was an error handing over the car")
-    }
+    fmt.Println(carFetched)
 }
