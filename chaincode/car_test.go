@@ -113,5 +113,17 @@ func TestCreateAndReadCar(t *testing.T) {
         t.Error("This is not the car you created before")
     }
 
+    // create a car with the same vin,
+    // should get rejected with an error msg
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("create", username, "garage", carData))
+    err = json.Unmarshal(response.Payload, &carCreated)
+    if (err != nil) {
+        // read the error msg
+        errMsg := string(response.Message)
+        if errMsg != fmt.Sprintf("Car with vin '%s' already exists. Choose another vin.", vin) {
+            t.Error(fmt.Sprintf("Only one car with vin '%s' can exist", vin))
+        }
+    }
+
     fmt.Println(carFetched)
 }

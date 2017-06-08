@@ -128,7 +128,15 @@ func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, username string,
         user.Name = username
     }
 
-    // save car to ledger, the car ts serves
+    // check for an existing car with that vin in the car index
+    response = t.read(stub, carIndexStr)
+    carIndex := make(map[string]string)
+    err = json.Unmarshal(response.Payload, &carIndex)
+    if carIndex[car.Vin] != "" {
+        return shim.Error(fmt.Sprintf("Car with vin '%s' already exists. Choose another vin.", car.Vin))
+    }
+
+    // save car to ledger, the car vin serves
     // as the index to find the car again
     carAsBytes, _ := json.Marshal(car)
     err = stub.PutState(car.Vin, carAsBytes)
@@ -136,10 +144,7 @@ func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, username string,
         return shim.Error("Error writing car")
     }
 
-    // get the car index and map username
-    response = t.read(stub, carIndexStr)
-    carIndex := make(map[string]string)
-    err = json.Unmarshal(response.Payload, &carIndex)
+    // map the car to the users name
     carIndex[car.Vin] = user.Name
     fmt.Printf("Added car with VIN '%s' created at '%d' in garage '%s' to car index.\n",
                 car.Vin, car.CreatedTs, user.Name)
