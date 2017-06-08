@@ -8,7 +8,7 @@ type Car struct {
 
 type User struct {
     Name           string                `json:"name"`
-    Cars           []int64               `json:"cars"`
+    Cars           []string              `json:"cars"`
 }
 
 /*

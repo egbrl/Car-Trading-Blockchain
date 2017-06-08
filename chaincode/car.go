@@ -4,7 +4,6 @@ import (
     "fmt"
     "encoding/json"
     "time"
-    "strconv"
 
     "github.com/hyperledger/fabric/core/chaincode/shim"
     pb "github.com/hyperledger/fabric/protos/peer"
@@ -132,7 +131,7 @@ func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, username string,
     // save car to ledger, the car ts serves
     // as the index to find the car again
     carAsBytes, _ := json.Marshal(car)
-    err = stub.PutState(strconv.FormatInt(car.CreatedTs, 10), carAsBytes)
+    err = stub.PutState(car.Vin, carAsBytes)
     if err != nil {
         return shim.Error("Error writing car")
     }
@@ -141,7 +140,7 @@ func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, username string,
     response = t.read(stub, carIndexStr)
     carIndex := make(map[string]string)
     err = json.Unmarshal(response.Payload, &carIndex)
-    carIndex[strconv.FormatInt(car.CreatedTs, 10)] = user.Name
+    carIndex[car.Vin] = user.Name
     fmt.Printf("Added car with VIN '%s' created at '%d' in garage '%s' to car index.\n",
                 car.Vin, car.CreatedTs, user.Name)
 
@@ -153,7 +152,7 @@ func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, username string,
     }
 
     // hand over the car and write user to ledger
-    user.Cars = append(user.Cars, car.CreatedTs)
+    user.Cars = append(user.Cars, car.Vin)
     userAsBytes, _ := json.Marshal(user)
     err = stub.PutState(user.Name, userAsBytes)
     if err != nil {
@@ -173,24 +172,24 @@ func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, username string,
  * On success,
  * returns the car.
  */
-func (t *CarChaincode) read_car(stub shim.ChaincodeStubInterface, username string, carTs string) pb.Response {
-    if carTs == "" {
-        return shim.Error("'read_car' expects a non-empty car ts to do the look up")
+func (t *CarChaincode) read_car(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response {
+    if vin == "" {
+        return shim.Error("'read_car' expects a non-empty VIN to do the look up")
     }
 
     // fetch the car from the ledger
-    carResponse := t.read(stub, carTs)
+    carResponse := t.read(stub, vin)
     car := Car {}
     err := json.Unmarshal(carResponse.Payload, &car)
     if err != nil {
-        return shim.Error("Failed to fetch car with ts '" + carTs + "' from ledger")
+        return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
     }
 
     // fetch the car index to check if the user owns the car
     indexResponse := t.read(stub, carIndexStr)
     carIndex := make(map[string]string)
     err = json.Unmarshal(indexResponse.Payload, &carIndex)
-    if carIndex[carTs] != username {
+    if carIndex[vin] != username {
         return shim.Error("Forbidden: this is not your car")
     }
 

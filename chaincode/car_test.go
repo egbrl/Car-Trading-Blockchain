@@ -4,7 +4,6 @@ import (
     "fmt"
     "encoding/json"
     "testing"
-    "strconv"
 
     "github.com/hyperledger/fabric/core/chaincode/shim"
     "github.com/hyperledger/fabric/common/util"
@@ -98,12 +97,12 @@ func TestCreateAndReadCar(t *testing.T) {
         t.Error("Failed to fetch car index")
     } else if len(carIndex) > 1 {
         t.Error("The car index should only contain one car by now")
-    } else if (carIndex[strconv.FormatInt(carCreated.CreatedTs, 10)] != username) {
+    } else if (carIndex[carCreated.Vin] != username) {
         t.Error("This is not the car '" + username + "' created")
     }
 
     // the user should only have one car by now
-    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read_car", username, "TESTING", strconv.FormatInt(carCreated.CreatedTs, 10)))
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read_car", username, "TESTING", carCreated.Vin))
     carFetched := Car {}
     err = json.Unmarshal(response.Payload, &carFetched)
     if err != nil {
