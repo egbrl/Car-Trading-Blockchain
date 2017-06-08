@@ -4,6 +4,7 @@ import (
     "fmt"
     "encoding/json"
     "time"
+    "errors"
 
     "github.com/hyperledger/fabric/core/chaincode/shim"
     pb "github.com/hyperledger/fabric/protos/peer"
@@ -91,8 +92,36 @@ func isInsured(car *Car) bool {
 }
 
 /*
+ * Returns the car index
+ */
+func (t *CarChaincode) getCarIndex(stub shim.ChaincodeStubInterface) (map[string]string, error) {
+    response := t.read(stub, carIndexStr)
+    carIndex := make(map[string]string)
+    err := json.Unmarshal(response.Payload, &carIndex)
+    if err != nil {
+        return nil, errors.New("Error parsing car index")
+    }
+
+    return carIndex, nil
+}
+
+/*
+ * Reads the car index at key 'vin'
+ *
+ * Returns username of car owner with VIN 'vin'.
+ */
+func (t *CarChaincode) getOwner(stub shim.ChaincodeStubInterface, vin string) (string, error) {
+    carIndex, err := t.getCarIndex(stub)
+    if err != nil {
+        return "", err
+    }
+    return carIndex[vin], nil
+}
+
+/*
  * Creates a new, unregistered car with the current timestamp
- * and appends it to the car index.
+ * and appends it to the car index. Returns an error if a
+ * car with the desired VIN already exists.
  *
  * Expects 'args':
  *  Car with VIN        json
@@ -129,10 +158,10 @@ func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, username string,
     }
 
     // check for an existing car with that vin in the car index
-    response = t.read(stub, carIndexStr)
-    carIndex := make(map[string]string)
-    err = json.Unmarshal(response.Payload, &carIndex)
-    if carIndex[car.Vin] != "" {
+    owner, err := t.getOwner(stub, car.Vin)
+    if err != nil {
+        return shim.Error(err.Error())
+    } else if owner != "" {
         return shim.Error(fmt.Sprintf("Car with vin '%s' already exists. Choose another vin.", car.Vin))
     }
 
@@ -145,6 +174,10 @@ func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, username string,
     }
 
     // map the car to the users name
+    carIndex, err := t.getCarIndex(stub)
+    if err != nil {
+        return shim.Error(err.Error())
+    }
     carIndex[car.Vin] = user.Name
     fmt.Printf("Added car with VIN '%s' created at '%d' in garage '%s' to car index.\n",
                 car.Vin, car.CreatedTs, user.Name)
@@ -191,10 +224,10 @@ func (t *CarChaincode) read_car(stub shim.ChaincodeStubInterface, username strin
     }
 
     // fetch the car index to check if the user owns the car
-    indexResponse := t.read(stub, carIndexStr)
-    carIndex := make(map[string]string)
-    err = json.Unmarshal(indexResponse.Payload, &carIndex)
-    if carIndex[vin] != username {
+    owner, err := t.getOwner(stub, vin)
+    if err != nil {
+        return shim.Error(err.Error())
+    } else if owner != username {
         return shim.Error("Forbidden: this is not your car")
     }
 
