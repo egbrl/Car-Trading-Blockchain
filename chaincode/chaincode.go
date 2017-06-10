@@ -84,11 +84,20 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
         } else {
             return t.read(stub, args[0])
         }
-    } else if function == "read_car" {
+    } else if function == "readCar" {
         if len(args) != 1 {
-            return shim.Error("'read' expects a car timestamp to do the look up")
+            return shim.Error("'readCar' expects a car vin to do the look up")
         } else {
-            return t.read_car(stub, username, args[0])
+            return t.readCar(stub, username, args[0])
+        }
+    }  else if function == "register" {
+        if len(args) != 1 {
+            return shim.Error("'register' expects a car vin to register")
+        } else if role != "dot"{
+            // only the DOT is allowd to register new cars
+            return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to register cars.", role))
+        } else {
+            return t.register(stub, username, args[0])
         }
     }
 

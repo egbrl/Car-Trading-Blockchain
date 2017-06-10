@@ -1,7 +1,7 @@
 package main
 
 type Car struct {
-    Certificate    *Certificate          `json:"certificate"`  // vehicle certificate issued by the DOT
+    Certificate    Certificate           `json:"certificate"`  // vehicle certificate issued by the DOT
     CreatedTs      int64                 `json:"created_ts"`   // birth date
     Vin            string                `json:"vin"`          // vehicle identification number
 }

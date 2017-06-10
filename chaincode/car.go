@@ -11,41 +11,13 @@ import (
 )
 
 /*
- * Checks for a valid car VIN.
- *
- * The car VIN is valid if the DOT certificate contains
- * the same information. Registration guarantees that
- * certificate VIN and a car VIN are equal and that
- * a certificate was issued by the DOT at least once.
- */
-func isRegistered(car *Car) bool {
-    // cannot be registered without certificate
-    if (car.Certificate == nil) {
-        fmt.Printf("Car created at ts '%d' is not yet registered\n", car.CreatedTs)
-        return false
-    }
-
-    // validate car VIN
-    carVin := car.Vin
-    registered := car.Certificate.Vin == carVin
-
-    if (registered) {
-        fmt.Printf("Car created at ts '%d' is registered with VIN '%s'\n", car.CreatedTs, carVin)
-    } else {
-        fmt.Printf("Car created at ts '%d' is not yet registered\n", car.CreatedTs)
-    }
-    
-    return registered
-}
-
-/*
  * Checks the car numberplate.
  *
  * The numberplate is handed out by the DOT.
  */
 func isConfirmed(car *Car) bool {
     // cannot have a numberplate without car papers
-    if (!isRegistered(car)) {
+    if (!IsRegistered(car)) {
         return false
     }
 
@@ -76,7 +48,7 @@ func isConfirmed(car *Car) bool {
  */
 func isInsured(car *Car) bool {
     // cannot be insured without car papers
-    if (!isRegistered(car)) {
+    if (!IsRegistered(car)) {
         return false
     }
 
@@ -210,9 +182,9 @@ func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, username string,
  * On success,
  * returns the car.
  */
-func (t *CarChaincode) read_car(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response {
+func (t *CarChaincode) readCar(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response {
     if vin == "" {
-        return shim.Error("'read_car' expects a non-empty VIN to do the look up")
+        return shim.Error("'readCar' expects a non-empty VIN to do the look up")
     }
 
     // fetch the car from the ledger

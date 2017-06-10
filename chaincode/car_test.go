@@ -102,7 +102,7 @@ func TestCreateAndReadCar(t *testing.T) {
     }
 
     // the user should only have one car by now
-    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read_car", username, "TESTING", carCreated.Vin))
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("readCar", username, "TESTING", carCreated.Vin))
     carFetched := Car {}
     err = json.Unmarshal(response.Payload, &carFetched)
     if err != nil {
