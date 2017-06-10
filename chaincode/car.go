@@ -11,59 +11,6 @@ import (
 )
 
 /*
- * Checks the car numberplate.
- *
- * The numberplate is handed out by the DOT.
- */
-func isConfirmed(car *Car) bool {
-    // cannot have a numberplate without car papers
-    if (!IsRegistered(car)) {
-        return false
-    }
-
-    confirmed := car.Certificate.Numberplate != ""
-
-    // because the car is registered, the car VIN can be trusted
-    if (confirmed) {
-        fmt.Printf("Car with VIN '%s' is confirmed\n", car.Vin)
-    } else {
-        fmt.Printf("Car with VIN '%s' has no valid numberplate\n", car.Vin)
-    }
-    
-    return confirmed
-}
-
-/*
- * Checks for an active car insurance.
- *
- * A vehicle can be registered and confirmed by the DOT,
- * but still lack an insurance contract. This case can occur
- * when you change the insurer without changing the numberplate.
- * 
- * On the other hand the vehicle could already be insured,
- * but still be waiting for a valid numberplate. This case may
- * occur when changing numberplates.
- *
- * In any case, the car has to be registered before it can be insured.
- */
-func isInsured(car *Car) bool {
-    // cannot be insured without car papers
-    if (!IsRegistered(car)) {
-        return false
-    }
-
-    insured := car.Certificate.Insurer != ""
-
-    if (insured) {
-        fmt.Printf("Car with VIN '%s' is insured by company '%s'\n", car.Vin, car.Certificate.Insurer)
-    } else {
-        fmt.Printf("Car with VIN '%s' is not insured\n", car.Vin)
-    }
-    
-    return insured
-}
-
-/*
  * Returns the car index
  */
 func (t *CarChaincode) getCarIndex(stub shim.ChaincodeStubInterface) (map[string]string, error) {

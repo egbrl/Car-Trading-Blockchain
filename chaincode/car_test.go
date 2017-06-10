@@ -48,15 +48,6 @@ func ccSetup(t *testing.T, stub *shim.MockStub) {
     }
 }
 
-func TestIsConfirmed(t *testing.T) {
-    // create a new car without timestamp
-    car := &Car{}
-
-    if (isConfirmed(car)) {
-        t.Error("Car should be not confirmed initially")
-    }
-}
-
 func TestInit(t *testing.T) {
     // create and name a new chaincode mock
     carChaincode := &CarChaincode{}

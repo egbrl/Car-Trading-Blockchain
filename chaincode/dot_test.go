@@ -9,12 +9,21 @@ import (
     "github.com/hyperledger/fabric/common/util"
 )
 
+func TestIsConfirmed(t *testing.T) {
+    // create a new car without numberplate
+    car := &Car{}
+
+    if (IsConfirmed(car)) {
+        t.Error("Car should not be confirmed initially")
+    }
+}
+
 func TestIsRegistered(t *testing.T) {
     // create a new car without certificate
     car := &Car{}
 
     if (IsRegistered(car)) {
-        t.Error("Car should be not confirmed initially")
+        t.Error("Car should not be registered initially")
     }
 }
 

@@ -9,6 +9,29 @@ import (
 )
 
 /*
+ * Checks the car numberplate.
+ *
+ * The numberplate is handed out by the DOT.
+ */
+func IsConfirmed(car *Car) bool {
+    // cannot have a numberplate without car papers
+    if (!IsRegistered(car)) {
+        return false
+    }
+
+    confirmed := car.Certificate.Numberplate != ""
+
+    // because the car is registered, the car VIN can be trusted
+    if (confirmed) {
+        fmt.Printf("Car with VIN '%s' is confirmed\n", car.Vin)
+    } else {
+        fmt.Printf("Car with VIN '%s' has no valid numberplate\n", car.Vin)
+    }
+
+    return confirmed
+}
+
+/*
  * Checks for a valid car VIN.
  *
  * The car VIN is valid if the DOT certificate contains
