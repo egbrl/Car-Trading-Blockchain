@@ -54,6 +54,85 @@ func (t *CarChaincode) getInsurerIndex(stub shim.ChaincodeStubInterface) (map[st
 }
 
 /*
+ * Returns an insurer with a list of insurance proposals.
+ */
+func (t *CarChaincode) getInsurer(stub shim.ChaincodeStubInterface, company string) pb.Response {
+    // load all insurers
+    insurerIndex, err := t.getInsurerIndex(stub)
+    if err != nil {
+        return shim.Error("Error reading insurer index")
+    }
+
+    ret := insurerIndex[company]
+    retAsBytes, _ := json.Marshal(ret)
+    return shim.Success(retAsBytes)
+}
+
+/*
+ * Accpets an insurance proposal for a car
+ * and creates an insurance contract. The proposal
+ * will be removed from the ledger afterwards.
+ *
+ * The car needs to be registered.
+ * A car numberplate (confirmation) is not required.
+ *
+ * On success,
+ * returns the removed insurance proposal
+ */
+func (t *CarChaincode) insuranceAccept(stub shim.ChaincodeStubInterface, username string, vin string, company string) pb.Response {
+    carResponse := t.readCar(stub, username, vin)
+    car := Car {}
+    json.Unmarshal(carResponse.Payload, &car)
+
+    insurerIndex, err := t.getInsurerIndex(stub)
+    if err != nil {
+        return shim.Error("Error fetching insurer index")
+    }
+
+    insurer := insurerIndex[company]
+    proposals := insurer.Proposals
+    validProposal := InsureProposal {}
+    var newProposals []InsureProposal
+    for i := 0; i < len(proposals); i++ {
+        newProposals = append(newProposals, proposals[i])
+
+        if proposals[i].Car == vin && proposals[i].User == username {
+            // check if we can create an insurance contract
+            // we can only create an insurance contract,
+            // if we are sure the car VIN is approved by the DOT
+            // and the car has a valid certificate
+            if !IsRegistered(&car) {
+                return shim.Error("Go register your car first")
+            }
+
+            // insure the car
+            car.Certificate.Insurer = company
+            carAsBytes, err := json.Marshal(car)
+            err = stub.PutState(car.Vin, carAsBytes)
+            if err != nil {
+                return shim.Error("Error writing car")
+            }
+
+            // remove proposal
+            validProposal = proposals[i]
+            newProposals = newProposals[:i]
+        }
+    }
+
+    // write udpated insurer index back to ledger
+    insurer.Proposals = newProposals
+    insurerIndex[company] = insurer
+    indexAsBytes, _ := json.Marshal(insurerIndex)
+    err = stub.PutState(insurerIndexStr, indexAsBytes)
+    if err != nil {
+        return shim.Error("Error writing insurer index")
+    }
+
+    propAsBytes, _ := json.Marshal(validProposal)
+    return shim.Success(propAsBytes)
+}
+
+/*
  * Creates an insurance proposal for an insurance
  * company 'company' and a car with 'vin'.
  *

@@ -114,6 +114,24 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
         } else {
             return t.insureProposal(stub, username, args[0], args[1])
         }
+    } else if function == "insuranceAccept" {
+        if len(args) != 2 {
+            return shim.Error("'insuranceAccept' expects a car vin and an insurance company")
+        } else if role != "insurer"{
+            // only normal users are allowed to do insurance proposals
+            return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create an insurance proposal.", role))
+        } else {
+            return t.insuranceAccept(stub, username, args[0], args[1])
+        }
+    } else if function == "getInsurer" {
+        if len(args) != 1 {
+            return shim.Error("'getInsurer' expects an insurance company name")
+        } else if role != "insurer"{
+            // only normal users are allowed to do insurance proposals
+            return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create an insurance proposal.", role))
+        } else {
+            return t.getInsurer(stub, args[0])
+        }
     }
 
     return shim.Error("Invoke did not find function: " + function)
