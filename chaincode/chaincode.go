@@ -13,7 +13,8 @@ import (
 type CarChaincode struct {
 }
 
-const carIndexStr string = "_cars"
+const carIndexStr string     = "_cars"
+const insurerIndexStr string = "_insurers"
 
 func (t *CarChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
     fmt.Println("Car demo Init")
@@ -45,7 +46,12 @@ func (t *CarChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
         return shim.Error(err.Error())
     }
 
-    fmt.Println("Car index clean")
+    // clear the insurer index
+    err = clearInsurerIndex(insurerIndexStr, stub)
+    if err != nil {
+        return shim.Error(err.Error())
+    }
+
     fmt.Println("Init terminated")
     return shim.Success(nil)
 }
@@ -94,10 +100,19 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
         if len(args) != 1 {
             return shim.Error("'register' expects a car vin to register")
         } else if role != "dot"{
-            // only the DOT is allowd to register new cars
+            // only the DOT is allowed to register new cars
             return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to register cars.", role))
         } else {
             return t.register(stub, username, args[0])
+        }
+    } else if function == "insureProposal" {
+        if len(args) != 2 {
+            return shim.Error("'insureProposal' expects a car vin and an insurance company")
+        } else if role != "user"{
+            // only normal users are allowed to do insurance proposals
+            return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create an insurance proposal.", role))
+        } else {
+            return t.insureProposal(stub, username, args[0], args[1])
         }
     }
 

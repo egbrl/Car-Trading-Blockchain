@@ -11,6 +11,16 @@ type User struct {
     Cars           []string              `json:"cars"`
 }
 
+type Insurer struct {
+    Name           string                `json:"name"`
+    Proposals      []InsureProposal      `json:"proposals"`
+}
+
+type InsureProposal struct {
+    User           string                `json:"user"`
+    Car            string                `json:"car"`
+}
+
 /*
  * Fahrzeugausweis
  *
