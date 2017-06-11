@@ -57,23 +57,18 @@ func (t *CarChaincode) getInsurerIndex(stub shim.ChaincodeStubInterface) (map[st
  * Creates an insurance proposal for an insurance
  * company 'company' and a car with 'vin'.
  *
- * The car has to be registered first.
+ * The car does not need to be registered.
  * A car numberplate is not required.
  * The proposal will be recorded even if no
  * insurance company with that name exists.
  *
  * On success,
- * returns the insurer index
+ * returns the insurance proposal
  */
 func (t *CarChaincode) insureProposal(stub shim.ChaincodeStubInterface, username string, vin string, company string) pb.Response {
     carResponse := t.readCar(stub, username, vin)
     car := Car {}
     json.Unmarshal(carResponse.Payload, &car)
-
-    // the car needs to be registered first
-    if !IsRegistered(&car) {
-        return shim.Error("Go register your car first!")
-    }
 
     // load all insurers
     insurerIndex, err := t.getInsurerIndex(stub)
@@ -86,9 +81,9 @@ func (t *CarChaincode) insureProposal(stub shim.ChaincodeStubInterface, username
     insurer := insurerIndex[company]
     if insurer.Name == "" {
         fmt.Printf("Insurance company '%s' does not exist yet\nSaving your proposal anyway\n", company)
-        // Create a new insurer, mainly to just record the proposal somewhere
+        // Create a new insurer,
+        // mainly just to save the proposal somewhere
         insurer = Insurer { Name: company }
-        insurerIndex[company] = insurer
     }
 
     // create the proposal
@@ -106,5 +101,6 @@ func (t *CarChaincode) insureProposal(stub shim.ChaincodeStubInterface, username
         return shim.Error("Error writing insurer index")
     }
 
-    return shim.Success(indexAsBytes)
+    proposalAsBytes, _ := json.Marshal(proposal)
+    return shim.Success(proposalAsBytes)
 }

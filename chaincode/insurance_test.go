@@ -41,13 +41,13 @@ func TestInsureProposal(t *testing.T) {
 
     fmt.Printf("Successfully created car with ts '%d'\n", car.CreatedTs)
 
-    // register the car
-    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("register", username, "dot", vin))
-    err = json.Unmarshal(response.Payload, &car)
-    if (err != nil) {
-        t.Error(response.Message)
-    }
-
     // make an insurance proposal for AXA
     response = stub.MockInvoke(uuid, util.ToChaincodeArgs("insureProposal", username, "user", vin, "axa"))
+    proposal := InsureProposal {}
+    err = json.Unmarshal(response.Payload, &proposal)
+    if (err != nil) {
+        t.Error("Error while creating insurance proposal")
+    }
+
+    fmt.Println(proposal)
 }
