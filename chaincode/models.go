@@ -4,6 +4,12 @@ type Car struct {
     Certificate    Certificate           `json:"certificate"`  // vehicle certificate issued by the DOT
     CreatedTs      int64                 `json:"created_ts"`   // birth date
     Vin            string                `json:"vin"`          // vehicle identification number
+    UsageData      UsageData             `json:"usage_data"`   // car usage profile, interesting for car rentals
+}
+
+type UsageData struct {
+    MileAge        int                   `json:"name"`         // car mile age
+    // tbd: what data does Mobility really collect?
 }
 
 type User struct {
