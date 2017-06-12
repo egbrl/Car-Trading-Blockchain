@@ -1,15 +1,23 @@
 package main
 
 type Car struct {
-    Certificate    Certificate           `json:"certificate"`  // vehicle certificate issued by the DOT
-    CreatedTs      int64                 `json:"created_ts"`   // birth date
-    Vin            string                `json:"vin"`          // vehicle identification number
-    UsageData      UsageData             `json:"usage_data"`   // car usage profile, interesting for car rentals
+    Certificate    Certificate           `json:"certificate"`    // vehicle certificate issued by the DOT
+    CreatedTs      int64                 `json:"created_ts"`     // birth date
+    Vin            string                `json:"vin"`            // vehicle identification number
+    UsageData      UsageData             `json:"usage_data"`     // car usage profile, interesting for car rentals
 }
 
 type UsageData struct {
-    MileAge        int                   `json:"name"`         // car mile age
-    // tbd: what data does Mobility really collect?
+    MileAge        int                   `json:"name"`           // car mile age
+    Repairs        string                `json:"repairs"`        //
+                                                                 // tbd: what data does Mobility really collect?
+
+    Contributions  []DataContribution    `json:"contributions"`  // who provided the data?
+}
+
+type DataContribution struct {
+    User           string                `json:"user"`
+    Metric         string                `json:"metric"`
 }
 
 type User struct {
