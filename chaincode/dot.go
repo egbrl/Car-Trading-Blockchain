@@ -19,6 +19,11 @@ func IsConfirmed(car *Car) bool {
         return false
     }
 
+    // cannot give you a numberplate without insurance contract
+    if (!IsInsured(car)) {
+        return false
+    }
+
     confirmed := car.Certificate.Numberplate != ""
 
     // because the car is registered, the car VIN can be trusted
