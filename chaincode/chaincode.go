@@ -1,19 +1,19 @@
 package main
 
 import (
-    "fmt"
-    "strconv"
-    "strings"
-    "reflect"
+	"fmt"
+	"reflect"
+	"strconv"
+	"strings"
 
-    "github.com/hyperledger/fabric/core/chaincode/shim"
-    pb "github.com/hyperledger/fabric/protos/peer"
+	"github.com/hyperledger/fabric/core/chaincode/shim"
+	pb "github.com/hyperledger/fabric/protos/peer"
 )
 
 type CarChaincode struct {
 }
 
-const carIndexStr string     = "_cars"
+const carIndexStr string = "_cars"
 const insurerIndexStr string = "_insurers"
 const registrationProposalIndexStr string = "_registrationProposals"
 
@@ -119,6 +119,16 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
         } else {
             return t.register(stub, username, args[0])
         }
+    } else if function == "confirm" {
+        if len(args) != 2 {
+            return shim.Error("'confirm' expects a car vin to confirm a car")
+        } else if role != "dot" {
+            // only the DOT is allowed to confirm cars
+            return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to confirm cars.", role))
+        } else {
+            return t.confirm(stub, username, args)
+        }
+
     } else if function == "insureProposal" {
         if len(args) != 2 {
             return shim.Error("'insureProposal' expects a car vin and an insurance company")
@@ -163,21 +173,21 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
  * returns ledger state in bytes at position 'key'.
  */
 func (t *CarChaincode) read(stub shim.ChaincodeStubInterface, key string) pb.Response {
-    if key == "" {
-        return shim.Error("'read' expects a non-empty key to do the look up")
-    }
+	if key == "" {
+		return shim.Error("'read' expects a non-empty key to do the look up")
+	}
 
-    valAsBytes, err := stub.GetState(key)
-    if err != nil {
-        return shim.Error("Failed to fetch value at key '" + key + "' from ledger")
-    }
+	valAsBytes, err := stub.GetState(key)
+	if err != nil {
+		return shim.Error("Failed to fetch value at key '" + key + "' from ledger")
+	}
 
-    return shim.Success(valAsBytes)
+	return shim.Success(valAsBytes)
 }
 
 func main() {
-    err := shim.Start(new(CarChaincode))
-    if err != nil {
-        fmt.Printf("Error starting Simple chaincode: %s", err)
-    }
+	err := shim.Start(new(CarChaincode))
+	if err != nil {
+		fmt.Printf("Error starting Simple chaincode: %s", err)
+	}
 }

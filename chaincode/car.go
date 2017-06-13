@@ -1,27 +1,27 @@
 package main
 
 import (
-    "fmt"
-    "encoding/json"
-    "time"
-    "errors"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"time"
 
-    "github.com/hyperledger/fabric/core/chaincode/shim"
-    pb "github.com/hyperledger/fabric/protos/peer"
+	"github.com/hyperledger/fabric/core/chaincode/shim"
+	pb "github.com/hyperledger/fabric/protos/peer"
 )
 
 /*
  * Returns the car index
  */
 func (t *CarChaincode) getCarIndex(stub shim.ChaincodeStubInterface) (map[string]string, error) {
-    response := t.read(stub, carIndexStr)
-    carIndex := make(map[string]string)
-    err := json.Unmarshal(response.Payload, &carIndex)
-    if err != nil {
-        return nil, errors.New("Error parsing car index")
-    }
+	response := t.read(stub, carIndexStr)
+	carIndex := make(map[string]string)
+	err := json.Unmarshal(response.Payload, &carIndex)
+	if err != nil {
+		return nil, errors.New("Error parsing car index")
+	}
 
-    return carIndex, nil
+	return carIndex, nil
 }
 
 /*
@@ -30,11 +30,11 @@ func (t *CarChaincode) getCarIndex(stub shim.ChaincodeStubInterface) (map[string
  * Returns username of car owner with VIN 'vin'.
  */
 func (t *CarChaincode) getOwner(stub shim.ChaincodeStubInterface, vin string) (string, error) {
-    carIndex, err := t.getCarIndex(stub)
-    if err != nil {
-        return "", err
-    }
-    return carIndex[vin], nil
+	carIndex, err := t.getCarIndex(stub)
+	if err != nil {
+		return "", err
+	}
+	return carIndex[vin], nil
 }
 
 /*
@@ -169,25 +169,78 @@ func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, username string,
  * returns the car.
  */
 func (t *CarChaincode) readCar(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response {
-    if vin == "" {
-        return shim.Error("'readCar' expects a non-empty VIN to do the look up")
-    }
+	if vin == "" {
+		return shim.Error("'readCar' expects a non-empty VIN to do the look up")
+	}
 
-    // fetch the car from the ledger
-    carResponse := t.read(stub, vin)
-    car := Car {}
-    err := json.Unmarshal(carResponse.Payload, &car)
-    if err != nil {
-        return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
-    }
+	// fetch the car from the ledger
+	carResponse := t.read(stub, vin)
+	car := Car{}
+	err := json.Unmarshal(carResponse.Payload, &car)
+	if err != nil {
+		return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
+	}
 
-    // fetch the car index to check if the user owns the car
-    owner, err := t.getOwner(stub, vin)
-    if err != nil {
-        return shim.Error(err.Error())
-    } else if owner != username {
-        return shim.Error("Forbidden: this is not your car")
-    }
+	// fetch the car index to check if the user owns the car
+	owner, err := t.getOwner(stub, vin)
+	if err != nil {
+		return shim.Error(err.Error())
+	} else if owner != username {
+		return shim.Error("Forbidden: this is not your car")
+	}
 
-    return shim.Success(carResponse.Payload)
+	return shim.Success(carResponse.Payload)
+}
+
+/*
+ * Confirms a car.
+ *
+ * Only the owner of a car can request confirmation of a car.
+ * Car needs to be insured as a requirement for confirmation.
+ *
+ *
+ */
+func (t *CarChaincode) confirm(stub shim.ChaincodeStubInterface, username string, args []string) pb.Response {
+	vin := args[0]
+	numberplate := args[1]
+
+	if vin == "" {
+		return shim.Error("'readCar' expects a non-empty VIN to do the look up")
+	}
+
+	// fetch the car from the ledger
+	carResponse := t.read(stub, vin)
+	car := Car{}
+	err := json.Unmarshal(carResponse.Payload, &car)
+	if err != nil {
+		return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
+	}
+
+	// check if username is owner of the car
+	if car.Certificate.Username != username {
+		return shim.Error("The person: '" + username + "' is not the owner of the car")
+	}
+
+	// check if car is insured
+	if !(IsInsured(&car)) {
+		return shim.Error("Car is not insured. Please insure car first before trying to confirm it")
+	}
+
+	// check numberplate argument
+	if numberplate == "" {
+		return shim.Error("Car numberplate is empty. Please hand over a numberplate to confirm a car")
+	}
+
+	// check if numberplate is already in use
+	// carIndex, err := t.getCarIndex(stub)
+	// for k, v := range carIndex {
+	// 	if v.Numberplate == numberplate {
+	// 		return shim.Error("Car numberplate already in use. Please use another one!")
+	//
+	// }
+
+	// assign the numberplate to the car
+	car.Certificate.Numberplate = numberplate
+
+	return shim.Success(carResponse.Payload)
 }
