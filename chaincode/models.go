@@ -54,8 +54,8 @@ type Certificate struct {
  * Pruefungsbericht
  * (Form. 13.20 A)
  */
-type CarAudit struct {
-    CarTs                 int64      `json:"car_ts"`
+type RegistrationProposal struct {
+    Car                   string     `json:"car"`
     NumberOfDoors         string     `json:"number_of_doors"`     // '4+1' for a passenger car
     NumberOfCylinders     int        `json:"number_of_cylinders"` // 3, 4, 6, 8 ?
     NumberOfAxis          int        `json:"number_of_axis"`      // typically 2
