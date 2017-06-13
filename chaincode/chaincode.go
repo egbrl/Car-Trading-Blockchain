@@ -15,6 +15,7 @@ type CarChaincode struct {
 
 const carIndexStr string     = "_cars"
 const insurerIndexStr string = "_insurers"
+const registrationProposalIndexStr string = "_registrationProposals"
 
 func (t *CarChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
     fmt.Println("Car demo Init")
@@ -48,6 +49,12 @@ func (t *CarChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 
     // clear the insurer index
     err = clearInsurerIndex(insurerIndexStr, stub)
+    if err != nil {
+        return shim.Error(err.Error())
+    }
+
+    // clear the registration proposal index
+    err = clearRegistrationProposalIndex(registrationProposalIndexStr, stub)
     if err != nil {
         return shim.Error(err.Error())
     }
@@ -96,7 +103,14 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
         } else {
             return t.readCar(stub, username, args[0])
         }
-    }  else if function == "register" {
+    } else if function == "readRegistrationProposals" {
+        if role != "dot"{
+            // only the DOT is allowed to read registration proposals
+            return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to read reigistration proposals.", role))
+        } else {
+            return t.readRegistrationProposals(stub)
+        }
+    } else if function == "register" {
         if len(args) != 1 {
             return shim.Error("'register' expects a car vin to register")
         } else if role != "dot"{

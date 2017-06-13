@@ -42,16 +42,36 @@ func (t *CarChaincode) getOwner(stub shim.ChaincodeStubInterface, vin string) (s
  * and appends it to the car index. Returns an error if a
  * car with the desired VIN already exists.
  *
+ * A registration proposal will be issued on successfull car creation.
+ * For this proposal, optional registration data can be passed to
+ * 'create' to create a tailored registration proposal.
+ *
  * Expects 'args':
- *  Car with VIN        json
+ *  Car with VIN                             json
+ *  (optional) RegistrationProposal          json
  *
  * On success,
  * returns the car.
  */
 func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, username string, args []string) pb.Response {
-    if len(args) != 1 {
+    if len(args) < 1 {
         return shim.Error("'create' expects Car with VIN as json")
     }
+
+    // create new registration proposal for the DOT
+    regProposal := RegistrationProposal {}
+
+    // if provided, read additional registration data
+    if len(args) > 1 {
+        fmt.Printf("Received registration data: %s\n", args[1])
+        err := json.Unmarshal([]byte(args[1]), &regProposal)
+        if err != nil {
+            fmt.Println("Unable to parse your registration data")
+        }
+    }
+
+    // let the invoker know if his data was well formatted
+    fmt.Printf("Creating car with parsed registration proposal: %v\n", regProposal)
 
     // create car from arguments
     car := Car {}
@@ -114,6 +134,25 @@ func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, username string,
     err = stub.PutState(user.Name, userAsBytes)
     if err != nil {
         return shim.Error("Error writing user")
+    }
+
+    // load all proposals
+    proposalIndex, err := t.getRegistrationProposals(stub)
+    if err != nil {
+        return shim.Error("Error loading registration proposal index")
+    }
+
+    // update the car vin in the registration proposal
+    // and save the proposal for the DOT
+    regProposal.Car = car.Vin
+    proposalIndex[car.Vin] = regProposal
+
+    // write udpated proposal index back to ledger
+    // for the DOT to read and register the car
+    indexAsBytes, _ = json.Marshal(proposalIndex)
+    err = stub.PutState(registrationProposalIndexStr, indexAsBytes)
+    if err != nil {
+        return shim.Error("Error writing registration proposal index")
     }
 
     // car creation successfull,

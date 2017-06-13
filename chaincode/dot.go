@@ -3,6 +3,7 @@ package main
 import (
     "fmt"
     "encoding/json"
+    "errors"
 
     "github.com/hyperledger/fabric/core/chaincode/shim"
     pb "github.com/hyperledger/fabric/protos/peer"
@@ -65,6 +66,49 @@ func IsRegistered(car *Car) bool {
 }
 
 /*
+ * Returns the registration proposal index with all
+ * registration proposals.
+ */
+func (t *CarChaincode) getRegistrationProposals(stub shim.ChaincodeStubInterface) (map[string]RegistrationProposal, error) {
+    response := t.read(stub, registrationProposalIndexStr)
+    proposalIndex := make(map[string]RegistrationProposal)
+    err := json.Unmarshal(response.Payload, &proposalIndex)
+    if err != nil {
+        return nil, errors.New("Error parsing registration proposal index")
+    }
+
+    return proposalIndex, nil
+}
+
+/*
+ * Reads all registration proposals.
+ */
+func (t *CarChaincode) readRegistrationProposals(stub shim.ChaincodeStubInterface) pb.Response {
+    proposalIndex, err := t.getRegistrationProposals(stub)
+    if err != nil {
+        return shim.Error("Error reading registration proposal index")
+    }
+
+    indexAsBytes, _ := json.Marshal(proposalIndex)
+    return shim.Success(indexAsBytes)
+}
+
+/*
+ * Returns a registration proposal for a car.
+ */
+func (t *CarChaincode) getRegistrationProposal(stub shim.ChaincodeStubInterface, car string) pb.Response {
+    // load all proposals
+    proposalIndex, err := t.getRegistrationProposals(stub)
+    if err != nil {
+        return shim.Error("Error reading registration proposal index")
+    }
+
+    ret := proposalIndex[car]
+    retAsBytes, _ := json.Marshal(ret)
+    return shim.Success(retAsBytes)
+}
+
+/*
  * Registers a car.
  *
  * Registration guarantees that certificate VIN
@@ -75,7 +119,7 @@ func IsRegistered(car *Car) bool {
  * returns the car with certificate.
  */
 func (t *CarChaincode) register(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response {
-    // this already checks that the user 
+    // reading the car already checks that the user 
     // is the actual owner of the car
     carResponse := t.readCar(stub, username, vin)
     car := Car {}
@@ -84,15 +128,37 @@ func (t *CarChaincode) register(stub shim.ChaincodeStubInterface, username strin
         return shim.Error(fmt.Sprintf("Cannot register, invalid VIN.\nCar VIN is '%s' and you want to register VIN '%s'", car.Vin, vin))
     }
 
+    // get all registration proposals
+    proposals, err := t.getRegistrationProposals(stub)
+    if err != nil {
+        return shim.Error("Error reading registration proposal index")
+    }
+
+    // check if there exists a registration proposal for that car
+    if proposals[car.Vin].Car != vin {
+        return shim.Error(fmt.Sprintf("There exists no registration proposal for car with VIN: %s", vin))
+    }
+
     // create a certificate, approve vin
     // and update the car in the ledger
     cert := Certificate { Username: username,
                           Vin:      vin }
     car.Certificate = cert
     carAsBytes, _ := json.Marshal(car)
-    err := stub.PutState(car.Vin, carAsBytes)
+    err = stub.PutState(car.Vin, carAsBytes)
     if err != nil {
         return shim.Error("Error writing car")
+    }
+
+    // remove the proposal we just registered
+    delete(proposals, car.Vin)
+
+    // save the new proposal index
+    // without the car we just registered
+    proposalsAsBytes, _ := json.Marshal(proposals)
+    err = stub.PutState(registrationProposalIndexStr, proposalsAsBytes)
+    if err != nil {
+        return shim.Error("Error writing proposal index")
     }
 
     fmt.Printf("Successfully registered car created at ts '%d' with VIN '%s'\n", car.CreatedTs, vin)

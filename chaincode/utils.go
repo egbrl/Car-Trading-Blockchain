@@ -32,3 +32,17 @@ func clearInsurerIndex(indexStr string, stub shim.ChaincodeStubInterface) error 
 
     return stub.PutState(indexStr, jsonAsBytes)
 }
+
+/*
+ * Clears an index of type 'map[string]RegistrationProposal' on the ledger
+ */
+func clearRegistrationProposalIndex(indexStr string, stub shim.ChaincodeStubInterface) error {
+    index := make(map[string]RegistrationProposal)
+
+    jsonAsBytes, err := json.Marshal(index)
+    if err != nil {
+        return err
+    }
+
+    return stub.PutState(indexStr, jsonAsBytes)
+}

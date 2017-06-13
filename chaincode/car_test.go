@@ -67,8 +67,13 @@ func TestCreateAndReadCar(t *testing.T) {
     ccSetup(t, stub)
 
     // create a new car
+    // and provide additional registration data for the DOT
     carData := `{ "vin": "` + vin + `" }`
-    response := stub.MockInvoke(uuid, util.ToChaincodeArgs("create", username, "garage", carData))
+    registrationData := `{ "number_of_doors":     "4+1",
+                           "number_of_cylinders":  4,
+                           "number_of_axis":       2,
+                           "max_speed":            200 }`
+    response := stub.MockInvoke(uuid, util.ToChaincodeArgs("create", username, "garage", carData, registrationData))
 
     // payload should contain the car
     carCreated := Car {}
@@ -104,8 +109,9 @@ func TestCreateAndReadCar(t *testing.T) {
         t.Error("This is not the car you created before")
     }
 
-    // create a car with the same vin,
+    // create a car with the same vin
     // should get rejected with an error msg
+    // also tests to create cars without the additional registration data
     response = stub.MockInvoke(uuid, util.ToChaincodeArgs("create", username, "garage", carData))
     err = json.Unmarshal(response.Payload, &carCreated)
     if (err == nil) {
@@ -113,4 +119,5 @@ func TestCreateAndReadCar(t *testing.T) {
     }
 
     fmt.Println(carFetched)
+
 }
