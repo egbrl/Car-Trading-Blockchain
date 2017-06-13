@@ -12,9 +12,9 @@ import (
 /*
  * Checks for an active car insurance.
  *
- * A vehicle can be registered and confirmed by the DOT,
- * but still lack an insurance contract. This case can occur
- * when you change the insurer without changing the numberplate.
+ * A vehicle can be registered by the DOT, but still lack
+ * an insurance contract. This is the case if the car has no
+ * numberplate (is not confirmed) yet.
  * 
  * On the other hand the vehicle could already be insured,
  * but still be waiting for a valid numberplate. This case may
