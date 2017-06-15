@@ -144,7 +144,7 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
             // only the DOT is allowed to revoke cars
             return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to revoke cars.", role))
         } else {
-            return t.revoke(stub, username, args)
+            return t.revoke(stub, username, args[0])
         }
     } else if function == "delete" {
         if len(args) != 1 {

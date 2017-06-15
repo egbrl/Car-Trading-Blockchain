@@ -247,15 +247,14 @@ func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username strin
 /*
  * Revokes a car.
  *
- * Only the owner of a car can request revokation of a car.
- *
+ * Only the owner of a car can request revocation of a car.
+ * A revocation will render the numberplate and the insurer invalid.
+ * This is required before a car transfer.
  *
  * On success,
  * returns the car.
  */
-func (t *CarChaincode) revoke(stub shim.ChaincodeStubInterface, username string, args []string) pb.Response {
-    vin := args[0]
-
+func (t *CarChaincode) revoke(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response {
     if vin == "" {
         return shim.Error("'revoke' expects a non-empty VIN to do the revocation")
     }
