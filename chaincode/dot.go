@@ -175,11 +175,16 @@ func (t *CarChaincode) register(stub shim.ChaincodeStubInterface, username strin
 }
 
 /*
- * Confirms a car.
+ * Confirms a car and assigns a numberplate.
  *
  * Only the owner of a car can request confirmation of a car.
  * Car needs to be insured as a requirement for getting
- * the permit to drive on the roads.
+ * the permit to drive on the roads. Only insured cars can get
+ * confirmed and get a numberplate.
+ *
+ * Required arguments:
+ * [0] Vin         string
+ * [1] Numberplate string
  *
  * On success,
  * returns the car.
@@ -189,30 +194,26 @@ func (t *CarChaincode) confirm(stub shim.ChaincodeStubInterface, username string
     numberplate := args[1]
 
     if vin == "" {
-        return shim.Error("'confirm' expects a non-empty VIN to do the confirmation")
+        return shim.Error("'confirm' expects a non-empty VIN to assign a numberplate")
+    }
+
+    // check numberplate argument
+    if numberplate == "" {
+        return shim.Error("Car numberplate is empty. Please provide a numberplate to confirm your car")
     }
 
     // fetch the car from the ledger
-    carResponse := t.read(stub, vin)
+    // this already checks for ownership
+    carResponse := t.readCar(stub, username, vin)
     car := Car{}
     err := json.Unmarshal(carResponse.Payload, &car)
     if err != nil {
         return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
     }
 
-    // check if username is owner of the car
-    if car.Certificate.Username != username {
-        return shim.Error("The person: '" + username + "' is not the owner of the car")
-    }
-
     // check if car is insured
-    if !(IsInsured(&car)) {
+    if !IsInsured(&car) {
         return shim.Error("Car is not insured. Please insure car first before trying to confirm it")
-    }
-
-    // check numberplate argument
-    if numberplate == "" {
-        return shim.Error("Car numberplate is empty. Please hand over a numberplate to confirm a car")
     }
 
     // check if numberplate is already in use
