@@ -114,6 +114,14 @@ func (t *CarChaincode) getRegistrationProposal(stub shim.ChaincodeStubInterface,
  * Registration guarantees that certificate VIN
  * and a car VIN are equal and that a certificate
  * was issued by the DOT at least once.
+ *
+ * To register a car, a RegistrationProposal needs to be present.
+ * This proposal is removed/deleted after successfull registration.
+ * This is not consistent with reality, but serves the purpose
+ * for now, because the Form 13.20 A (RegistrationProposal)
+ * is not used anywhere else right now. Like this, the RegistrationProposal
+ * only serves the purpose to signal the DOT, that there is a new
+ * car waiting for registration.
  * 
  * On success,
  * returns the car with certificate.
