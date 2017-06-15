@@ -311,6 +311,7 @@ func (t *CarChaincode) delete(stub shim.ChaincodeStubInterface, vin string) pb.R
     if err != nil {
         return shim.Error("Failed to delete car state")
     }
-
+    
+    fmt.Printf("Successfully deleted car with VIN: '%s'\n", vin)
     return shim.Success(nil)
 }

@@ -123,7 +123,7 @@ func TestReadRegistrationProposalsAndRegisterCar(t *testing.T) {
     fmt.Println(car.Certificate)
 }
 
-func TestConfirmAndRevoke(t *testing.T) {
+func TestConfirmRevokeAndDelete(t *testing.T) {
     numberplate      := "ZH 7878"
     insuranceCompany := "axa"
 
@@ -237,4 +237,18 @@ func TestConfirmAndRevoke(t *testing.T) {
     }
 
     fmt.Println(car.Certificate)
+
+    // delete the car from the ledger
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("delete", username, "dot", vin))
+    if (response.Payload != nil) {
+        t.Error("Car deletion unsuccessfull")
+    }
+
+    // try to fetch the delete car from the ledger
+    // (should be impossible)
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("readCar", username, "TESTING", car.Vin))
+    err = json.Unmarshal(response.Payload, &car)
+    if err == nil {
+        t.Error("Failed to delete car")
+    }
 }
