@@ -13,6 +13,10 @@ import (
 type CarChaincode struct {
 }
 
+// uuid for test mocks
+const uuid string = "1"
+
+// indexes
 const carIndexStr string = "_cars"
 const insurerIndexStr string = "_insurers"
 const registrationProposalIndexStr string = "_registrationProposals"

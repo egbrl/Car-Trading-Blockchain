@@ -9,11 +9,6 @@ import (
     "github.com/hyperledger/fabric/common/util"
 )
 
-// default test input arguments
-var username string = "amag"
-var vin string      = "WVW ZZZ 6RZ HY26 0780"
-var carData string  = `{ "vin": "` + vin + `" }`
-
 func TestIsConfirmed(t *testing.T) {
     // create a new car without numberplate
     car := &Car{}
@@ -33,6 +28,10 @@ func TestIsRegistered(t *testing.T) {
 }
 
 func TestReadRegistrationProposalsAndRegisterCar(t *testing.T) {
+    var username string = "amag"
+    var vin string      = "WVW ZZZ 6RZ HY26 0780"
+    var carData string  = `{ "vin": "` + vin + `" }`
+
     // create and name a new chaincode mock
     carChaincode := &CarChaincode{}
     stub := shim.NewMockStub("car", carChaincode)
@@ -124,8 +123,11 @@ func TestReadRegistrationProposalsAndRegisterCar(t *testing.T) {
 }
 
 func TestConfirmRevokeAndDelete(t *testing.T) {
-    numberplate      := "ZH 7878"
-    insuranceCompany := "axa"
+    var username string         = "amag"
+    var vin string              = "WVW ZZZ 6RZ HY26 0780"
+    var carData string          = `{ "vin": "` + vin + `" }`
+    var numberplate string      = "ZH 7878"
+    var insuranceCompany string = "axa"
 
     // create and name a new chaincode mock
     carChaincode := &CarChaincode{}
