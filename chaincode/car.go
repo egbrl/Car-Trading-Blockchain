@@ -248,7 +248,8 @@ func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username strin
  * Revokes a car.
  *
  * Only the owner of a car can request revocation of a car.
- * A revocation will render the numberplate and the insurer invalid.
+ * A revocation will render the numberplate
+ * and the insurance contract as invalid.
  * This is required before a car transfer.
  *
  * On success,
@@ -260,22 +261,18 @@ func (t *CarChaincode) revoke(stub shim.ChaincodeStubInterface, username string,
     }
 
     // fetch the car from the ledger
-    carResponse := t.read(stub, vin)
+    // this already checks for ownership
+    carResponse := t.readCar(stub, username, vin)
     car := Car{}
     err := json.Unmarshal(carResponse.Payload, &car)
     if err != nil {
         return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
     }
 
-    // check if username is owner of the car
-    if car.Certificate.Username != username {
-        return shim.Error("The person: '" + username + "' is not the owner of the car")
-    }
-
-    // Remove car insurance
+    // remove car insurance
     car.Certificate.Insurer = ""
 
-    // Check if car is not anymore insured
+    // check if car is not anymore insured
     if IsInsured(&car) {
         return shim.Error("Whoops... Something went wrong while revoking car. Car is still insured.")
     }
@@ -283,7 +280,7 @@ func (t *CarChaincode) revoke(stub shim.ChaincodeStubInterface, username string,
     // remove numberplate
     car.Certificate.Numberplate = ""
 
-    // Check if not anymore confirmed
+    // check if not confirmed anymore
     if IsConfirmed(&car) {
         return shim.Error("Whoops... Something went wrong while revoking car. Car is still confirmed.")
     }
@@ -292,13 +289,12 @@ func (t *CarChaincode) revoke(stub shim.ChaincodeStubInterface, username string,
     carAsBytes, _ := json.Marshal(car)
     err = stub.PutState(vin, carAsBytes)
     if err != nil {
-        return shim.Error("Error writing registration proposal index")
+        return shim.Error("Error writing car")
     }
 
     // car revokation successfull,
     // return the car
     return shim.Success(carAsBytes)
-
 }
 
 // Deletes car from state
