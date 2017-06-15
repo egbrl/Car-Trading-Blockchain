@@ -210,7 +210,7 @@ func (t *CarChaincode) readCar(stub shim.ChaincodeStubInterface, username string
  * Transfers a car to a new owner (receiver)
  * 
  * Arguments required:
- * [0] Username                    (string)
+ * [0] VIN of the car to transfer  (string)
  * [1] Username of ther receiver   (string)
  *
  * On success,
@@ -286,7 +286,9 @@ func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username strin
     // (new car owner)
     owner, err = t.getUser(stub, newCarOwner)
     if err != nil {
-        return shim.Error("Error fetching new car owner (receiver)")
+        fmt.Println("New car owner (receiver) does not exist. Creating this user.")
+        owner = User {}
+        owner.Name = newCarOwner
     }
 
     // attach the car to the receiver (new car owner)
@@ -297,6 +299,23 @@ func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username strin
     err = stub.PutState(newCarOwner, ownerAsBytes)
     if err != nil {
         return shim.Error("Error writing new car owner (receiver)")
+    }
+
+    // get the car index
+    carIndex, err := t.getCarIndex(stub)
+    if err != nil {
+        return shim.Error("Error fetching car index")
+    }
+
+    // update the car index to represent
+    // the new ownership rights
+    carIndex[car.Vin] = newCarOwner
+
+    // write the car index back to ledger
+    indexAsBytes, _ := json.Marshal(carIndex)
+    err = stub.PutState(carIndexStr, indexAsBytes)
+    if err != nil {
+        return shim.Error("Error writing car index")
     }
 
     // car transfer successfull,
