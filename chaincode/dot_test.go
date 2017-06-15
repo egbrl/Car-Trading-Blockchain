@@ -123,7 +123,7 @@ func TestReadRegistrationProposalsAndRegisterCar(t *testing.T) {
     fmt.Println(car.Certificate)
 }
 
-func TestConfirm(t *testing.T) {
+func TestConfirmAndRevoke(t *testing.T) {
     numberplate      := "ZH 7878"
     insuranceCompany := "axa"
 
@@ -220,4 +220,21 @@ func TestConfirm(t *testing.T) {
     }
 
     fmt.Println(car.Certificate.Numberplate)
+
+    // revoke numberplate
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("revoke", username, "dot", vin))
+    err = json.Unmarshal(response.Payload, &car)
+    if err != nil {
+        t.Error("Error revoking numberplate")
+    }
+
+    if IsConfirmed(&car) {
+        t.Error("Car should be revoked by now")
+    } else if car.Certificate.Insurer != "" {
+        t.Error("Revocation includes cancelation of the insurance contract")
+    } else if car.Certificate.Numberplate != "" {
+        t.Error("Revocation includes removal of the numberplate")
+    }
+
+    fmt.Println(car.Certificate)
 }
