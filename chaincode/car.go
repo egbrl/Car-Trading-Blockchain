@@ -245,17 +245,15 @@ func (t *CarChaincode) confirm(stub shim.ChaincodeStubInterface, username string
 	car.Certificate.Numberplate = numberplate
 
 	// write udpated car back to ledger
-	indexAsBytes, _ = json.Marshal(proposalIndex)
-	err = stub.PutState(registrationProposalIndexStr, indexAsBytes)
+	carAsBytes, _ := json.Marshal(car)
+	err = stub.PutState(vin, carAsBytes)
 	if err != nil {
 		return shim.Error("Error writing registration proposal index")
 	}
 
-	// car creation successfull,
+	// car confirmation successfull,
 	// return the car
 	return shim.Success(carAsBytes)
-
-	return shim.Success(carResponse.Payload)
 }
 
 /*
@@ -303,5 +301,15 @@ func (t *CarChaincode) revoke(stub shim.ChaincodeStubInterface, username string,
 		return shim.Error("Whoops... Something went wrong while revoking car. Car is still confirmed.")
 	}
 
-	return shim.Success(carResponse.Payload)
+	// write udpated car back to ledger
+	carAsBytes, _ := json.Marshal(car)
+	err = stub.PutState(vin, carAsBytes)
+	if err != nil {
+		return shim.Error("Error writing registration proposal index")
+	}
+
+	// car revokation successfull,
+	// return the car
+	return shim.Success(carAsBytes)
+
 }
