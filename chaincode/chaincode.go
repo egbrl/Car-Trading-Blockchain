@@ -132,8 +132,8 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if len(args) != 2 {
 			return shim.Error("'transfer' expects a car vin and name of the new owner to transfer a car")
 		} else if role == "user" || role == "garage" {
-			// only allow users and garage users to transer cars
-			return t.transfer(stub, username, args)
+            // only allow users and garage users to transer cars
+            return t.transfer(stub, username, args)
 		} else {
 			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to transfer cars.", role))
 		}
