@@ -187,7 +187,7 @@ func (t *CarChaincode) register(stub shim.ChaincodeStubInterface, username strin
  * [1] Numberplate string
  *
  * On success,
- * returns the car.
+ * returns the car with numberplate.
  */
 func (t *CarChaincode) confirm(stub shim.ChaincodeStubInterface, username string, args []string) pb.Response {
     vin := args[0]
@@ -231,10 +231,10 @@ func (t *CarChaincode) confirm(stub shim.ChaincodeStubInterface, username string
     carAsBytes, _ := json.Marshal(car)
     err = stub.PutState(vin, carAsBytes)
     if err != nil {
-        return shim.Error("Error writing registration proposal index")
+        return shim.Error("Error writing car")
     }
 
     // car confirmation successfull,
-    // return the car
+    // return the car with numberplate
     return shim.Success(carAsBytes)
 }
