@@ -128,6 +128,14 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		} else {
 			return t.confirm(stub, username, args)
 		}
+	} else if function == "transfer" {
+		if len(args) != 2 {
+			return shim.Error("'transfer' expects a car vin and name of the new owner to confirm a car")
+		} else if role != "user" {
+			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to confirm cars.", role))
+		} else {
+			return t.transfer(stub, username, args)
+		}
 	} else if function == "revoke" {
 		if len(args) != 1 {
 			return shim.Error("'revoke' expects a car vin to revoke a car")

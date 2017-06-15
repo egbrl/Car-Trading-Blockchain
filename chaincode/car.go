@@ -207,7 +207,7 @@ func (t *CarChaincode) confirm(stub shim.ChaincodeStubInterface, username string
 	numberplate := args[1]
 
 	if vin == "" {
-		return shim.Error("'readCar' expects a non-empty VIN to do the look up")
+		return shim.Error("'confirm' expects a non-empty VIN to do the confirmation")
 	}
 
 	// fetch the car from the ledger
@@ -257,7 +257,59 @@ func (t *CarChaincode) confirm(stub shim.ChaincodeStubInterface, username string
 }
 
 /*
- * Confirms a car.
+ * Transfers a car.
+ *
+ * Transfers a car to new owner
+ *
+ * On success,
+ * returns the car.
+ */
+func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username string, args []string) pb.Response {
+	vin := args[0]
+	newCarOwner := args[1]
+
+	if vin == "" {
+		return shim.Error("'transfer' expects a non-empty VIN to do the transfer")
+	}
+
+	if newCarOwner == "" {
+		return shim.Error("'transfer' expects a non-empty newCarOwner to do the transfer")
+	}
+
+	// fetch the car from the ledger
+	carResponse := t.read(stub, vin)
+	car := Car{}
+	err := json.Unmarshal(carResponse.Payload, &car)
+	if err != nil {
+		return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
+	}
+
+	// check if username is owner of the car
+	if car.Certificate.Username != username {
+		return shim.Error("The person: '" + username + "' is not the owner of the car")
+	}
+
+	// check if car is not confirmed anymore
+	if IsConfirmed(&car) {
+		return shim.Error("The car is still confirmed. It has to be revoked first in order to do the transfer")
+	}
+
+	car.Certificate.Username = newCarOwner
+
+	// write udpated car back to ledger
+	carAsBytes, _ := json.Marshal(car)
+	err = stub.PutState(vin, carAsBytes)
+	if err != nil {
+		return shim.Error("Error writing registration proposal index")
+	}
+
+	// car transfer successfull,
+	// return the car
+	return shim.Success(carAsBytes)
+}
+
+/*
+ * Revokes a car.
  *
  * Only the owner of a car can request revokation of a car.
  *
@@ -269,7 +321,7 @@ func (t *CarChaincode) revoke(stub shim.ChaincodeStubInterface, username string,
 	vin := args[0]
 
 	if vin == "" {
-		return shim.Error("'readCar' expects a non-empty VIN to do the look up")
+		return shim.Error("'revoke' expects a non-empty VIN to do the revocation")
 	}
 
 	// fetch the car from the ledger
