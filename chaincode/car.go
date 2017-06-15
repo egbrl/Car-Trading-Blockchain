@@ -193,9 +193,11 @@ func (t *CarChaincode) readCar(stub shim.ChaincodeStubInterface, username string
 }
 
 /*
- * Transfers a car.
- *
- * Transfers a car to new owner
+ * Transfers a car to a new owner (receiver)
+ * 
+ * Arguments required:
+ * [0] Username                    (string)
+ * [1] Username of ther receiver   (string)
  *
  * On success,
  * returns the car.
@@ -209,20 +211,16 @@ func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username strin
     }
 
     if newCarOwner == "" {
-        return shim.Error("'transfer' expects a non-empty newCarOwner to do the transfer")
+        return shim.Error("'transfer' expects a non-empty car receiver username to do the transfer")
     }
 
     // fetch the car from the ledger
-    carResponse := t.read(stub, vin)
+    // this already checks for ownership
+    carResponse := t.readCar(stub, username, vin)
     car := Car{}
     err := json.Unmarshal(carResponse.Payload, &car)
     if err != nil {
         return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
-    }
-
-    // check if username is owner of the car
-    if car.Certificate.Username != username {
-        return shim.Error("The person: '" + username + "' is not the owner of the car")
     }
 
     // check if car is not confirmed anymore

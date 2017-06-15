@@ -183,8 +183,8 @@ func (t *CarChaincode) register(stub shim.ChaincodeStubInterface, username strin
  * confirmed and get a numberplate.
  *
  * Required arguments:
- * [0] Vin         string
- * [1] Numberplate string
+ *   [0] Vin         (string)
+ *   [1] Numberplate (string)
  *
  * On success,
  * returns the car with numberplate.
@@ -311,7 +311,7 @@ func (t *CarChaincode) delete(stub shim.ChaincodeStubInterface, vin string) pb.R
     if err != nil {
         return shim.Error("Failed to delete car state")
     }
-    
+
     fmt.Printf("Successfully deleted car with VIN: '%s'\n", vin)
     return shim.Success(nil)
 }
