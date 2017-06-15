@@ -173,3 +173,67 @@ func (t *CarChaincode) register(stub shim.ChaincodeStubInterface, username strin
     
     return shim.Success(carAsBytes)
 }
+
+/*
+ * Confirms a car.
+ *
+ * Only the owner of a car can request confirmation of a car.
+ * Car needs to be insured as a requirement for getting
+ * the permit to drive on the roads.
+ *
+ * On success,
+ * returns the car.
+ */
+func (t *CarChaincode) confirm(stub shim.ChaincodeStubInterface, username string, args []string) pb.Response {
+    vin := args[0]
+    numberplate := args[1]
+
+    if vin == "" {
+        return shim.Error("'confirm' expects a non-empty VIN to do the confirmation")
+    }
+
+    // fetch the car from the ledger
+    carResponse := t.read(stub, vin)
+    car := Car{}
+    err := json.Unmarshal(carResponse.Payload, &car)
+    if err != nil {
+        return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
+    }
+
+    // check if username is owner of the car
+    if car.Certificate.Username != username {
+        return shim.Error("The person: '" + username + "' is not the owner of the car")
+    }
+
+    // check if car is insured
+    if !(IsInsured(&car)) {
+        return shim.Error("Car is not insured. Please insure car first before trying to confirm it")
+    }
+
+    // check numberplate argument
+    if numberplate == "" {
+        return shim.Error("Car numberplate is empty. Please hand over a numberplate to confirm a car")
+    }
+
+    // check if numberplate is already in use
+    // carIndex, err := t.getCarIndex(stub)
+    // for k, v := range carIndex {
+    //  if v.Numberplate == numberplate {
+    //      return shim.Error("Car numberplate already in use. Please use another one!")
+    //
+    // }
+
+    // assign the numberplate to the car
+    car.Certificate.Numberplate = numberplate
+
+    // write udpated car back to ledger
+    carAsBytes, _ := json.Marshal(car)
+    err = stub.PutState(vin, carAsBytes)
+    if err != nil {
+        return shim.Error("Error writing registration proposal index")
+    }
+
+    // car confirmation successfull,
+    // return the car
+    return shim.Success(carAsBytes)
+}
