@@ -217,12 +217,20 @@ func (t *CarChaincode) confirm(stub shim.ChaincodeStubInterface, username string
     }
 
     // check if numberplate is already in use
-    // carIndex, err := t.getCarIndex(stub)
-    // for k, v := range carIndex {
-    //  if v.Numberplate == numberplate {
-    //      return shim.Error("Car numberplate already in use. Please use another one!")
-    //
-    // }
+    carIndex, err := t.getCarIndex(stub)
+    carToCheck := Car{}
+    for carVin, user := range carIndex {
+        // get the full car object with certificate
+        carToCheckResp := t.readCar(stub, user, carVin)
+        err := json.Unmarshal(carToCheckResp.Payload, &carToCheck)
+        if err != nil {
+            return shim.Error("Failed to fetch car with vin '" + carVin + "' from ledger")
+        }
+
+        if carToCheck.Certificate.Numberplate == numberplate {
+            return shim.Error("Car numberplate already in use. Please use another one!")
+        }
+    }
 
     // assign the numberplate to the car
     car.Certificate.Numberplate = numberplate
