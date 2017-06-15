@@ -299,3 +299,18 @@ func (t *CarChaincode) revoke(stub shim.ChaincodeStubInterface, username string,
     // return the car
     return shim.Success(carAsBytes)
 }
+
+/*
+ * Deletes a car from the ledger.
+ *
+ * Returns 'nil' on success.
+ */
+func (t *CarChaincode) delete(stub shim.ChaincodeStubInterface, vin string) pb.Response {
+    // Delete the key from the state in ledger
+    err := stub.DelState(vin)
+    if err != nil {
+        return shim.Error("Failed to delete car state")
+    }
+
+    return shim.Success(nil)
+}

@@ -151,9 +151,9 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
             return shim.Error("'delete' expects a car vin to delete a car")
         } else if role != "dot" {
             // only the DOT is allowed to delete cars
-            return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to revoke cars.", role))
+            return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to delete cars.", role))
         } else {
-            return t.delete(stub, args)
+            return t.delete(stub, args[0])
         }
     } else if function == "insureProposal" {
         if len(args) != 2 {
