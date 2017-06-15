@@ -121,7 +121,7 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
         }
     } else if function == "confirm" {
         if len(args) != 2 {
-            return shim.Error("'confirm' expects a car vin and numberplate to confirm a car")
+            return shim.Error(fmt.Sprintf("'confirm' expects a car vin and numberplate to confirm a car.\n You can choose your numberplate yourself."))
         } else if role != "dot" {
             // only the DOT is allowed to confirm cars
             return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to confirm cars.", role))
