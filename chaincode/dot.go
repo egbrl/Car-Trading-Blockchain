@@ -246,3 +246,56 @@ func (t *CarChaincode) confirm(stub shim.ChaincodeStubInterface, username string
     // return the car with numberplate
     return shim.Success(carAsBytes)
 }
+
+/*
+ * Revokes a car.
+ *
+ * Only the owner of a car can request revocation of a car.
+ * A revocation will render the numberplate
+ * and the insurance contract as invalid.
+ * This is required before a car transfer.
+ *
+ * On success,
+ * returns the car.
+ */
+func (t *CarChaincode) revoke(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response {
+    if vin == "" {
+        return shim.Error("'revoke' expects a non-empty VIN to do the revocation")
+    }
+
+    // fetch the car from the ledger
+    // this already checks for ownership
+    carResponse := t.readCar(stub, username, vin)
+    car := Car{}
+    err := json.Unmarshal(carResponse.Payload, &car)
+    if err != nil {
+        return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
+    }
+
+    // remove car insurance
+    car.Certificate.Insurer = ""
+
+    // check if car is not anymore insured
+    if IsInsured(&car) {
+        return shim.Error("Whoops... Something went wrong while revoking car. Car is still insured.")
+    }
+
+    // remove numberplate
+    car.Certificate.Numberplate = ""
+
+    // check if not confirmed anymore
+    if IsConfirmed(&car) {
+        return shim.Error("Whoops... Something went wrong while revoking car. Car is still confirmed.")
+    }
+
+    // write udpated car back to ledger
+    carAsBytes, _ := json.Marshal(car)
+    err = stub.PutState(vin, carAsBytes)
+    if err != nil {
+        return shim.Error("Error writing car")
+    }
+
+    // car revokation successfull,
+    // return the car
+    return shim.Success(carAsBytes)
+}
