@@ -20,6 +20,7 @@ const uuid string = "1"
 const carIndexStr string = "_cars"
 const insurerIndexStr string = "_insurers"
 const registrationProposalIndexStr string = "_registrationProposals"
+const revocationProposalIndexStr string = "_revocationProposals"
 
 func (t *CarChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
     fmt.Println("Car demo Init")
@@ -46,7 +47,13 @@ func (t *CarChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
     }
 
     // clear the car index
-    err = clearCarIndex(carIndexStr, stub)
+    err = clearStringIndex(carIndexStr, stub)
+    if err != nil {
+        return shim.Error(err.Error())
+    }
+
+    // clear the revocation proposal index
+    err = clearStringIndex(revocationProposalIndexStr, stub)
     if err != nil {
         return shim.Error(err.Error())
     }
@@ -141,6 +148,20 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
         } else {
             return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to transfer cars.", role))
         }
+    } else if function == "getRevocationProposals" {
+        if role != "dot" {
+            return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to query revocation proposals.", role))
+        } else {
+            return t.getRevocationProposals(stub)
+        }
+    } else if function == "revocationProposal" {
+        if len(args) != 1 {
+            return shim.Error("'revocationProposal' expects a car vin to revoke a car")
+        } else if role != "user" {
+            return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create a revocation proposal.", role))
+        } else {
+            return t.revocationProposal(stub, username, args[0])
+        }
     } else if function == "revoke" {
         if len(args) != 1 {
             return shim.Error("'revoke' expects a car vin to revoke a car")
@@ -172,7 +193,7 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
         if len(args) != 2 {
             return shim.Error("'insuranceAccept' expects a car vin and an insurance company")
         } else if role != "insurer" {
-            // only normal users are allowed to do insurance proposals
+            // only insurers are allowed to create insurance contracts
             return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create an insurance proposal.", role))
         } else {
             return t.insuranceAccept(stub, username, args[0], args[1])
@@ -181,7 +202,7 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
         if len(args) != 1 {
             return shim.Error("'getInsurer' expects an insurance company name")
         } else if role != "insurer" {
-            // only normal users are allowed to do insurance proposals
+            // only insurers are allowed to read their insurance proposals
             return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create an insurance proposal.", role))
         } else {
             return t.getInsurer(stub, args[0])

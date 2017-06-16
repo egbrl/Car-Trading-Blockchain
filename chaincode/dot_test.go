@@ -122,6 +122,121 @@ func TestReadRegistrationProposalsAndRegisterCar(t *testing.T) {
     fmt.Println(car.Certificate)
 }
 
+func TestRevocationIndex(t *testing.T) {
+    var username string         = "amag"
+    var vin string              = "WVW ZZZ 6RZ HY26 0780"
+    var carData string          = `{ "vin": "` + vin + `" }`
+    var numberplate string      = "ZH 7878"
+    var insuranceCompany string = "axa"
+
+    // create and name a new chaincode mock
+    carChaincode := &CarChaincode{}
+    stub := shim.NewMockStub("car", carChaincode)
+
+    ccSetup(t, stub)
+
+    // create a new car
+    response := stub.MockInvoke(uuid, util.ToChaincodeArgs("create", username, "garage", carData))
+
+    // payload should contain the car...
+    car := Car {}
+    err := json.Unmarshal(response.Payload, &car)
+    if (err != nil) {
+        t.Error("Error creating car")
+    }
+
+    fmt.Printf("Successfully created car with ts '%d'\n", car.CreatedTs)
+
+    // register the car as DOT user
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("register", username, "dot", vin))
+    err = json.Unmarshal(response.Payload, &car)
+    if err != nil {
+        t.Error(response.Message)
+    }
+
+    // make an insurance proposal for AXA
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("insureProposal", username, "user", vin, insuranceCompany))
+    proposal := InsureProposal {}
+    err = json.Unmarshal(response.Payload, &proposal)
+    if (err != nil) {
+        t.Error("Error while creating insurance proposal")
+    }
+
+    // and let axa insure the car
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("insuranceAccept", username, "insurer", vin, insuranceCompany))
+    err = json.Unmarshal(response.Payload, &proposal)
+    if (err != nil) {
+        t.Error("Error while accepting insurance proposal")
+    }
+
+    // get a numberplate (confirmation)
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("confirm", username, "dot", vin, numberplate))
+    err = json.Unmarshal(response.Payload, &car)
+    if err != nil {
+        t.Error("Error assigning numberplate")
+    }
+
+    if !IsConfirmed(&car) {
+        t.Error("Car should be confirmed by now")
+    }
+
+    // checkout revocation proposals, should have none
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("getRevocationProposals", username, "dot"))
+    index := make(map[string]string)
+    err = json.Unmarshal(response.Payload, &index)
+
+    if len(index) != 0 {
+        t.Error("There should not be any revocation proposals")
+    }
+
+    // create a proposal
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("revocationProposal", username, "user", vin))
+    if response.Payload != nil {
+        t.Error("Error creating revocation proposal")
+    }
+
+    // read proposals again
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("getRevocationProposals", username, "dot"))
+    err = json.Unmarshal(response.Payload, &index)
+    if err != nil {
+        t.Error("Error reading revocation proposals")
+    }
+
+    if len(index) != 1 {
+        t.Error("There should be a revocation proposal now")
+    }
+
+    if index[car.Vin] != username {
+        t.Error("The revocation proposal was intended for another car/username")
+    }
+
+    fmt.Println("Current revocation proposals:")
+    fmt.Println(index)
+
+    // revoke numberplate
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("revoke", username, "dot", vin))
+    err = json.Unmarshal(response.Payload, &car)
+    if err != nil {
+        t.Error("Error revoking numberplate")
+    }
+
+    if IsConfirmed(&car) {
+        t.Error("Car should be revoked by now")
+    }
+
+    // read proposals again
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("getRevocationProposals", username, "dot"))
+    index = make(map[string]string)
+    err = json.Unmarshal(response.Payload, &index)
+
+    fmt.Println("Revocation proposal index after revocation:")
+    fmt.Println(index)
+
+    if len(index) != 0 {
+        t.Error("The revocation proposal should get deleted after revocation")
+    }
+}
+
 func TestConfirmRevokeAndDelete(t *testing.T) {
     var username string         = "amag"
     var vin string              = "WVW ZZZ 6RZ HY26 0780"

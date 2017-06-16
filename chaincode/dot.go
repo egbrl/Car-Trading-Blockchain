@@ -295,9 +295,98 @@ func (t *CarChaincode) revoke(stub shim.ChaincodeStubInterface, username string,
         return shim.Error("Error writing car")
     }
 
+    // fetch all revocation proposals
+    response := t.getRevocationProposals(stub)
+    index := make(map[string]string)
+    err = json.Unmarshal(response.Payload, &index)
+    if err != nil {
+        return shim.Error("Failed to fetch revocation proposals")
+    }
+
+    // remove the revocation proposal if any
+    delete(index, car.Vin)
+
+    // save proposals back to ledger
+    indexAsBytes, _ := json.Marshal(index)
+    err = stub.PutState(revocationProposalIndexStr, indexAsBytes)
+    if err != nil {
+        return shim.Error("Error writing revocation proposals")
+    }
+
     // car revokation successfull,
     // return the car
     return shim.Success(carAsBytes)
+}
+
+/*
+ * Returns all revocation proposals.
+ */
+func (t *CarChaincode) getRevocationProposals(stub shim.ChaincodeStubInterface) pb.Response {
+    response := t.read(stub, revocationProposalIndexStr)
+    index := make(map[string]string)
+    err := json.Unmarshal(response.Payload, &index)
+    if err != nil {
+        return shim.Error("Error reading revocation proposal index")
+    }
+
+    return shim.Success(response.Payload)
+}
+
+/*
+ * Creates a revocation proposal.
+ *
+ * Only the owner of a car can request revocation of a car.
+ * A revocation proposal is not a prerequisite, for the DOT
+ * to revoke a car. A car could be revoked inedependently
+ * of this proposal.
+ *
+ * On success,
+ * returns 'nil'.
+ */
+func (t *CarChaincode) revocationProposal(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response {
+    if vin == "" {
+        return shim.Error("'revocationProposal' expects a non-empty VIN to do the revocation")
+    }
+
+    // fetch the car from the ledger
+    // this already checks for ownership
+    carResponse := t.readCar(stub, username, vin)
+    car := Car{}
+    err := json.Unmarshal(carResponse.Payload, &car)
+    if err != nil {
+        return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
+    }
+
+    // check if the car can be revoked
+    if !IsConfirmed(&car) {
+        return shim.Error("You cannot create a revocation proposal for an unconfirmed car.")
+    }
+
+    // fetch all the revocation proposals
+    response := t.read(stub, revocationProposalIndexStr)
+    index := make(map[string]string)
+    err = json.Unmarshal(response.Payload, &index)
+    if err != nil {
+        return shim.Error("Error parsing revocation proposal index")
+    }
+
+    // check if a proposal to revoke this car already exists
+    if index[vin] == username {
+        return shim.Error("A revocation proposal for that car VIN and user already exists.")
+    }
+
+    // save the users request to revok his car
+    // in the revocation proposal index
+    index[vin] = username
+
+    // save index back to ledger
+    indexAsBytes, _ := json.Marshal(index)
+    err = stub.PutState(revocationProposalIndexStr, indexAsBytes)
+    if err != nil {
+        return shim.Error("Error writing revocation proposal index")
+    }
+
+    return shim.Success(nil)
 }
 
 /*

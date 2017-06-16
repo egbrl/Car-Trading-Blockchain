@@ -8,7 +8,7 @@ import (
 /*
  * Clears an index of type 'map[string]string' on the ledger
  */
-func clearCarIndex(indexStr string, stub shim.ChaincodeStubInterface) error {
+func clearStringIndex(indexStr string, stub shim.ChaincodeStubInterface) error {
     index := make(map[string]string)
 
     jsonAsBytes, err := json.Marshal(index)
