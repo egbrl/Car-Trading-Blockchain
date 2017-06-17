@@ -8,7 +8,7 @@ type Car struct {
 }
 
 type UsageData struct {
-    MileAge        int                   `json:"name"`           // car mile age
+    MileAge        int                   `json:"mile_age"`       // car mile age
     Repairs        string                `json:"repairs"`        //
                                                                  // tbd: what data does Mobility really collect?
 
