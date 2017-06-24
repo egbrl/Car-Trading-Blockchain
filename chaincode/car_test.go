@@ -154,6 +154,135 @@ func TestTransferCar(t *testing.T) {
     }
 }
 
+func TestSellCar(t *testing.T) {
+    var username string = "amag"
+    var receiver string = "bobby"
+    var vin string      = "WVW ZZZ 6RZ HY26 0780"
+
+    // create and name a new chaincode mock
+    carChaincode := &CarChaincode{}
+    stub := shim.NewMockStub("car", carChaincode)
+
+    ccSetup(t, stub)
+
+    // create a new car
+    carData := `{ "vin": "` + vin + `" }`
+    response := stub.MockInvoke(uuid, util.ToChaincodeArgs("create", username, "garage", carData))
+
+    // payload should contain the car
+    car := Car {}
+    err := json.Unmarshal(response.Payload, &car)
+    if (err != nil) {
+        t.Error(err.Error())
+    }
+
+    fmt.Printf("Successfully created car with ts '%d'\n", car.CreatedTs)
+
+    // register the car as DOT user
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("register", username, "dot", vin))
+    err = json.Unmarshal(response.Payload, &car)
+    if (err != nil) {
+        t.Error("Error registering the car")
+    }
+
+    if !IsRegistered(&car) {
+        t.Error("Car should now be registered!")
+    }
+
+    // sell the car, but for less than 100 credits
+    // the new car owner (receiver 'bobby') will get created
+    // with a balance of 100
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("sell", username, "garage", "99", vin, receiver))
+    err = json.Unmarshal(response.Payload, &car)
+    if (err != nil) {
+        fmt.Println(response.Message)
+        t.Error("Error selling car")
+    }
+
+    // check that the old owner has no longer access to the car
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("readCar", username, "TESTING", car.Vin))
+    err = json.Unmarshal(response.Payload, &car)
+    if err == nil {
+        fmt.Println(response.Message)
+        t.Error("The old car owner should no longer have access to the car")
+    }
+
+    // check that bobby has access to the car now
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("readCar", receiver, "TESTING", car.Vin))
+    err = json.Unmarshal(response.Payload, &car)
+    if err != nil {
+        t.Error("Error transferring car ownership in the cars certificate")
+    }
+
+    // checkout bobbys user record
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", receiver))
+    receiverAsUser := User {}
+    err = json.Unmarshal(response.Payload, &receiverAsUser)
+    if err != nil {
+        t.Error("Error fetching new car owner (receiver) from the ledger")
+    }
+
+    fmt.Printf("New owner/receiver with cars: %v\n", receiverAsUser)
+
+    if receiverAsUser.Cars[0] != vin {
+        t.Error("Car transfer unsuccessfull")
+    }
+
+    // checkout the old owners user record
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", username))
+    oldOwnerAsUser := User {}
+    err = json.Unmarshal(response.Payload, &oldOwnerAsUser)
+    if err != nil {
+        t.Error("Error fetching old owner from the ledger")
+    }
+
+    fmt.Printf("Old owner with cars: %v\n", oldOwnerAsUser)
+
+    // the old owner should be left with 0 cars
+    if len(oldOwnerAsUser.Cars) != 0 {
+        t.Error("Car transfer unsuccessfull")
+    }
+
+    // check out the new car index and see
+    // that ownership righs are registered properly
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", carIndexStr))
+    carIndex := make(map[string]string)
+    err = json.Unmarshal(response.Payload, &carIndex)
+
+    fmt.Printf("Car index after transfer: %v\n", carIndex)
+
+    if carIndex[vin] != receiver {
+        t.Error("Car transfer unsuccessfull")
+    }
+
+    // check new balances of seller
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", username))
+    seller := User {}
+    err = json.Unmarshal(response.Payload, &seller)
+    if err != nil {
+        t.Error("Error checking seller balance")
+    }
+
+    fmt.Printf("Seller: %v\n", seller)
+
+    if seller.Balance != 99 {
+        t.Error("Sellers balance not updated")
+    }
+
+    // check new balances of buyer
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", receiver))
+    err = json.Unmarshal(response.Payload, &receiverAsUser)
+    if err != nil {
+        t.Error("Error checking buyer/receiver balance")
+    }
+
+    fmt.Printf("Buyer: %v\n", receiverAsUser)
+
+    if receiverAsUser.Balance != 1 {
+        t.Error("Buyers balance not updated")
+    }
+}
+
 func TestCreateAndReadCar(t *testing.T) {
     username := "amag"
     vin      := "WVW ZZZ 6RZ HY26 0780"
