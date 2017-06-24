@@ -99,7 +99,7 @@ func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, username string,
     car.CreatedTs = time.Now().Unix()
 
     // create user from arguments
-    user := User{}
+    user := User{ Balance: 100 }
 
     // check for existing garage user with that name
     response := t.read(stub, username)
@@ -217,7 +217,7 @@ func (t *CarChaincode) updateBalance(stub shim.ChaincodeStubInterface, username 
         return User {}, errors.New("Error fetching user, balance not updated")
     }
 
-    // update user balance
+    // updbalanceate user balance
     user.Balance = balance
 
     // write user balance back to ledger

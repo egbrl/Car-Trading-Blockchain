@@ -265,7 +265,7 @@ func TestSellCar(t *testing.T) {
 
     fmt.Printf("Seller: %v\n", seller)
 
-    if seller.Balance != 99 {
+    if seller.Balance != 199 {
         t.Error("Sellers balance not updated")
     }
 
