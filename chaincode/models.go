@@ -23,6 +23,7 @@ type DataContribution struct {
 type User struct {
     Name           string                `json:"name"`
     Cars           []string              `json:"cars"`
+    Balance        int                   `json:"balance"`
 }
 
 type Insurer struct {

@@ -148,6 +148,15 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
         } else {
             return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to transfer cars.", role))
         }
+    } else if function == "sell" {
+        if len(args) != 3 {
+            return shim.Error("'sell' expects a price, car vin and buyer name to transfer a car")
+        } else if role == "user" || role == "garage" {
+            // only allow users and garage users to transer cars
+            return t.sell(stub, username, args)
+        } else {
+            return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to sell cars.", role))
+        }
     } else if function == "getRevocationProposals" {
         if role != "dot" {
             return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to query revocation proposals.", role))
