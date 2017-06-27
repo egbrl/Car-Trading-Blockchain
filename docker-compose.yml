@@ -68,6 +68,8 @@ services:
     links:
       - peer0
       - orderer0
+    ports:
+      - 10010:10010
     depends_on:
       - peer0
       - orderer0
