@@ -11,7 +11,7 @@ sudo rm -rf /var/lib/docker/
 sudo systemctl start docker
 ```
 
-Install the docker images with this script: [yeasy(download_images.sh)](https://raw.githubusercontent.com/yeasy/docker-compose-files/c984ad3f477795ff6beb7a5146aa28d48a329942/hyperledger/1.0/scripts/download_images.sh)
+Install the docker images with this script: [download_images.sh](https://raw.githubusercontent.com/EGabb/Car-Trading-Blockchain/master/download_images.sh)
 
 In the latest version where `IMG_VERSION=0.9.4` I encountered [this](https://github.com/yeasy/docker-compose-files/issues/48) error. So just use the link given above to download the exact version of the script where `IMG_VERSION=0.9.3` is used.
 
