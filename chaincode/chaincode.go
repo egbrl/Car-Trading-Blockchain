@@ -53,6 +53,12 @@ func (t *CarChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(err.Error())
 	}
 
+	// clear the user index
+	err = clearUserIndex(userIndexStr, stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
 	// clear the revocation proposal index
 	err = clearStringIndex(revocationProposalIndexStr, stub)
 	if err != nil {
