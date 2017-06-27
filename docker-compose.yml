@@ -70,6 +70,9 @@ services:
       - orderer0
     ports:
       - 10010:10010
+    volumes:
+      - ./swagger:/go/src/github.com/EGabb/Car-Trading-Blockchain/swagger
+      - ./chaincode:/go/src/github.com/EGabb/Car-Trading-Blockchain/chaincode
     depends_on:
       - peer0
       - orderer0

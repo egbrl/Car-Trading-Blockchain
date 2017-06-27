@@ -11,11 +11,7 @@ sudo rm -rf /var/lib/docker/
 sudo systemctl start docker
 ```
 
-Install the docker images with this script: [download_images.sh](https://raw.githubusercontent.com/EGabb/Car-Trading-Blockchain/master/download_images.sh)
-
-In the latest version where `IMG_VERSION=0.9.4` I encountered [this](https://github.com/yeasy/docker-compose-files/issues/48) error. So just use the link given above to download the exact version of the script where `IMG_VERSION=0.9.3` is used.
-
-Then do `docker-compose up` from the project root folder.
+Install the docker images with the [download_images.sh](https://raw.githubusercontent.com/EGabb/Car-Trading-Blockchain/master/download_images.sh) script from the project root. Then do `docker-compose up` from the project root folder.
 
 ## CC Development
 To test if cc builds locally with most recent fabric-preview.:
@@ -37,16 +33,10 @@ local$    go test
 ```
 
 ## Run CC in Dockers
-Use the fabric-cli to create a directory and deploy the cc:
+The cc in the `./chaincode` directory is mounted in the `fabric-cli` container. To install and execute the cc do:
 ```
 local$    docker-compose up
 local$    docker exec -it fabric-cli bash
-root@cli# mkdir -p /go/src/github.com/EGabb/Car-Trading-Blockchain
-```
-
-Copy the cc from the local machine (project root folder) into the container, install and execute:
-```
-local$    docker cp chaincode/ fabric-cli:/go/src/github.com/EGabb/Car-Trading-Blockchain/
 root@cli# peer chaincode install -v 1.0 -n car_cc -p github.com/EGabb/Car-Trading-Blockchain/chaincode
 root@cli# peer chaincode instantiate -v 1.0 -n car_cc -c '{"Args":["init", "999"]}'
 ```
