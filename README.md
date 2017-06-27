@@ -1,5 +1,7 @@
 # Blockchain Car Demo
 
+[![Build Status](https://travis-ci.org/EGabb/Car-Trading-Blockchain.svg?branch=master)](https://travis-ci.org/EGabb/Car-Trading-Blockchain)
+
 ## Env Setup
 
 You may need to clean your docker env first (radical, hard-core way):
