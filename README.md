@@ -41,13 +41,13 @@ Use the fabric-cli to create a directory and deploy the cc:
 ```
 local$    docker-compose up
 local$    docker exec -it fabric-cli bash
-root@cli# mkdir -p /go/src/github.com/EGabb/Car_Sharing_Blockchain
+root@cli# mkdir -p /go/src/github.com/EGabb/Car-Trading-Blockchain
 ```
 
 Copy the cc from the local machine (project root folder) into the container, install and execute:
 ```
-local$    docker cp chaincode/ fabric-cli:/go/src/github.com/EGabb/Car_Sharing_Blockchain/
-root@cli# peer chaincode install -v 1.0 -n car_cc -p github.com/EGabb/Car_Sharing_Blockchain/chaincode
+local$    docker cp chaincode/ fabric-cli:/go/src/github.com/EGabb/Car-Trading-Blockchain/
+root@cli# peer chaincode install -v 1.0 -n car_cc -p github.com/EGabb/Car-Trading-Blockchain/chaincode
 root@cli# peer chaincode instantiate -v 1.0 -n car_cc -c '{"Args":["init", "999"]}'
 ```
 
