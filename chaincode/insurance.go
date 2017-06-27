@@ -93,10 +93,10 @@ func (t *CarChaincode) insuranceAccept(stub shim.ChaincodeStubInterface, usernam
     proposals := insurer.Proposals
     validProposal := InsureProposal {}
     var newProposals []InsureProposal
-    for i := 0; i < len(proposals); i++ {
-        newProposals = append(newProposals, proposals[i])
+    for i, proposal := range proposals {
+        newProposals = append(newProposals, proposal)
 
-        if proposals[i].Car == vin && proposals[i].User == username {
+        if proposal.Car == vin && proposal.User == username {
             // check if we can create an insurance contract
             // we can only create an insurance contract,
             // if we are sure the car VIN is approved by the DOT
@@ -114,7 +114,7 @@ func (t *CarChaincode) insuranceAccept(stub shim.ChaincodeStubInterface, usernam
             }
 
             // remove proposal
-            validProposal = proposals[i]
+            validProposal = proposal
             newProposals = newProposals[:i]
         }
     }
