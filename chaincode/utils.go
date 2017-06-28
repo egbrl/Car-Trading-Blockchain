@@ -1,63 +1,63 @@
 package main
 
 import (
-	"encoding/json"
+    "encoding/json"
 
-	"github.com/hyperledger/fabric/core/chaincode/shim"
+    "github.com/hyperledger/fabric/core/chaincode/shim"
 )
 
 /*
  * Clears an index of type 'map[string]string' on the ledger
  */
 func clearStringIndex(indexStr string, stub shim.ChaincodeStubInterface) error {
-	index := make(map[string]string)
+    index := make(map[string]string)
 
-	jsonAsBytes, err := json.Marshal(index)
-	if err != nil {
-		return err
-	}
+    jsonAsBytes, err := json.Marshal(index)
+    if err != nil {
+        return err
+    }
 
-	return stub.PutState(indexStr, jsonAsBytes)
+    return stub.PutState(indexStr, jsonAsBytes)
 }
 
 /*
  * Clears an index of type 'map[string]Insurer' on the ledger
  */
 func clearInsurerIndex(indexStr string, stub shim.ChaincodeStubInterface) error {
-	index := make(map[string]Insurer)
+    index := make(map[string]Insurer)
 
-	jsonAsBytes, err := json.Marshal(index)
-	if err != nil {
-		return err
-	}
+    jsonAsBytes, err := json.Marshal(index)
+    if err != nil {
+        return err
+    }
 
-	return stub.PutState(indexStr, jsonAsBytes)
+    return stub.PutState(indexStr, jsonAsBytes)
 }
 
 /*
  * Clears an index of type 'map[string]User' on the ledger
  */
 func clearUserIndex(indexStr string, stub shim.ChaincodeStubInterface) error {
-	index := make(map[string]User)
+    index := make(map[string]User)
 
-	jsonAsBytes, err := json.Marshal(index)
-	if err != nil {
-		return err
-	}
+    jsonAsBytes, err := json.Marshal(index)
+    if err != nil {
+        return err
+    }
 
-	return stub.PutState(indexStr, jsonAsBytes)
+    return stub.PutState(indexStr, jsonAsBytes)
 }
 
 /*
  * Clears an index of type 'map[string]RegistrationProposal' on the ledger
  */
 func clearRegistrationProposalIndex(indexStr string, stub shim.ChaincodeStubInterface) error {
-	index := make(map[string]RegistrationProposal)
+    index := make(map[string]RegistrationProposal)
 
-	jsonAsBytes, err := json.Marshal(index)
-	if err != nil {
-		return err
-	}
+    jsonAsBytes, err := json.Marshal(index)
+    if err != nil {
+        return err
+    }
 
-	return stub.PutState(indexStr, jsonAsBytes)
+    return stub.PutState(indexStr, jsonAsBytes)
 }
