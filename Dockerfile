@@ -11,7 +11,11 @@ RUN cd $FABRIC_ROOT/peer \
 
 RUN mkdir -p $EGABB_PROJECT_ROOT
 RUN apt-get install npm -y
-RUN cd $EGABB_PROJECT_ROOT
+
+# it is necessary to rename the nodejs binary
+# (see https://github.com/nodejs/node-v0.x-archive/issues/3911#issuecomment-8956154)
+RUN ln -s /usr/bin/nodejs /usr/bin/node
+RUN npm install -g nodemon
 
 CMD ["peer","node","start"]
 
