@@ -5,7 +5,7 @@ module.exports = {
 };
 
 function create(req, res) {
-  exec("peer chaincode invoke -n car -c '{\"Args\":[\"create\", \"amag\", \"garage\", \"{\\\"vin\\\": \\\"YWVW ZZZ 6RZ HY26 0780\\\"}\"]}'", function(error, stdout, stderr) {
+  exec("peer chaincode invoke -n car_cc -c '{\"Args\":[\"create\", \"amag\", \"garage\", \"{\\\"vin\\\": \\\"YWVW ZZZ 6RZ HY26 0780\\\"}\"]}'", function(error, stdout, stderr) {
     console.log('stdout: ' + stdout);
     console.log('stderr: ' + stderr);
     if (error !== null) {
