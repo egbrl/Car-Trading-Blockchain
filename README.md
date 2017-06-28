@@ -32,6 +32,11 @@ To run all tests:
 local$    go test
 ```
 
+Or to run only some tests (car tests in this case):
+```
+local$    go test -run car
+```
+
 ## Run CC in Dockers
 The cc in the `./chaincode` directory is mounted in the `fabric-cli` container. To install and execute the cc do:
 ```
