@@ -11,7 +11,7 @@ sudo rm -rf /var/lib/docker/
 sudo systemctl start docker
 ```
 
-Install the docker images with the [download_images.sh](https://raw.githubusercontent.com/EGabb/Car-Trading-Blockchain/master/download_images.sh) script from the project root. Then do `docker-compose up` from the project root folder.
+Then type `bash download_images.sh` from the project root to assemble and install the docker images with the script provided. You should have a clean setup now. If you encounter problems, try a `docker rm $(docker ps -aq)` to remove all containers from time to time.
 
 ## CC Development
 To test if cc builds locally with most recent fabric-preview.:
