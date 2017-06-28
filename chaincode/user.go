@@ -13,6 +13,9 @@ import (
  * Creates a new user and appends it to the user index.
  * Returns an error if a user with the desired username already exists.
  *
+ * Until we have an interface to stock up user credits,
+ * every new user gets 100 credits for free to buy cars.
+ *
  * On success,
  * returns the user.
  */
@@ -28,7 +31,7 @@ func (t *CarChaincode) createUser(stub shim.ChaincodeStubInterface, username str
 	if !userExisting {
 		fmt.Printf("User '%s' does not exist yet\nSaving new user with that username\n", username)
 		// Create a new user,
-		user = User{Name: username, Cars: []string{}, Balance: 0}
+		user = User{Name: username, Cars: []string{}, Balance: 100}
 	} else {
 		return shim.Error(fmt.Sprintf("User with username '%s' already exists. Choose another username.", username))
 	}
@@ -139,8 +142,10 @@ func (t *CarChaincode) updateBalance(stub shim.ChaincodeStubInterface, username 
 	user.Balance = balance
 
 	// write user balance back to ledger
-	userAsBytes, _ := json.Marshal(user)
-	err = stub.PutState(username, userAsBytes)
+	userIndex, _ := t.getUserIndex(stub)
+	userIndex[username] = user
+	userIndexAsBytes, _ := json.Marshal(userIndex)
+	err = stub.PutState(userIndexStr, userIndexAsBytes)
 	if err != nil {
 		return User{}, errors.New("Error writing user, balance not updated")
 	}

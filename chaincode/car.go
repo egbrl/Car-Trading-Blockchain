@@ -131,10 +131,12 @@ func (t *CarChaincode) create(stub shim.ChaincodeStubInterface, username string,
 
 	// hand over the car and write user to ledger
 	user.Cars = append(user.Cars, car.Vin)
-	userAsBytes, _ := json.Marshal(user)
-	err = stub.PutState(user.Name, userAsBytes)
+        userIndex, _ := t.getUserIndex(stub)
+        userIndex[user.Name] = user
+        userIndexAsBytes, _ := json.Marshal(userIndex)
+        err = stub.PutState(userIndexStr, userIndexAsBytes)
 	if err != nil {
-		return shim.Error("Error writing user")
+		return shim.Error("Error saving user")
 	}
 
 	// load all proposals
@@ -226,14 +228,12 @@ func (t *CarChaincode) sell(stub shim.ChaincodeStubInterface, seller string, arg
 	if err != nil {
 		// buyer does not exist yet
 		// create and give her some credits to buy cars
-		buyerAsUser = User{Name: buyer, Balance: 100}
-
-		// write the buyer to ledger
-		buyerAsBytes, _ := json.Marshal(buyerAsUser)
-		err = stub.PutState(buyer, buyerAsBytes)
-		if err != nil {
-			return shim.Error("Error creating new buyer")
-		}
+		userResponse := t.createUser(stub, buyer)
+                buyerAsUser = User {}
+                err = json.Unmarshal(userResponse.Payload, &buyerAsUser)
+                if err != nil {
+                        return shim.Error("Error creating new buyer")
+                }
 	}
 
 	// check buyer balance
@@ -373,8 +373,10 @@ func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username strin
 	owner.Cars = newCarList
 
 	// write the old owner back to state
-	ownerAsBytes, _ := json.Marshal(owner)
-	err = stub.PutState(username, ownerAsBytes)
+        userIndex, _ := t.getUserIndex(stub)
+        userIndex[username] = owner
+	userIndexAsBytes, _ := json.Marshal(userIndex)
+	err = stub.PutState(userIndexStr, userIndexAsBytes)
 	if err != nil {
 		return shim.Error("Error writing old owner")
 	}
@@ -392,8 +394,10 @@ func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username strin
 	owner.Cars = append(owner.Cars, car.Vin)
 
 	// write back the new owner (reveiver) to state
-	ownerAsBytes, _ = json.Marshal(owner)
-	err = stub.PutState(newCarOwner, ownerAsBytes)
+        userIndex,_ = t.getUserIndex(stub)
+        userIndex[newCarOwner] = owner
+	userIndexAsBytes, _ = json.Marshal(userIndex)
+	err = stub.PutState(userIndexStr, userIndexAsBytes)
 	if err != nil {
 		return shim.Error("Error writing new car owner (receiver)")
 	}
