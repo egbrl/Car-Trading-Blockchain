@@ -5,13 +5,12 @@ module.exports = {
 };
 
 function create(req, res) {
-  exec("peer chaincode invoke -n car_cc -c '{\"Args\":[\"create\", \"amag\", \"garage\", \"{\\\"vin\\\": \\\"YWVW ZZZ 6RZ HY26 0780\\\"}\"]}'", function(error, stdout, stderr) {
-    console.log('stdout: ' + stdout);
-    console.log('stderr: ' + stderr);
-    if (error !== null) {
-      console.log('exec error: ' + error);
+  exec("peer chaincode invoke --logging-level=info -n car_cc -c '{\"Args\":[\"create\", \"amag\", \"garage\", \"{\\\"vin\\\": \\\"WVW ZZZ 6RZ HY26 0780\\\"}\"]}'", function(error, stdout, stderr) {
+    if (error === null) {
+        // somehow also successfull invokes go to stderr..
+        return res.json(stderr);
+    } else {
+        return res.status(400).json(stderr);
     }
-
-    res.json(stdout);
   });
 }
