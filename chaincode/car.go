@@ -84,14 +84,10 @@ func (t *CarChaincode) createCar(stub shim.ChaincodeStubInterface, username stri
 	// add car birth date
 	car.CreatedTs = time.Now().Unix()
 
-	// create user from arguments
-	user := User{Balance: 100}
-
 	// check for existing garage user with that name
-	user, err = t.getUser(stub, username)
+	user, err := t.getUser(stub, username)
 	if err != nil {
-		user := User{Balance: 100}
-		user.Name = username
+		user = User{Name: username, Cars: []string{}, Balance: 100}
 	}
 
 	// check for an existing car with that vin in the car index
