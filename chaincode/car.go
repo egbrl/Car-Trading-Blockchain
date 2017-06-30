@@ -88,12 +88,9 @@ func (t *CarChaincode) createCar(stub shim.ChaincodeStubInterface, username stri
 	user := User{Balance: 100}
 
 	// check for existing garage user with that name
-	response := t.read(stub, username)
-	existingUser := User{}
-	err = json.Unmarshal(response.Payload, &existingUser)
-	if err == nil {
-		user = existingUser
-	} else {
+	user, err = t.getUser(stub, username)
+	if err != nil {
+		user := User{Balance: 100}
 		user.Name = username
 	}
 
@@ -110,7 +107,7 @@ func (t *CarChaincode) createCar(stub shim.ChaincodeStubInterface, username stri
 	carAsBytes, _ := json.Marshal(car)
 	err = stub.PutState(car.Vin, carAsBytes)
 	if err != nil {
-		return shim.Error("Error writing car")
+		return shim.Error("Error writing car to ledger")
 	}
 
 	// map the car to the users name
@@ -131,10 +128,7 @@ func (t *CarChaincode) createCar(stub shim.ChaincodeStubInterface, username stri
 
 	// hand over the car and write user to ledger
 	user.Cars = append(user.Cars, car.Vin)
-	userIndex, _ := t.getUserIndex(stub)
-	userIndex[user.Name] = user
-	userIndexAsBytes, _ := json.Marshal(userIndex)
-	err = stub.PutState(userIndexStr, userIndexAsBytes)
+	err = t.saveUser(stub, user)
 	if err != nil {
 		return shim.Error("Error saving user")
 	}
