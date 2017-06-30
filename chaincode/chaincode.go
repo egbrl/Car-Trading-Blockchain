@@ -168,14 +168,15 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			// only a user is allowed to update balance
 			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to update the balance of a user.", role))
 		} else {
+			/* TODO
 			newBalance64, err := strconv.ParseInt(args[0], 10, 64)
 			var newBalance int
 			newBalance = int(newBalance64)
 			if err != nil {
 				return shim.Error("Error converting string to int.")
 			}
-			// Todo:
-			// return t.updateBalance(shim, username, newBalance)
+			return t.updateBalance(shim, username, newBalance)
+			*/
 		}
 
 	// GARAGE FUNCTIONS
