@@ -129,6 +129,30 @@ func (t *CarChaincode) getUser(stub shim.ChaincodeStubInterface, username string
 }
 
 /*
+ * Saves user back to ledger
+ */
+func (t *CarChaincode) saveUser(stub shim.ChaincodeStubInterface, user User) error {
+	response := t.read(stub, userIndexStr)
+	userIndex := make(map[string]User)
+	err := json.Unmarshal(response.Payload, &userIndex)
+	if err != nil {
+		return errors.New("Error parsing user index")
+	}
+
+	// overwriting existing user with updated user
+	userIndex[user.Name] = user
+
+	// write updated user back to ledger
+	userAsBytes, _ := json.Marshal(user)
+	err = stub.PutState(user.Name, userAsBytes)
+	if err != nil {
+		return errors.New("Error writing userIndex back to ledger")
+	}
+
+	return nil
+}
+
+/*
  * Updates User balance
  */
 func (t *CarChaincode) updateBalance(stub shim.ChaincodeStubInterface, username string, balance int) (User, error) {

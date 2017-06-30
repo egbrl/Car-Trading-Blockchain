@@ -184,7 +184,7 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if role != "garage" {
 			return shim.Error("'create' expects you to be a garage user")
 		}
-		return t.create(stub, username, args)
+		return t.createCar(stub, username, args)
 
 	// DOT FUNCTIONS
 	case "revoke":
@@ -264,7 +264,7 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 
 	default:
-		return shim.Error("Invoke did not find function: " + function)
+
 	}
 
 	return shim.Error("Invoke did not find function: " + function)
@@ -297,6 +297,6 @@ func (t *CarChaincode) read(stub shim.ChaincodeStubInterface, key string) pb.Res
 func main() {
 	err := shim.Start(new(CarChaincode))
 	if err != nil {
-		fmt.Printf("Error starting Simple chaincode: %s", err)
+		fmt.Printf("Error starting Car chaincode: %s", err)
 	}
 }
