@@ -10,9 +10,7 @@ import (
 )
 
 /*
- * Creates a new user
- *   - appends it to the user index
- *   - appends saves .
+ * Creates a new user and appends it to the user index.
  * Returns an error if a user with the desired username already exists.
  *
  * Until we have an interface to stock up user credits,
@@ -29,9 +27,8 @@ func (t *CarChaincode) createUser(stub shim.ChaincodeStubInterface, username str
 		return shim.Error(err.Error())
 	}
 
-	user, err := t.getUser(stub, username)
-
-	if err != nil {
+	user, userExisting := userIndex[username]
+	if !userExisting {
 		fmt.Printf("User '%s' does not exist yet\nSaving new user with that username\n", username)
 		// Create a new user,
 		user = User{Name: username, Cars: []string{}, Balance: 100}
@@ -40,7 +37,6 @@ func (t *CarChaincode) createUser(stub shim.ChaincodeStubInterface, username str
 	}
 
 	// map the user to the userIndex
-	userIndex.append
 	userIndex[username] = user
 	fmt.Printf("Added user with Username '%s' to user index.\n", username)
 
@@ -101,9 +97,9 @@ func (t *CarChaincode) deleteUser(stub shim.ChaincodeStubInterface, username str
 /*
  * Returns the user index
  */
-func (t *CarChaincode) getUserIndex(stub shim.ChaincodeStubInterface) ([]string, error) {
+func (t *CarChaincode) getUserIndex(stub shim.ChaincodeStubInterface) (map[string]User, error) {
 	response := t.read(stub, userIndexStr)
-	userIndex = []string{}
+	userIndex := make(map[string]User)
 	err := json.Unmarshal(response.Payload, &userIndex)
 	if err != nil {
 		return nil, errors.New("Error parsing user index")
@@ -116,15 +112,20 @@ func (t *CarChaincode) getUserIndex(stub shim.ChaincodeStubInterface) ([]string,
  * Reads a User from ledger
  */
 func (t *CarChaincode) getUser(stub shim.ChaincodeStubInterface, username string) (User, error) {
-	userString := "usr_" + username
-	response := t.read(stub, userString)
-	var user User
-	err := json.Unmarshal(response.Payload, &user)
+	response := t.read(stub, userIndexStr)
+	userIndex := make(map[string]User)
+	err := json.Unmarshal(response.Payload, &userIndex)
 	if err != nil {
 		return User{}, errors.New("Error parsing user index")
 	}
 
-	return user, err
+	// getting user from user index map
+	user, userExisting := userIndex[username]
+	if !userExisting {
+		return User{}, errors.New("Error fetching user from user index map")
+	}
+
+	return user, nil
 }
 
 /*
