@@ -40,18 +40,23 @@ func (t *CarChaincode) createUser(stub shim.ChaincodeStubInterface, username str
 	}
 
 	// map the user to the userIndex
-	userIndex.append
-	userIndex[username] = user
+	userIndex[user.Name] = user.Name
 	fmt.Printf("Added user with Username '%s' to user index.\n", username)
 
 	// write udpated user index back to ledger
 	indexAsBytes, _ := json.Marshal(userIndex)
 	err = stub.PutState(userIndexStr, indexAsBytes)
 	if err != nil {
-		return shim.Error("Error writing user index")
+		return shim.Error("Error writing updated user index to ledger")
 	}
 
+	// write new user to ledger
 	userAsBytes, _ := json.Marshal(user)
+	userString := "usr_" + user.Name
+	err = stub.PutState(userString, userAsBytes)
+	if err != nil {
+		return shim.Error("Error writing user to ledger")
+	}
 
 	// user creation successfull,
 	// return the user
@@ -69,23 +74,28 @@ func (t *CarChaincode) deleteUser(stub shim.ChaincodeStubInterface, username str
 		return shim.Error(err.Error())
 	}
 
-	//getting the user object
-	user, remainingBalanceRecipientUserExisting := userIndexMap[remainingBalanceRecipient]
-
-	//check if user doesn't own a car anymore
-	numberOfCars := len(user.Cars)
-	if numberOfCars != 0 {
-		return shim.Error("User '" + username + "' still owns one or more car. Deletion of user therefore not possible.")
+	// getting user which shall be deleted
+	userToDelete, err := t.getUser(stub, username)
+	if err != nil {
+		return shim.Error("User to delete does not exist. Username: '" + username + "'")
 	}
 
-	//transfer remaining balance to chosen recipient
-	if remainingBalanceRecipientUserExisting {
-		user.Balance += userIndexMap[username].Balance
-		userIndexMap[remainingBalanceRecipient] = user
+	// getting the user which receives the remaining balance
+	balanceRecipient, err := t.getUser(stub, remainingBalanceRecipient)
+	if err != nil {
+		return shim.Error("User does not exist. Username: '" + username + "'")
 	}
+
+	// check if user doesn't own a car anymore
+	if len(userToDelete.Cars) != 0 {
+		return shim.Error("Deletion of user not possible. User '" + username + "' still owns '" + string(len(userToDelete.Cars)) + "' cars.")
+	}
+
+	// transfer remaining balance to chosen recipient
+	balanceRecipient.Balance += userToDelete.Balance
 
 	// delete user from user index
-	delete(userIndexMap, username)
+	delete(userIndexMap, userToDelete.Name)
 
 	// write udpated user index back to ledger
 	indexAsBytes, _ := json.Marshal(userIndexMap)
@@ -94,16 +104,22 @@ func (t *CarChaincode) deleteUser(stub shim.ChaincodeStubInterface, username str
 		return shim.Error("Error writing user index")
 	}
 
-	fmt.Printf("Successfully deleted user with username: '%s'\n", username)
+	// Delete the user key from the state in ledger
+	err = stub.DelState("usr_" + userToDelete.Name)
+	if err != nil {
+		return shim.Error("Failed to delete user from state")
+	}
+
+	fmt.Printf("Successfully deleted user with username: '%s'\n", userToDelete.Name)
 	return shim.Success(nil)
 }
 
 /*
  * Returns the user index
  */
-func (t *CarChaincode) getUserIndex(stub shim.ChaincodeStubInterface) ([]string, error) {
+func (t *CarChaincode) getUserIndex(stub shim.ChaincodeStubInterface) (map[string]string, error) {
 	response := t.read(stub, userIndexStr)
-	userIndex = []string{}
+	userIndex := make(map[string]string)
 	err := json.Unmarshal(response.Payload, &userIndex)
 	if err != nil {
 		return nil, errors.New("Error parsing user index")
@@ -116,8 +132,7 @@ func (t *CarChaincode) getUserIndex(stub shim.ChaincodeStubInterface) ([]string,
  * Reads a User from ledger
  */
 func (t *CarChaincode) getUser(stub shim.ChaincodeStubInterface, username string) (User, error) {
-	userString := "usr_" + username
-	response := t.read(stub, userString)
+	response := t.read(stub, "usr_"+username)
 	var user User
 	err := json.Unmarshal(response.Payload, &user)
 	if err != nil {
@@ -128,22 +143,11 @@ func (t *CarChaincode) getUser(stub shim.ChaincodeStubInterface, username string
 }
 
 /*
- * Saves user back to ledger
+ * Writes updated user back to ledger
  */
 func (t *CarChaincode) saveUser(stub shim.ChaincodeStubInterface, user User) error {
-	response := t.read(stub, userIndexStr)
-	userIndex := make(map[string]User)
-	err := json.Unmarshal(response.Payload, &userIndex)
-	if err != nil {
-		return errors.New("Error parsing user index")
-	}
-
-	// overwriting existing user with updated user
-	userIndex[user.Name] = user
-
-	// write updated user back to ledger
 	userAsBytes, _ := json.Marshal(user)
-	err = stub.PutState(user.Name, userAsBytes)
+	err := stub.PutState("usr_"+user.Name, userAsBytes)
 	if err != nil {
 		return errors.New("Error writing userIndex back to ledger")
 	}
@@ -152,26 +156,54 @@ func (t *CarChaincode) saveUser(stub shim.ChaincodeStubInterface, user User) err
 }
 
 /*
+ * Sets User balance
+ */
+func (t *CarChaincode) setBalance(stub shim.ChaincodeStubInterface, username string, balance int) (User, error) {
+	// fetch user
+	user, err := t.getUser(stub, username)
+	if err != nil {
+		return User{}, errors.New("Error fetching user, balance not set")
+	}
+
+	// set new user balance
+	user.Balance = balance
+
+	// save updated user
+	err = t.saveUser(stub, user)
+	if err != nil {
+		return User{}, errors.New("Error writing user, balance not set")
+	}
+
+	fmt.Printf("Balance of user '" + user.Name + "' successfully set")
+
+	return user, nil
+}
+
+/*
  * Updates User balance
  */
-func (t *CarChaincode) updateBalance(stub shim.ChaincodeStubInterface, username string, balance int) (User, error) {
+func (t *CarChaincode) updateBalance(stub shim.ChaincodeStubInterface, username string, updateAmount int) (User, error) {
 	// fetch user
 	user, err := t.getUser(stub, username)
 	if err != nil {
 		return User{}, errors.New("Error fetching user, balance not updated")
 	}
 
-	// updbalanceate user balance
-	user.Balance = balance
+	// check if user balance does not go below zero
+	if user.Balance+updateAmount < 0 {
+		return user, errors.New("Updating balance not possible. User balance would go below zero")
+	}
 
-	// write user balance back to ledger
-	userIndex, _ := t.getUserIndex(stub)
-	userIndex[username] = user
-	userIndexAsBytes, _ := json.Marshal(userIndex)
-	err = stub.PutState(userIndexStr, userIndexAsBytes)
+	// update user balance
+	user.Balance += updateAmount
+
+	// save updated user
+	err = t.saveUser(stub, user)
 	if err != nil {
 		return User{}, errors.New("Error writing user, balance not updated")
 	}
+
+	fmt.Printf("Balance of user '" + user.Name + "' successfully updated")
 
 	return user, nil
 }
