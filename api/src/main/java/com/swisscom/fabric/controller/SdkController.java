@@ -222,7 +222,7 @@ public class SdkController extends AbstractRestController {
   }
 
   private static final String FOO_CHAIN_NAME = "foo";
-  private static final String TEST_FIXTURES_PATH = "/data/home/ian/hyperledger/fabric-sdk-java/src/test/fixture";
+  private static final String PROJECT_ROOT = "/home/andi/Documents/UZH/Masterprojekt/Hackathon/Car-Trading-Blockchain";
 
   @RequestMapping(value = "/getchain", method = RequestMethod.GET)
   public ErrorInfo getchain() throws InvalidArgumentException, IOException, TransactionException, ProposalException {
@@ -300,7 +300,7 @@ public class SdkController extends AbstractRestController {
     Orderer anOrderer = orderers.iterator().next();
     orderers.remove(anOrderer);
 
-    ChainConfiguration chainConfiguration = new ChainConfiguration(new File(TEST_FIXTURES_PATH + "/sdkintegration/e2e-2Orgs/channel/" + FOO_CHAIN_NAME + ".tx"));
+    ChainConfiguration chainConfiguration = new ChainConfiguration(new File(PROJECT_ROOT + "/fixtures/e2e-2Orgs/channel/" + FOO_CHAIN_NAME + ".tx"));
 
     //Only peer Admin org
     client.setUserContext(sampleOrg.getPeerAdmin());
@@ -354,8 +354,8 @@ public class SdkController extends AbstractRestController {
     return result;
   }
 
-  private static final String CHAIN_CODE_NAME = "example_cc_go";
-  private static final String CHAIN_CODE_PATH = "github.com/example_cc";
+  private static final String CHAIN_CODE_NAME = "car_cc_go";
+  private static final String CHAIN_CODE_PATH = "github.com/car_cc";
   private static final String CHAIN_CODE_VERSION = "1";
 
   @RequestMapping(value = "/installchaincode", method = RequestMethod.GET)
@@ -385,7 +385,7 @@ public class SdkController extends AbstractRestController {
 
     // install from directory (install from stream also available)
     ////For GO language and serving just a single user, chaincodeSource is mostly likely the users GOPATH
-    installProposalRequest.setChaincodeSourceLocation(new File(TEST_FIXTURES_PATH + "/sdkintegration/gocc/sample1"));
+    installProposalRequest.setChaincodeSourceLocation(new File(PROJECT_ROOT + "/chaincode"));
 
     installProposalRequest.setChaincodeVersion(CHAIN_CODE_VERSION);
 
@@ -458,7 +458,7 @@ public class SdkController extends AbstractRestController {
               See README.md Chaincode endorsement policies section for more details.
      */
     ChaincodeEndorsementPolicy chaincodeEndorsementPolicy = new ChaincodeEndorsementPolicy();
-    chaincodeEndorsementPolicy.fromYamlFile(new File(TEST_FIXTURES_PATH + "/sdkintegration/chaincodeendorsementpolicy.yaml"));
+    chaincodeEndorsementPolicy.fromYamlFile(new File(PROJECT_ROOT + "/fixtures/chaincodeendorsementpolicy.yaml"));
     instantiateProposalRequest.setChaincodeEndorsementPolicy(chaincodeEndorsementPolicy);
 
     out("Sending instantiateProposalRequest to all peers with arguments: a and b set to 100 and %s respectively", "" + (200 + delta));

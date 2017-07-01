@@ -353,7 +353,7 @@ public class TestConfig {
 
     public String getTestChannlePath() {
 
-        return "/data/home/ian/hyperledger/fabric-sdk-java/src/test/fixture/sdkintegration/e2e-2Orgs/channel";
+        return "/home/andi/Documents/UZH/Masterprojekt/Hackathon/Car-Trading-Blockchain/fixtures/e2e-2Orgs/channel";
 
     }
 
