@@ -65,9 +65,13 @@ func TestTransferCar(t *testing.T) {
 
 	ccSetup(t, stub)
 
+	// creat new users (amag, bobby)
+	response := stub.MockInvoke(uuid, util.ToChaincodeArgs("createUser", username))
+	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("createUser", receiver))
+
 	// create a new car
 	carData := `{ "vin": "` + vin + `" }`
-	response := stub.MockInvoke(uuid, util.ToChaincodeArgs("create", username, "garage", carData))
+	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("create", username, "garage", carData))
 
 	// payload should contain the car
 	car := Car{}
