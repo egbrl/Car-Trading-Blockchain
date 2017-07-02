@@ -117,9 +117,8 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "readCar":
 		if len(args) != 1 {
 			return shim.Error("'readCar' expects a car vin to do the look up")
-		} else {
-			return t.readCar(stub, username, args[0])
 		}
+		return t.readCar(stub, username, args[0])
 
 	// USER FUNCTIONS
 	case "transfer":

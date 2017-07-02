@@ -154,6 +154,38 @@ func (t *CarChaincode) createCar(stub shim.ChaincodeStubInterface, username stri
 }
 
 /*
+ * Reads a car and checks for ownership
+ *
+ * Only the car owner can read the car.
+ *
+ * On success,
+ * returns the car.
+ */
+func (t *CarChaincode) getCar(stub shim.ChaincodeStubInterface, username string, vin string) (Car, error) {
+	if vin == "" {
+		return Car{}, errors.New("'readCar' expects a non-empty VIN to do the look up")
+	}
+
+	// fetch the car from the ledger
+	carResponse := t.read(stub, vin)
+	car := Car{}
+	err := json.Unmarshal(carResponse.Payload, &car)
+	if err != nil {
+		return Car{}, errors.New("Failed to fetch car with vin '" + vin + "' from ledger")
+	}
+
+	// fetch the car index to check if the user owns the car
+	owner, err := t.getOwner(stub, vin)
+	if err != nil {
+		return Car{}, errors.New(err.Error())
+	} else if owner != username {
+		return Car{}, errors.New("Forbidden: this is not your car")
+	}
+
+	return car, nil
+}
+
+/*
  * Reads a car.
  *
  * Only the car owner can read the car.
@@ -348,9 +380,7 @@ func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username strin
 
 	// fetch the car from the ledger
 	// this already checks for ownership
-	carResponse := t.readCar(stub, username, vin)
-	car := Car{}
-	err := json.Unmarshal(carResponse.Payload, &car)
+	car, err := t.getCar(stub, username, vin)
 	if err != nil {
 		return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
 	}
