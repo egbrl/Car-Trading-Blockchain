@@ -403,17 +403,6 @@ func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username strin
 
 	// get the old car owner
 	oldOwner, err := t.getUser(stub, username)
-	if err != nil {
-		// Temporary fix for tests (ToDo: Fix User creation in tests)
-		fmt.Printf("Error fetching old car owner. Creating new one.")
-		userAsBytes := t.createUser(stub, username)
-		err := json.Unmarshal(userAsBytes.Payload, &oldOwner)
-		if err != nil {
-			return shim.Error("Error unmarshaling user payload.")
-		}
-		//return shim.Error("Error fetching old car owner")
-
-	}
 
 	// go through all his cars
 	// and remove the car we just transferred
@@ -440,14 +429,20 @@ func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username strin
 	// get the receiver of the car
 	// (new car owner)
 	newOwner, err := t.getUser(stub, newCarOwnerUsername)
+
 	if err != nil {
 		fmt.Println("New car owner (receiver) does not exist. Creating this user.")
-		oldOwner = User{}
-		oldOwner.Name = newCarOwnerUsername
+		userResponse := t.createUser(stub, newCarOwnerUsername)
+		newOwner = User{}
+		err = json.Unmarshal(userResponse.Payload, &newOwner)
+		if err != nil {
+			return shim.Error("Error creating new car owner")
+		}
 	}
 
 	// attach the car to the receiver (new car owner)
-	newOwner.Cars = append(oldOwner.Cars, car.Vin)
+	newOwner.Cars = append(newOwner.Cars, car.Vin)
+
 
 	// write back the new owner (reveiver) to state
 	err = t.saveUser(stub, newOwner)
