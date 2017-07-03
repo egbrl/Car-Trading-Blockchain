@@ -118,13 +118,12 @@ func TestTransferCar(t *testing.T) {
 	}
 
 	// checkout bobbys user record
-	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", userIndexStr))
-	userIndex := make(map[string]User)
-	err = json.Unmarshal(response.Payload, &userIndex)
+	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", "usr_" + receiver))
+	receiverAsUser := User {}
+	err = json.Unmarshal(response.Payload, &receiverAsUser)
 	if err != nil {
-		t.Error("Error fetching user index")
+		t.Error("Error fetching receiver")
 	}
-	receiverAsUser := userIndex[receiver]
 
 	fmt.Printf("New owner/receiver with cars: %v\n", receiverAsUser)
 
@@ -133,13 +132,12 @@ func TestTransferCar(t *testing.T) {
 	}
 
 	// checkout the old owners user record
-	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", userIndexStr))
-	userIndex = make(map[string]User)
-	err = json.Unmarshal(response.Payload, &userIndex)
+	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", "usr_" + username))
+	oldOwnerAsUser := User {}
+	err = json.Unmarshal(response.Payload, &oldOwnerAsUser)
 	if err != nil {
-		t.Error("Error fetching user index")
+		t.Error("Error fetching old owner")
 	}
-	oldOwnerAsUser := userIndex[username]
 
 	fmt.Printf("Old owner with cars: %v\n", oldOwnerAsUser)
 
@@ -221,13 +219,12 @@ func TestSellCar(t *testing.T) {
 	}
 
 	// checkout bobbys user record
-	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", userIndexStr))
-	userIndex := make(map[string]User)
-	err = json.Unmarshal(response.Payload, &userIndex)
+	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", "usr_" + receiver))
+	receiverAsUser := User {}
+	err = json.Unmarshal(response.Payload, &receiverAsUser)
 	if err != nil {
-		t.Error("Error fetching user index")
+		t.Error("Error fetching receiver")
 	}
-	receiverAsUser := userIndex[receiver]
 
 	fmt.Printf("New owner/receiver with cars: %v\n", receiverAsUser)
 
@@ -236,13 +233,12 @@ func TestSellCar(t *testing.T) {
 	}
 
 	// checkout the old owners user record
-	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", userIndexStr))
-	userIndex = make(map[string]User)
-	err = json.Unmarshal(response.Payload, &userIndex)
+	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", "usr_" + username))
+	oldOwnerAsUser := User {}
+	err = json.Unmarshal(response.Payload, &oldOwnerAsUser)
 	if err != nil {
-		t.Error("Error fetching user index")
+		t.Error("Error fetching seller")
 	}
-	oldOwnerAsUser := userIndex[username]
 
 	fmt.Printf("Old owner with cars: %v\n", oldOwnerAsUser)
 
@@ -315,7 +311,7 @@ func TestCreateAndReadCar(t *testing.T) {
 		t.Error("This is not the car '" + username + "' created")
 	}
 
-	// the user should only have one car by now
+	// check out the new car entry
 	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("readCar", username, "TESTING", carCreated.Vin))
 	carFetched := Car{}
 	err = json.Unmarshal(response.Payload, &carFetched)
@@ -325,6 +321,20 @@ func TestCreateAndReadCar(t *testing.T) {
 		t.Error("Car VIN does not match")
 	} else if carFetched.CreatedTs != carCreated.CreatedTs {
 		t.Error("This is not the car you created before")
+	}
+
+	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("read", "TESTING", "TESTING", "usr_" + username))
+	user := User {}
+	err = json.Unmarshal(response.Payload, &user)
+	if err != nil {
+		t.Error("Failed to fetch user")
+	}
+
+	fmt.Printf("Car owner: %v\n+", user)
+
+	// the user should only have one car by now
+	if user.Cars[0] != vin {
+		t.Error(fmt.Sprintf("Car was not handed over to user '%s'", username))
 	}
 
 	// create a car with the same vin
