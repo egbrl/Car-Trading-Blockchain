@@ -265,7 +265,7 @@ func (t *CarChaincode) sell(stub shim.ChaincodeStubInterface, seller string, arg
 	}
 
 	// update buyer balance
-	buyerAsUser, err = t.updateBalance(stub, buyer, buyerAsUser.Balance-priceAsInt)
+	buyerAsUser, err = t.setBalance(stub, buyer, buyerAsUser.Balance-priceAsInt)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -290,10 +290,10 @@ func (t *CarChaincode) sell(stub shim.ChaincodeStubInterface, seller string, arg
 	}
 
 	// update sellers balance
-	sellerAsUser, err = t.updateBalance(stub, seller, sellerAsUser.Balance+priceAsInt)
+	sellerAsUser, err = t.setBalance(stub, seller, sellerAsUser.Balance+priceAsInt)
 	if err != nil {
 		// undo successful 'buyer' transaction
-		buyerAsUser, err = t.updateBalance(stub, buyer, buyerAsUser.Balance+priceAsInt)
+		buyerAsUser, err = t.setBalance(stub, buyer, buyerAsUser.Balance+priceAsInt)
 		if err != nil {
 			return shim.Error("State corrupted")
 		}
@@ -302,6 +302,22 @@ func (t *CarChaincode) sell(stub shim.ChaincodeStubInterface, seller string, arg
 	}
 
 	fmt.Printf("Balance of user %s (seller) updated, is now: %n\n", seller, sellerAsUser.Balance)
+
+	//////////////////////////////////////////////////////////
+	//           WRITING USER CHANGES TO LEDGER             //
+	//////////////////////////////////////////////////////////
+
+	// Writing updated buyer back to ledger
+	err = t.saveUser(stub, buyerAsUser)
+	if err != nil {
+		return shim.Error("Error saving updated buyer!")
+	}
+
+	// writing updated seller back to ledger
+	err = t.saveUser(stub, sellerAsUser)
+	if err != nil {
+		return shim.Error("Error saving updated seller!")
+	}
 
 	//////////////////////////////////////////////////////////
 	//                       CAR                            //
@@ -317,12 +333,12 @@ func (t *CarChaincode) sell(stub shim.ChaincodeStubInterface, seller string, arg
 	if err != nil {
 		// undo SELLER and BUYER balance updates if unsucessfull
 		// is there a 'hfc transaction' for automation of this scenario?
-		buyerAsUser, err = t.updateBalance(stub, buyer, buyerAsUser.Balance+priceAsInt)
+		buyerAsUser, err = t.setBalance(stub, buyer, buyerAsUser.Balance+priceAsInt)
 		if err != nil {
 			return shim.Error("State corrupted")
 		}
 
-		sellerAsUser, err = t.updateBalance(stub, seller, sellerAsUser.Balance-priceAsInt)
+		sellerAsUser, err = t.setBalance(stub, seller, sellerAsUser.Balance-priceAsInt)
 		if err != nil {
 			return shim.Error("State corrupted")
 		}
@@ -331,20 +347,8 @@ func (t *CarChaincode) sell(stub shim.ChaincodeStubInterface, seller string, arg
 	}
 
 	//////////////////////////////////////////////////////////
-	//              WRITING CHANGES TO LEDGER               //
+	//           WRITING CAR CHANGES TO LEDGER              //
 	//////////////////////////////////////////////////////////
-
-	// Writing updated buyer back to ledger
-	err = t.saveUser(stub, buyerAsUser)
-	if err != nil {
-		return shim.Error("Error saving updated buyer!")
-	}
-
-	// writing updated seller back to ledger
-	err = t.saveUser(stub, sellerAsUser)
-	if err != nil {
-		return shim.Error("Error saving updated seller!")
-	}
 
 	// write updated car back to ledger
 	carAsBytes, _ := json.Marshal(car)
