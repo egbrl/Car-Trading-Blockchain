@@ -20,24 +20,24 @@ import (
  * returns the user.
  */
 func (t *CarChaincode) createUser(stub shim.ChaincodeStubInterface, username string) pb.Response {
-
 	// check if user with this username already exists
+	_, err := t.getUser(stub, username)
+	if err == nil {
+		return shim.Error(fmt.Sprintf("User with username '%s' already exists. Choose another username.", username))
+	}
+
+	// user does not exist yet,
+	// create user
+	fmt.Printf("User '%s' does not exist yet\nSaving new user with that username\n", username)
+	user := User{Name: username, Cars: []string{}, Balance: 100}
+
 	userIndex, err := t.getUserIndex(stub)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
-	user, userExisting := userIndex[username]
-	if !userExisting {
-		fmt.Printf("User '%s' does not exist yet\nSaving new user with that username\n", username)
-		// Create a new user,
-		user = User{Name: username, Cars: []string{}, Balance: 100}
-	} else {
-		return shim.Error(fmt.Sprintf("User with username '%s' already exists. Choose another username.", username))
-	}
-
 	// map the user to the userIndex
-	userIndex[user.Name] = user.Name
+	userIndex[username] = username
 	fmt.Printf("Added user with Username '%s' to user index.\n", username)
 
 	// write udpated user index back to ledger
@@ -48,15 +48,14 @@ func (t *CarChaincode) createUser(stub shim.ChaincodeStubInterface, username str
 	}
 
 	// write new user to ledger
-	userAsBytes, _ := json.Marshal(user)
-	userString := "usr_" + user.Name
-	err = stub.PutState(userString, userAsBytes)
+	err = t.saveUser(stub, user)
 	if err != nil {
-		return shim.Error("Error writing user to ledger")
+		return shim.Error(err.Error())
 	}
 
 	// user creation successfull,
 	// return the user
+	userAsBytes, _ := json.Marshal(user)
 	return shim.Success(userAsBytes)
 }
 
@@ -134,12 +133,6 @@ func (t *CarChaincode) getUser(stub shim.ChaincodeStubInterface, username string
 	err := json.Unmarshal(response.Payload, &user)
 	if err != nil {
 		return User{}, errors.New("Error parsing user index")
-	}
-
-	// getting user from user index map
-	user, userExisting := userIndex[username]
-	if !userExisting {
-		return User{}, errors.New("Error fetching user from user index map")
 	}
 
 	return user, nil
