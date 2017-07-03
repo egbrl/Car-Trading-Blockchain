@@ -117,11 +117,22 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "readCar":
 		if len(args) != 1 {
 			return shim.Error("'readCar' expects a car vin to do the look up")
-		} else {
-			return t.readCar(stub, username, args[0])
 		}
+		return t.readCar(stub, username, args[0])
 
 	// USER FUNCTIONS
+	case "createUser":
+		if len(args) != 0 {
+			return shim.Error("'creatUser' expects a username to create a new user")
+		}
+		return t.createUser(stub, args[0])
+
+	case "deleteUser":
+		if len(args) != 2 {
+			return shim.Error("'deleteUser' expects a username and a remainingBalanceRecipient username")
+		}
+		return t.deleteUser(stub, args[0], args[1])
+
 	case "transfer":
 		if len(args) != 2 {
 			return shim.Error("'transfer' expects a car vin and name of the new owner to transfer a car")

@@ -1,12 +1,12 @@
 package main
 
 import (
-    "fmt"
-    "encoding/json"
-    "errors"
+	"encoding/json"
+	"errors"
+	"fmt"
 
-    "github.com/hyperledger/fabric/core/chaincode/shim"
-    pb "github.com/hyperledger/fabric/protos/peer"
+	"github.com/hyperledger/fabric/core/chaincode/shim"
+	pb "github.com/hyperledger/fabric/protos/peer"
 )
 
 /*
@@ -15,26 +15,26 @@ import (
  * The numberplate is handed out by the DOT.
  */
 func IsConfirmed(car *Car) bool {
-    // cannot have a numberplate without car papers
-    if (!IsRegistered(car)) {
-        return false
-    }
+	// cannot have a numberplate without car papers
+	if !IsRegistered(car) {
+		return false
+	}
 
-    // cannot give you a numberplate without insurance contract
-    if (!IsInsured(car)) {
-        return false
-    }
+	// cannot give you a numberplate without insurance contract
+	if !IsInsured(car) {
+		return false
+	}
 
-    confirmed := car.Certificate.Numberplate != ""
+	confirmed := car.Certificate.Numberplate != ""
 
-    // because the car is registered, the car VIN can be trusted
-    if (confirmed) {
-        fmt.Printf("Car with VIN '%s' is confirmed\n", car.Vin)
-    } else {
-        fmt.Printf("Car with VIN '%s' has no valid numberplate\n", car.Vin)
-    }
+	// because the car is registered, the car VIN can be trusted
+	if confirmed {
+		fmt.Printf("Car with VIN '%s' is confirmed\n", car.Vin)
+	} else {
+		fmt.Printf("Car with VIN '%s' has no valid numberplate\n", car.Vin)
+	}
 
-    return confirmed
+	return confirmed
 }
 
 /*
@@ -46,23 +46,23 @@ func IsConfirmed(car *Car) bool {
  * a certificate was issued by the DOT at least once.
  */
 func IsRegistered(car *Car) bool {
-    // cannot be registered without certificate
-    if (car.Certificate.Vin == "") {
-        fmt.Printf("Car created at ts '%d' is not yet registered\n", car.CreatedTs)
-        return false
-    }
+	// cannot be registered without certificate
+	if car.Certificate.Vin == "" {
+		fmt.Printf("Car created at ts '%d' is not yet registered\n", car.CreatedTs)
+		return false
+	}
 
-    // validate car VIN
-    carVin := car.Vin
-    registered := car.Certificate.Vin == carVin
+	// validate car VIN
+	carVin := car.Vin
+	registered := car.Certificate.Vin == carVin
 
-    if (registered) {
-        fmt.Printf("Car created at ts '%d' is registered with VIN '%s'\n", car.CreatedTs, carVin)
-    } else {
-        fmt.Printf("Car created at ts '%d' is not yet registered\n", car.CreatedTs)
-    }
-    
-    return registered
+	if registered {
+		fmt.Printf("Car created at ts '%d' is registered with VIN '%s'\n", car.CreatedTs, carVin)
+	} else {
+		fmt.Printf("Car created at ts '%d' is not yet registered\n", car.CreatedTs)
+	}
+
+	return registered
 }
 
 /*
@@ -70,42 +70,42 @@ func IsRegistered(car *Car) bool {
  * registration proposals.
  */
 func (t *CarChaincode) getRegistrationProposals(stub shim.ChaincodeStubInterface) (map[string]RegistrationProposal, error) {
-    response := t.read(stub, registrationProposalIndexStr)
-    proposalIndex := make(map[string]RegistrationProposal)
-    err := json.Unmarshal(response.Payload, &proposalIndex)
-    if err != nil {
-        return nil, errors.New("Error parsing registration proposal index")
-    }
+	response := t.read(stub, registrationProposalIndexStr)
+	proposalIndex := make(map[string]RegistrationProposal)
+	err := json.Unmarshal(response.Payload, &proposalIndex)
+	if err != nil {
+		return nil, errors.New("Error parsing registration proposal index")
+	}
 
-    return proposalIndex, nil
+	return proposalIndex, nil
 }
 
 /*
  * Reads all registration proposals.
  */
 func (t *CarChaincode) readRegistrationProposals(stub shim.ChaincodeStubInterface) pb.Response {
-    proposalIndex, err := t.getRegistrationProposals(stub)
-    if err != nil {
-        return shim.Error("Error reading registration proposal index")
-    }
+	proposalIndex, err := t.getRegistrationProposals(stub)
+	if err != nil {
+		return shim.Error("Error reading registration proposal index")
+	}
 
-    indexAsBytes, _ := json.Marshal(proposalIndex)
-    return shim.Success(indexAsBytes)
+	indexAsBytes, _ := json.Marshal(proposalIndex)
+	return shim.Success(indexAsBytes)
 }
 
 /*
  * Returns a registration proposal for a car.
  */
 func (t *CarChaincode) getRegistrationProposal(stub shim.ChaincodeStubInterface, car string) pb.Response {
-    // load all proposals
-    proposalIndex, err := t.getRegistrationProposals(stub)
-    if err != nil {
-        return shim.Error("Error reading registration proposal index")
-    }
+	// load all proposals
+	proposalIndex, err := t.getRegistrationProposals(stub)
+	if err != nil {
+		return shim.Error("Error reading registration proposal index")
+	}
 
-    ret := proposalIndex[car]
-    retAsBytes, _ := json.Marshal(ret)
-    return shim.Success(retAsBytes)
+	ret := proposalIndex[car]
+	retAsBytes, _ := json.Marshal(ret)
+	return shim.Success(retAsBytes)
 }
 
 /*
@@ -122,56 +122,54 @@ func (t *CarChaincode) getRegistrationProposal(stub shim.ChaincodeStubInterface,
  * is not used anywhere else right now. Like this, the RegistrationProposal
  * only serves the purpose to signal the DOT, that there is a new
  * car waiting for registration.
- * 
+ *
  * On success,
  * returns the car with certificate.
  */
 func (t *CarChaincode) register(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response {
-    // reading the car already checks that the user 
-    // is the actual owner of the car
-    carResponse := t.readCar(stub, username, vin)
-    car := Car {}
-    json.Unmarshal(carResponse.Payload, &car)
-    if vin != car.Vin {
-        return shim.Error(fmt.Sprintf("Cannot register, invalid VIN.\nCar VIN is '%s' and you want to register VIN '%s'", car.Vin, vin))
-    }
+	// reading the car already checks that the user
+	// is the actual owner of the car
+	car, err := t.getCar(stub, username, vin)
+	if vin != car.Vin {
+		return shim.Error(fmt.Sprintf("Cannot register, invalid VIN.\nCar VIN is '%s' and you want to register VIN '%s'", car.Vin, vin))
+	}
 
-    // get all registration proposals
-    proposals, err := t.getRegistrationProposals(stub)
-    if err != nil {
-        return shim.Error("Error reading registration proposal index")
-    }
+	// get all registration proposals
+	proposals, err := t.getRegistrationProposals(stub)
+	if err != nil {
+		return shim.Error("Error reading registration proposal index")
+	}
 
-    // check if there exists a registration proposal for that car
-    if proposals[car.Vin].Car != vin {
-        return shim.Error(fmt.Sprintf("There exists no registration proposal for car with VIN: %s", vin))
-    }
+	// check if there exists a registration proposal for that car
+	if proposals[car.Vin].Car != vin {
+		return shim.Error(fmt.Sprintf("There exists no registration proposal for car with VIN: %s", vin))
+	}
 
-    // create a certificate, approve vin
-    // and update the car in the ledger
-    cert := Certificate { Username: username,
-                          Vin:      vin }
-    car.Certificate = cert
-    carAsBytes, _ := json.Marshal(car)
-    err = stub.PutState(car.Vin, carAsBytes)
-    if err != nil {
-        return shim.Error("Error writing car")
-    }
+	// create a certificate, approve vin
+	// and update the car in the ledger
+	cert := Certificate{Username: username,
+		Vin: vin}
+	car.Certificate = cert
+	carAsBytes, _ := json.Marshal(car)
+	err = stub.PutState(car.Vin, carAsBytes)
+	if err != nil {
+		return shim.Error("Error writing car")
+	}
 
-    // remove the proposal we just registered
-    delete(proposals, car.Vin)
+	// remove the proposal we just registered
+	delete(proposals, car.Vin)
 
-    // save the new proposal index
-    // without the car we just registered
-    proposalsAsBytes, _ := json.Marshal(proposals)
-    err = stub.PutState(registrationProposalIndexStr, proposalsAsBytes)
-    if err != nil {
-        return shim.Error("Error writing proposal index")
-    }
+	// save the new proposal index
+	// without the car we just registered
+	proposalsAsBytes, _ := json.Marshal(proposals)
+	err = stub.PutState(registrationProposalIndexStr, proposalsAsBytes)
+	if err != nil {
+		return shim.Error("Error writing proposal index")
+	}
 
-    fmt.Printf("Successfully registered car created at ts '%d' with VIN '%s'\n", car.CreatedTs, vin)
-    
-    return shim.Success(carAsBytes)
+	fmt.Printf("Successfully registered car created at ts '%d' with VIN '%s'\n", car.CreatedTs, vin)
+
+	return shim.Success(carAsBytes)
 }
 
 /*
@@ -190,61 +188,58 @@ func (t *CarChaincode) register(stub shim.ChaincodeStubInterface, username strin
  * returns the car with numberplate.
  */
 func (t *CarChaincode) confirm(stub shim.ChaincodeStubInterface, username string, args []string) pb.Response {
-    vin := args[0]
-    numberplate := args[1]
+	vin := args[0]
+	numberplate := args[1]
 
-    if vin == "" {
-        return shim.Error("'confirm' expects a non-empty VIN to assign a numberplate")
-    }
+	if vin == "" {
+		return shim.Error("'confirm' expects a non-empty VIN to assign a numberplate")
+	}
 
-    // check numberplate argument
-    if numberplate == "" {
-        return shim.Error("Car numberplate is empty. Please provide a numberplate to confirm your car")
-    }
+	// check numberplate argument
+	if numberplate == "" {
+		return shim.Error("Car numberplate is empty. Please provide a numberplate to confirm your car")
+	}
 
-    // fetch the car from the ledger
-    // this already checks for ownership
-    carResponse := t.readCar(stub, username, vin)
-    car := Car{}
-    err := json.Unmarshal(carResponse.Payload, &car)
-    if err != nil {
-        return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
-    }
+	// fetch the car from the ledger
+	// this already checks for ownership
+	car, err := t.getCar(stub, username, vin)
+	if err != nil {
+		return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
+	}
 
-    // check if car is insured
-    if !IsInsured(&car) {
-        return shim.Error("Car is not insured. Please insure car first before trying to confirm it")
-    }
+	// check if car is insured
+	if !IsInsured(&car) {
+		return shim.Error("Car is not insured. Please insure car first before trying to confirm it")
+	}
 
-    // check if numberplate is already in use
-    carIndex, err := t.getCarIndex(stub)
-    carToCheck := Car{}
-    for carVin, user := range carIndex {
-        // get the full car object with certificate
-        carToCheckResp := t.readCar(stub, user, carVin)
-        err := json.Unmarshal(carToCheckResp.Payload, &carToCheck)
-        if err != nil {
-            return shim.Error("Failed to fetch car with vin '" + carVin + "' from ledger")
-        }
+	// check if numberplate is already in use
+	carIndex, err := t.getCarIndex(stub)
+	carToCheck := Car{}
+	for carVin, user := range carIndex {
+		// get the full car object with certificate
+		carToCheck, err = t.getCar(stub, user, carVin)
+		if err != nil {
+			return shim.Error("Failed to fetch car with vin '" + carVin + "' from ledger")
+		}
 
-        if carToCheck.Certificate.Numberplate == numberplate {
-            return shim.Error("Car numberplate already in use. Please use another one!")
-        }
-    }
+		if carToCheck.Certificate.Numberplate == numberplate {
+			return shim.Error("Car numberplate already in use. Please use another one!")
+		}
+	}
 
-    // assign the numberplate to the car
-    car.Certificate.Numberplate = numberplate
+	// assign the numberplate to the car
+	car.Certificate.Numberplate = numberplate
 
-    // write udpated car back to ledger
-    carAsBytes, _ := json.Marshal(car)
-    err = stub.PutState(vin, carAsBytes)
-    if err != nil {
-        return shim.Error("Error writing car")
-    }
+	// write udpated car back to ledger
+	carAsBytes, _ := json.Marshal(car)
+	err = stub.PutState(vin, carAsBytes)
+	if err != nil {
+		return shim.Error("Error writing car")
+	}
 
-    // car confirmation successfull,
-    // return the car with numberplate
-    return shim.Success(carAsBytes)
+	// car confirmation successfull,
+	// return the car with numberplate
+	return shim.Success(carAsBytes)
 }
 
 /*
@@ -259,77 +254,75 @@ func (t *CarChaincode) confirm(stub shim.ChaincodeStubInterface, username string
  * returns the car.
  */
 func (t *CarChaincode) revoke(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response {
-    if vin == "" {
-        return shim.Error("'revoke' expects a non-empty VIN to do the revocation")
-    }
+	if vin == "" {
+		return shim.Error("'revoke' expects a non-empty VIN to do the revocation")
+	}
 
-    // fetch the car from the ledger
-    // this already checks for ownership
-    carResponse := t.readCar(stub, username, vin)
-    car := Car{}
-    err := json.Unmarshal(carResponse.Payload, &car)
-    if err != nil {
-        return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
-    }
+	// fetch the car from the ledger
+	// this already checks for ownership
+	car, err := t.getCar(stub, username, vin)
+	if err != nil {
+		return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
+	}
 
-    // remove car insurance
-    car.Certificate.Insurer = ""
+	// remove car insurance
+	car.Certificate.Insurer = ""
 
-    // check if car is not anymore insured
-    if IsInsured(&car) {
-        return shim.Error("Whoops... Something went wrong while revoking car. Car is still insured.")
-    }
+	// check if car is not anymore insured
+	if IsInsured(&car) {
+		return shim.Error("Whoops... Something went wrong while revoking car. Car is still insured.")
+	}
 
-    // remove numberplate
-    car.Certificate.Numberplate = ""
+	// remove numberplate
+	car.Certificate.Numberplate = ""
 
-    // check if not confirmed anymore
-    if IsConfirmed(&car) {
-        return shim.Error("Whoops... Something went wrong while revoking car. Car is still confirmed.")
-    }
+	// check if not confirmed anymore
+	if IsConfirmed(&car) {
+		return shim.Error("Whoops... Something went wrong while revoking car. Car is still confirmed.")
+	}
 
-    // write udpated car back to ledger
-    carAsBytes, _ := json.Marshal(car)
-    err = stub.PutState(vin, carAsBytes)
-    if err != nil {
-        return shim.Error("Error writing car")
-    }
+	// write udpated car back to ledger
+	carAsBytes, _ := json.Marshal(car)
+	err = stub.PutState(vin, carAsBytes)
+	if err != nil {
+		return shim.Error("Error writing car")
+	}
 
-    // fetch all revocation proposals
-    response := t.getRevocationProposals(stub)
-    index := make(map[string]string)
-    err = json.Unmarshal(response.Payload, &index)
-    if err != nil {
-        return shim.Error("Failed to fetch revocation proposals")
-    }
+	// fetch all revocation proposals
+	response := t.getRevocationProposals(stub)
+	index := make(map[string]string)
+	err = json.Unmarshal(response.Payload, &index)
+	if err != nil {
+		return shim.Error("Failed to fetch revocation proposals")
+	}
 
-    // remove the revocation proposal if any
-    delete(index, car.Vin)
+	// remove the revocation proposal if any
+	delete(index, car.Vin)
 
-    // save proposals back to ledger
-    indexAsBytes, _ := json.Marshal(index)
-    err = stub.PutState(revocationProposalIndexStr, indexAsBytes)
-    if err != nil {
-        return shim.Error("Error writing revocation proposals")
-    }
+	// save proposals back to ledger
+	indexAsBytes, _ := json.Marshal(index)
+	err = stub.PutState(revocationProposalIndexStr, indexAsBytes)
+	if err != nil {
+		return shim.Error("Error writing revocation proposals")
+	}
 
-    // car revokation successfull,
-    // return the car
-    return shim.Success(carAsBytes)
+	// car revokation successfull,
+	// return the car
+	return shim.Success(carAsBytes)
 }
 
 /*
  * Returns all revocation proposals.
  */
 func (t *CarChaincode) getRevocationProposals(stub shim.ChaincodeStubInterface) pb.Response {
-    response := t.read(stub, revocationProposalIndexStr)
-    index := make(map[string]string)
-    err := json.Unmarshal(response.Payload, &index)
-    if err != nil {
-        return shim.Error("Error reading revocation proposal index")
-    }
+	response := t.read(stub, revocationProposalIndexStr)
+	index := make(map[string]string)
+	err := json.Unmarshal(response.Payload, &index)
+	if err != nil {
+		return shim.Error("Error reading revocation proposal index")
+	}
 
-    return shim.Success(response.Payload)
+	return shim.Success(response.Payload)
 }
 
 /*
@@ -344,49 +337,47 @@ func (t *CarChaincode) getRevocationProposals(stub shim.ChaincodeStubInterface) 
  * returns 'nil'.
  */
 func (t *CarChaincode) revocationProposal(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response {
-    if vin == "" {
-        return shim.Error("'revocationProposal' expects a non-empty VIN to do the revocation")
-    }
+	if vin == "" {
+		return shim.Error("'revocationProposal' expects a non-empty VIN to do the revocation")
+	}
 
-    // fetch the car from the ledger
-    // this already checks for ownership
-    carResponse := t.readCar(stub, username, vin)
-    car := Car{}
-    err := json.Unmarshal(carResponse.Payload, &car)
-    if err != nil {
-        return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
-    }
+	// fetch the car from the ledger
+	// this already checks for ownership
+	car, err := t.getCar(stub, username, vin)
+	if err != nil {
+		return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
+	}
 
-    // check if the car can be revoked
-    if !IsConfirmed(&car) {
-        return shim.Error("You cannot create a revocation proposal for an unconfirmed car.")
-    }
+	// check if the car can be revoked
+	if !IsConfirmed(&car) {
+		return shim.Error("You cannot create a revocation proposal for an unconfirmed car.")
+	}
 
-    // fetch all the revocation proposals
-    response := t.read(stub, revocationProposalIndexStr)
-    index := make(map[string]string)
-    err = json.Unmarshal(response.Payload, &index)
-    if err != nil {
-        return shim.Error("Error parsing revocation proposal index")
-    }
+	// fetch all the revocation proposals
+	response := t.read(stub, revocationProposalIndexStr)
+	index := make(map[string]string)
+	err = json.Unmarshal(response.Payload, &index)
+	if err != nil {
+		return shim.Error("Error parsing revocation proposal index")
+	}
 
-    // check if a proposal to revoke this car already exists
-    if index[vin] == username {
-        return shim.Error("A revocation proposal for that car VIN and user already exists.")
-    }
+	// check if a proposal to revoke this car already exists
+	if index[vin] == username {
+		return shim.Error("A revocation proposal for that car VIN and user already exists.")
+	}
 
-    // save the users request to revok his car
-    // in the revocation proposal index
-    index[vin] = username
+	// save the users request to revok his car
+	// in the revocation proposal index
+	index[vin] = username
 
-    // save index back to ledger
-    indexAsBytes, _ := json.Marshal(index)
-    err = stub.PutState(revocationProposalIndexStr, indexAsBytes)
-    if err != nil {
-        return shim.Error("Error writing revocation proposal index")
-    }
+	// save index back to ledger
+	indexAsBytes, _ := json.Marshal(index)
+	err = stub.PutState(revocationProposalIndexStr, indexAsBytes)
+	if err != nil {
+		return shim.Error("Error writing revocation proposal index")
+	}
 
-    return shim.Success(nil)
+	return shim.Success(nil)
 }
 
 /*
@@ -395,12 +386,12 @@ func (t *CarChaincode) revocationProposal(stub shim.ChaincodeStubInterface, user
  * Returns 'nil' on success.
  */
 func (t *CarChaincode) delete(stub shim.ChaincodeStubInterface, vin string) pb.Response {
-    // Delete the key from the state in ledger
-    err := stub.DelState(vin)
-    if err != nil {
-        return shim.Error("Failed to delete car state")
-    }
+	// Delete the key from the state in ledger
+	err := stub.DelState(vin)
+	if err != nil {
+		return shim.Error("Failed to delete car state")
+	}
 
-    fmt.Printf("Successfully deleted car with VIN: '%s'\n", vin)
-    return shim.Success(nil)
+	fmt.Printf("Successfully deleted car with VIN: '%s'\n", vin)
+	return shim.Success(nil)
 }

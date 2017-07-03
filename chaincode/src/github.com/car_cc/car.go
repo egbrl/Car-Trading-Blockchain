@@ -154,6 +154,38 @@ func (t *CarChaincode) createCar(stub shim.ChaincodeStubInterface, username stri
 }
 
 /*
+ * Reads a car and checks for ownership
+ *
+ * Only the car owner can read the car.
+ *
+ * On success,
+ * returns the car.
+ */
+func (t *CarChaincode) getCar(stub shim.ChaincodeStubInterface, username string, vin string) (Car, error) {
+	if vin == "" {
+		return Car{}, errors.New("'readCar' expects a non-empty VIN to do the look up")
+	}
+
+	// fetch the car from the ledger
+	carResponse := t.read(stub, vin)
+	car := Car{}
+	err := json.Unmarshal(carResponse.Payload, &car)
+	if err != nil {
+		return Car{}, errors.New("Failed to fetch car with vin '" + vin + "' from ledger")
+	}
+
+	// fetch the car index to check if the user owns the car
+	owner, err := t.getOwner(stub, vin)
+	if err != nil {
+		return Car{}, errors.New(err.Error())
+	} else if owner != username {
+		return Car{}, errors.New("Forbidden: this is not your car")
+	}
+
+	return car, nil
+}
+
+/*
  * Reads a car.
  *
  * Only the car owner can read the car.
@@ -336,21 +368,19 @@ func (t *CarChaincode) sell(stub shim.ChaincodeStubInterface, seller string, arg
  */
 func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username string, args []string) pb.Response {
 	vin := args[0]
-	newCarOwner := args[1]
+	newCarOwnerUsername := args[1]
 
 	if vin == "" {
 		return shim.Error("'transfer' expects a non-empty VIN to do the transfer")
 	}
 
-	if newCarOwner == "" {
+	if newCarOwnerUsername == "" {
 		return shim.Error("'transfer' expects a non-empty car receiver username to do the transfer")
 	}
 
 	// fetch the car from the ledger
 	// this already checks for ownership
-	carResponse := t.readCar(stub, username, vin)
-	car := Car{}
-	err := json.Unmarshal(carResponse.Payload, &car)
+	car, err := t.getCar(stub, username, vin)
 	if err != nil {
 		return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
 	}
@@ -362,7 +392,7 @@ func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username strin
 
 	// transfer:
 	// change of ownership in the car certificate
-	car.Certificate.Username = newCarOwner
+	car.Certificate.Username = newCarOwnerUsername
 
 	// write car with udpated certificate back to ledger
 	carAsBytes, _ := json.Marshal(car)
@@ -372,12 +402,12 @@ func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username strin
 	}
 
 	// get the old car owner
-	owner, err := t.getUser(stub, username)
+	oldOwner, err := t.getUser(stub, username)
 	if err != nil {
 		// Temporary fix for tests (ToDo: Fix User creation in tests)
 		fmt.Printf("Error fetching old car owner. Creating new one.")
 		userAsBytes := t.createUser(stub, username)
-		err := json.Unmarshal(userAsBytes.Payload, &owner)
+		err := json.Unmarshal(userAsBytes.Payload, &oldOwner)
 		if err != nil {
 			return shim.Error("Error unmarshaling user payload.")
 		}
@@ -387,7 +417,7 @@ func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username strin
 
 	// go through all his cars
 	// and remove the car we just transferred
-	cars := owner.Cars
+	cars := oldOwner.Cars
 	var newCarList []string
 	for i, carVin := range cars {
 		newCarList = append(newCarList, carVin)
@@ -399,34 +429,28 @@ func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username strin
 
 	// save the new car list without the transferred
 	// car to the old owner
-	owner.Cars = newCarList
+	oldOwner.Cars = newCarList
 
 	// write the old owner back to state
-	userIndex, _ := t.getUserIndex(stub)
-	userIndex[username] = owner
-	userIndexAsBytes, _ := json.Marshal(userIndex)
-	err = stub.PutState(userIndexStr, userIndexAsBytes)
+	err = t.saveUser(stub, oldOwner)
 	if err != nil {
 		return shim.Error("Error writing old owner")
 	}
 
 	// get the receiver of the car
 	// (new car owner)
-	owner, err = t.getUser(stub, newCarOwner)
+	newOwner, err := t.getUser(stub, newCarOwnerUsername)
 	if err != nil {
 		fmt.Println("New car owner (receiver) does not exist. Creating this user.")
-		owner = User{}
-		owner.Name = newCarOwner
+		oldOwner = User{}
+		oldOwner.Name = newCarOwnerUsername
 	}
 
 	// attach the car to the receiver (new car owner)
-	owner.Cars = append(owner.Cars, car.Vin)
+	newOwner.Cars = append(oldOwner.Cars, car.Vin)
 
 	// write back the new owner (reveiver) to state
-	userIndex, _ = t.getUserIndex(stub)
-	userIndex[newCarOwner] = owner
-	userIndexAsBytes, _ = json.Marshal(userIndex)
-	err = stub.PutState(userIndexStr, userIndexAsBytes)
+	err = t.saveUser(stub, newOwner)
 	if err != nil {
 		return shim.Error("Error writing new car owner (receiver)")
 	}
@@ -439,7 +463,7 @@ func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username strin
 
 	// update the car index to represent
 	// the new ownership rights
-	carIndex[car.Vin] = newCarOwner
+	carIndex[car.Vin] = newOwner.Name
 
 	// write the car index back to ledger
 	indexAsBytes, _ := json.Marshal(carIndex)
