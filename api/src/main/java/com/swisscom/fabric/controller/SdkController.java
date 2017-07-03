@@ -222,7 +222,7 @@ public class SdkController extends AbstractRestController {
   }
 
   private static final String FOO_CHAIN_NAME = "foo";
-  private static final String PROJECT_ROOT = "/home/andi/Documents/UZH/Masterprojekt/Hackathon/Car-Trading-Blockchain";
+  private static final String PROJECT_ROOT = "/var/egabb/";
 
   @RequestMapping(value = "/getchain", method = RequestMethod.GET)
   public ErrorInfo getchain() throws InvalidArgumentException, IOException, TransactionException, ProposalException {

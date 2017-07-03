@@ -1,6 +1,17 @@
 version: '2'
 
 services:
+  api:
+    image: egabb/car_cc_api
+    ports:
+      - "8080:8080"
+    command: sh -c 'cd /var/egabb/api; sleep 3; mvn clean install; mvn spring-boot:run'
+    volumes:
+      - ../api/:/var/egabb/api
+      - ../fixtures/:/var/egabb/fixtures
+      - ../chaincode/:/var/egabb/chaincode
+    container_name: car_cc_api
+
   ca0:
     image: hyperledger/fabric-ca${IMAGE_TAG_FABRIC_CA}
     environment:
