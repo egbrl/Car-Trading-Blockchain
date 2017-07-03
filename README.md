@@ -32,9 +32,9 @@ To run all tests:
 local$    go test
 ```
 
-Or to run only some tests (car tests in this case):
+Or to run only some tests (TestTransferCar test in this case):
 ```
-local$    go test -run car
+local$    go test -run TestTransferCar
 ```
 
 ## Run CC in Dockers
