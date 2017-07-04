@@ -28,6 +28,18 @@ To test the car API (install & instantiate the cc) execute:
 bash fixtures/instantiate_car_cc.sh
 ```
 
+## Create Cars with the REST API
+You can also try to create a car now with the rest api:
+```
+curl http://127.0.0.1:8080/rest/createCar;
+```
+
+To check out your newly created car, log into one of the docker containers of `org1` (either `peer0` or `peer1`) and query the test car:
+```
+local$           docker exec -it peer0.org1.example.com bash
+root@peer0.org1# peer chaincode invoke -n car_cc_go -C foo -c '{"Args":["readCar", "test_user1", "garage", "WVW ZZZ 6RZ HY26 0780"]}'
+```
+
 If you encounter problems, try a `docker rm $(docker ps -aq)` to remove all containers from time to time.
 
 ## CC Development
