@@ -48,8 +48,7 @@
 
             <div class="inner cover">
 
-                <h1>User Login</h1>
-                <p style="color: orange">Demo user: user / password</p>
+                <h1 style="margin-bottom: 20px;">User Login</h1>
                 <p th:if="${loginError}" style="color: red">Wrong user or password</p>
 
                 <form class="form-horizontal" th:action="@{/login}" method="post">

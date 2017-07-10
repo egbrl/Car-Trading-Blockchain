@@ -9,29 +9,32 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-	@Override
-	protected void configure(HttpSecurity http) throws Exception {
-		http
-				.authorizeRequests()
-					.antMatchers("/css/**", "/index").permitAll()
-					.antMatchers("/user/**").hasRole("USER")
-					.and()
-				.formLogin().loginPage("/login").failureUrl("/login-error");
-	}
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+                .authorizeRequests()
+                .antMatchers("/css/**", "/index").permitAll()
+                .antMatchers("/user/**").hasRole("USER")
+                .antMatchers("/garage/**").hasRole("GARAGE")
+                .antMatchers("/insurance/**").hasRole("INSURANCE")
+                .antMatchers("/dot/**").hasRole("DOT")
+                .and()
+                .formLogin().loginPage("/login").failureUrl("/login-error");
+    }
 
-	@Autowired
-	public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-		auth
-			.inMemoryAuthentication()
-				.withUser("user").password("password").roles("USER");
-		auth
-				.inMemoryAuthentication()
-				.withUser("garage").password("password").roles("GARAGE");
-		auth
-				.inMemoryAuthentication()
-				.withUser("insurance").password("password").roles("INSURANCE");
-		auth
-				.inMemoryAuthentication()
-				.withUser("dot").password("password").roles("DOT");
-	}
+    @Autowired
+    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+        auth
+                .inMemoryAuthentication()
+                .withUser("user").password("password").roles("USER");
+        auth
+                .inMemoryAuthentication()
+                .withUser("garage").password("password").roles("GARAGE");
+        auth
+                .inMemoryAuthentication()
+                .withUser("insurance").password("password").roles("INSURANCE");
+        auth
+                .inMemoryAuthentication()
+                .withUser("dot").password("password").roles("DOT");
+    }
 }
