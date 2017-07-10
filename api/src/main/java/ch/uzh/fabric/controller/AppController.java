@@ -38,6 +38,10 @@ public class AppController {
 	private static final String CHAIN_CODE_PATH = "github.com/car_cc";
 	private static final String CHAIN_CODE_VERSION = "1";
 
+	private static final String TEST_USER = "test_user1";
+	private static final String TEST_ROLE = "garage";
+	private static final String TEST_VIN = "WVW ZZZ 6RZ HY26 0780";
+
 	private Collection<SampleOrg> testSampleOrgs;
 	private SampleStore sampleStore;
 	private HFClient client;
@@ -434,6 +438,55 @@ public class AppController {
 	public String index() {
 		System.out.println(chain.toString());
 		return "index";
+	}
+
+	@RequestMapping("/car/create")
+	public String createCar() {
+		ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
+				.setVersion(CHAIN_CODE_VERSION)
+				.setPath(CHAIN_CODE_PATH).build();
+
+		try {
+			Collection<ProposalResponse> successful = new LinkedList<>();
+			Collection<ProposalResponse> failed = new LinkedList<>();
+
+			TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
+			transactionProposalRequest.setChaincodeID(chainCodeID);
+			transactionProposalRequest.setFcn("create");
+
+			transactionProposalRequest.setArgs(new String[]{TEST_USER, TEST_ROLE, "{ \"vin\": \"" + TEST_VIN + "\" }", ""});
+			out("sending transaction proposal to 'create' a car to all peers");
+
+			Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
+			for (ProposalResponse response : invokePropResp) {
+				if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
+					out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
+					successful.add(response);
+				} else {
+					failed.add(response);
+				}
+			}
+			out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
+					invokePropResp.size(), successful.size(), failed.size());
+			if (failed.size() > 0) {
+				throw new ProposalException("Not enough endorsers for invoke");
+
+			}
+			out("Successfully received transaction proposal responses.");
+
+			out("Sending chain code transaction to orderer");
+			chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+		} catch (Exception e) {
+			out(e.toString());
+			e.printStackTrace();
+			ErrorInfo result = new ErrorInfo(500, "", "CompletionException " + e.getMessage());
+			//return result;
+			return "user/index";
+		}
+
+		ErrorInfo result = new ErrorInfo(0, "", "OK");
+		//return result;
+		return "user/index";
 	}
 
 	@RequestMapping("/user/index")
