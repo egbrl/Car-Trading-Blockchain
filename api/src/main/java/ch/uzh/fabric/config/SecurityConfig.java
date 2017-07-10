@@ -15,6 +15,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 				.authorizeRequests()
 					.antMatchers("/css/**", "/index").permitAll()
 					.antMatchers("/user/**").hasRole("USER")
+					.antMatchers("/car/create").hasRole("GARAGE")
+
 					.and()
 				.formLogin().loginPage("/login").failureUrl("/login-error");
 	}
