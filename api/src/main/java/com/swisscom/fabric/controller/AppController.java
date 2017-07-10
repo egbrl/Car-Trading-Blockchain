@@ -28,7 +28,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Controller
 public class AppController {
-	private static final Logger LOGGER = LoggerFactory.getLogger(SdkController.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(AppController.class);
 	private static final TestConfig TESTCONFIG = TestConfig.getConfig();
 	private static final String TEST_ADMIN_NAME = "admin";
 	private static final String TESTUSER_1_NAME = "user1";
