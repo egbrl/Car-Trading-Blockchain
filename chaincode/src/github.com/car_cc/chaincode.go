@@ -215,7 +215,7 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			// only the DOT is allowed to delete cars
 			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to delete cars.", role))
 		} else {
-			return t.delete(stub, args[0])
+			return t.deleteCar(stub, args[0])
 		}
 
 	case "readRegistrationProposals":
@@ -233,7 +233,7 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			// only the DOT is allowed to register new cars
 			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to register cars.", role))
 		} else {
-			return t.register(stub, username, args[0])
+			return t.registerCar(stub, username, args[0])
 		}
 
 	case "confirm":
@@ -243,7 +243,7 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			// only the DOT is allowed to confirm cars
 			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to confirm cars.", role))
 		} else {
-			return t.confirm(stub, username, args)
+			return t.confirmCar(stub, username, args)
 		}
 
 	case "getRevocationProposals":

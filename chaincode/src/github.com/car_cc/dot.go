@@ -115,7 +115,7 @@ func (t *CarChaincode) getRegistrationProposal(stub shim.ChaincodeStubInterface,
  * and a car VIN are equal and that a certificate
  * was issued by the DOT at least once.
  *
- * To register a car, a RegistrationProposal needs to be present.
+ * To registerCar a car, a RegistrationProposal needs to be present.
  * This proposal is removed/deleted after successfull registration.
  * This is not consistent with reality, but serves the purpose
  * for now, because the Form 13.20 A (RegistrationProposal)
@@ -126,7 +126,7 @@ func (t *CarChaincode) getRegistrationProposal(stub shim.ChaincodeStubInterface,
  * On success,
  * returns the car with certificate.
  */
-func (t *CarChaincode) register(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response {
+func (t *CarChaincode) registerCar(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response {
 	// reading the car already checks that the user
 	// is the actual owner of the car
 	car, err := t.getCar(stub, username, vin)
@@ -187,7 +187,7 @@ func (t *CarChaincode) register(stub shim.ChaincodeStubInterface, username strin
  * On success,
  * returns the car with numberplate.
  */
-func (t *CarChaincode) confirm(stub shim.ChaincodeStubInterface, username string, args []string) pb.Response {
+func (t *CarChaincode) confirmCar(stub shim.ChaincodeStubInterface, username string, args []string) pb.Response {
 	vin := args[0]
 	numberplate := args[1]
 
@@ -385,9 +385,20 @@ func (t *CarChaincode) revocationProposal(stub shim.ChaincodeStubInterface, user
  *
  * Returns 'nil' on success.
  */
-func (t *CarChaincode) delete(stub shim.ChaincodeStubInterface, vin string) pb.Response {
+func (t *CarChaincode) deleteCar(stub shim.ChaincodeStubInterface, vin string) pb.Response {
+	//getting car index
+	carIndex, err := t.getCarIndex(stub)
+	if err != nil {
+		return shim.Error("Could not get car index")
+	}
+	_, carExisting := carIndex[vin]
+	if !carExisting {
+		return shim.Error("Car does not exist in Car Index!")
+	}
+	delete(carIndex, vin)
+
 	// Delete the key from the state in ledger
-	err := stub.DelState(vin)
+	err = stub.DelState(vin)
 	if err != nil {
 		return shim.Error("Failed to delete car state")
 	}
