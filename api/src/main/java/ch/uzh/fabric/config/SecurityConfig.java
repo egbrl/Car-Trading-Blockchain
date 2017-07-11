@@ -9,6 +9,9 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
+    public static final String BOOTSTRAP_GARAGE_USER = "garage";
+    public static final String BOOTSTRAP_GARAGE_ROLE = "garage";
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
@@ -29,7 +32,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .withUser("user").password("password").roles("USER");
         auth
                 .inMemoryAuthentication()
-                .withUser("garage").password("password").roles("GARAGE");
+                .withUser(BOOTSTRAP_GARAGE_USER).password("password").roles(BOOTSTRAP_GARAGE_ROLE);
         auth
                 .inMemoryAuthentication()
                 .withUser("insurance").password("password").roles("INSURANCE");

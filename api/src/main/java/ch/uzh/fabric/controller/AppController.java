@@ -1,6 +1,9 @@
 package ch.uzh.fabric.controller;
 
 import ch.uzh.fabric.config.*;
+import ch.uzh.fabric.model.CarData;
+import ch.uzh.fabric.model.ProposalData;
+import com.google.gson.Gson;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.*;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
@@ -9,8 +12,10 @@ import org.hyperledger.fabric_ca.sdk.RegistrationRequest;
 import org.hyperledger.fabric_ca.sdk.exception.EnrollmentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.annotation.PostConstruct;
@@ -18,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Paths;
+import java.security.Principal;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -38,16 +44,14 @@ public class AppController {
 	private static final String CHAIN_CODE_PATH = "github.com/car_cc";
 	private static final String CHAIN_CODE_VERSION = "1";
 
-	private static final String TEST_USER = "test_user1";
-	private static final String TEST_ROLE = "garage";
-	private static final String TEST_VIN = "WVW ZZZ 6RZ HY26 0780";
+	private static final String TEST_VIN = "WVWZZZ6RZHY260780";
 
 	private Collection<SampleOrg> testSampleOrgs;
 	private SampleStore sampleStore;
 	private HFClient client;
 	private Chain chain;
 
-
+	private Gson g = new Gson();
 
 
 	/*
@@ -62,12 +66,26 @@ public class AppController {
 
 	@RequestMapping("/index")
 	public String index() {
-		System.out.println(chain.toString());
 		return "index";
 	}
 
 	@RequestMapping("/car/create")
-	public String createCar() {
+	public String createCar(Authentication authentication, @RequestBody CarData carData, @RequestBody ProposalData proposalData) {
+		String username;
+		String garageRole;
+
+		try {
+			// Authenticated web app request
+			username = authentication.getName();
+			garageRole = authentication.getAuthorities().toArray()[0].toString();
+			out("read username and role from web request");
+		} catch (NullPointerException e) {
+			// Can only be the bootstrap script
+			username = SecurityConfig.BOOTSTRAP_GARAGE_USER;
+			garageRole = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
+			out("read username and role from bootstraped code values");
+		}
+
 		ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
 				.setVersion(CHAIN_CODE_VERSION)
 				.setPath(CHAIN_CODE_PATH).build();
@@ -80,7 +98,7 @@ public class AppController {
 			transactionProposalRequest.setChaincodeID(chainCodeID);
 			transactionProposalRequest.setFcn("create");
 
-			transactionProposalRequest.setArgs(new String[]{TEST_USER, TEST_ROLE, "{ \"vin\": \"" + TEST_VIN + "\" }", ""});
+			transactionProposalRequest.setArgs(new String[]{username, garageRole, g.toJson(carData), g.toJson(proposalData)});
 			out("sending transaction proposal to 'create' a car to all peers");
 
 			Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
@@ -161,6 +179,9 @@ public class AppController {
 		constructchain();
 		installchaincode();
 		instantiatechaincode();
+
+		// Create first garage user car
+		createCar(null, new CarData(TEST_VIN), new ProposalData("4+1",null,null,200));
 
 		System.out.println("Hyperledger network is ready to use");
 	}
