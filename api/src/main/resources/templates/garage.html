@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <title>BLANK WebApp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <link rel="stylesheet" href="../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
+    <link rel="stylesheet" href="../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
+</head>
+<body>
+<div class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <a href="../" class="navbar-brand">BLANK WebApp</a>
+            <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <div class="navbar-collapse collapse" id="navbar-main">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a href="#" th:href="@{/garage}" >My Cars</a>
+                </li>
+                <li>
+                    <a href="#">Import Car</a>
+                </li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="themes"><strong><span
+                            sec:authentication="name">Username</span></strong>&nbsp;<span class="caret"></span></a>
+                    <ul class="dropdown-menu" aria-labelledby="themes">
+                        <li><a href="#">Account</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#">Logout</a></li>
+
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+<div class="container">
+
+    <div class="page-header" style="border-bottom: none">
+        <div class="row">
+            <div>
+                <p class="pull-right">Your role: <span sec:authentication="principal.authorities">ROLE</span></p>
+                <h1>My Cars</h1>
+            </div>
+        </div>
+    </div>
+    <div>
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Type</th>
+                <th>Brand</th>
+                <th>Color</th>
+                <th>VIN</th>
+                <th>Numberplate</th>
+                <th>Insurer</th>
+                <th>Registration</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <th scope="row">1</th>
+                <td>M3</td>
+                <td>BMW</td>
+                <td>black</td>
+                <td>WVWZZZ6RZHY260780</td>
+                <td>ZH 1234</td>
+                <td>AXA Winterthur</td>
+                <td>Yes</td>
+                <td><button type="button" class="btn btn-danger">revoke</button></td>
+            </tr>
+            <tr>
+                <th scope="row">2</th>
+                <td>Q7</td>
+                <td>Audi</td>
+                <td>blue</td>
+                <td>IINOB6RZHY260780</td>
+                <td><button type="button" class="btn btn-success">confirm Car</button></td>
+                <td>AXA Winterthur</td>
+                <td>Yes</td>
+                <td><button type="button" class="btn btn-danger disabled">revoke</button></td>
+            </tr>
+            <tr>
+                <th scope="row">3</th>
+                <td></td>
+                <td></td>
+                <td>black</td>
+                <td>WVWZZZ6RZHY260780</td>
+                <td><button type="button" class="btn btn-success disabled">confirm car</button></td>
+                <td><button type="button" class="btn btn-success disabled">insure car</button></td>
+                <td><button type="button" class="btn btn-success disabled">register car</button></td>
+                <td><button type="button" class="btn btn-danger disabled">revoke</button></td>
+            </tr>
+            <tr>
+                <th scope="row">4</th>
+                <td>C350</td>
+                <td>Mercedes</td>
+                <td>white</td>
+                <td>WVWZZZ6RZHY260780</td>
+                <td><button type="button" class="btn btn-success disabled">confirm car</button></td>
+                <td><button type="button" class="btn btn-success">insure car</button></td>
+                <td>Yes</td>
+                <td><button type="button" class="btn btn-danger disabled">revoke</button></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <footer>
+        <div class="row">
+            <div class="col-lg-12">
+
+                <ul class="list-unstyled">
+                    <li class="pull-right"><a href="#top">Back to top</a></li>
+                </ul>
+                <p>&copy; by BLANK 2017 :: Made by 4 Students at <a href="http://www.ifi.uzh.ch/en/imrg.html"
+                                                                    rel="nofollow" target="_blank">IMRG</a> of the <a
+                        href="http://www.uzh.ch" target="_blank" rel="nofollow">University of Zurich</a>.</p>
+                <p>Based on <a href="https://hyperledger-fabric.readthedocs.io/en/latest/" rel="nofollow"
+                               target="_blank">Hyperledger Fabric</a> and <a
+                        href="https://projects.spring.io/spring-framework/" rel="nofollow" target="_blank">Spring
+                    Framework</a>.</p>
+
+            </div>
+        </div>
+
+    </footer>
+
+
+</div>
+
+
+<script src="../static/js/jquery-1.10.2.min.js" th:src="@{/js/jquery-1.10.2.min.js}"></script>
+<script src="../static/js/bootstrap.min.js" th:src="@{/js/bootstrap.min.js}"></script>
+<script src="../static/js/custom.js" th:src="@{/js/custom.js}"></script>
+</body>
+</html>
