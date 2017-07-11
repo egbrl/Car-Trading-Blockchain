@@ -5,8 +5,8 @@
     <title>BLANK WebApp</title>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <link rel="stylesheet" href="../static/css/bootstrap.css" media="screen"/>
-    <link rel="stylesheet" href="../static/css/custom.min.css"/>
+    <link rel="stylesheet" href="../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
+    <link rel="stylesheet" href="../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
 </head>
 <body>
 <div class="navbar navbar-default navbar-fixed-top">
@@ -59,7 +59,15 @@
             </ul>
 
             <ul class="nav navbar-nav navbar-right">
-                <li><a href="#" target="_blank">User XY</a></li>
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="themes"><strong><span sec:authentication="name">Username</span></strong>&nbsp;<span class="caret"></span></a>
+                    <ul class="dropdown-menu" aria-labelledby="themes">
+                        <li><a href="#">Account</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#">Logout</a></li>
+
+                    </ul>
+                </li>
             </ul>
         </div>
     </div>
@@ -70,7 +78,8 @@
 
     <div class="page-header" id="banner">
         <div class="row">
-            <div class="col-lg-8 col-md-7 col-sm-6">
+            <div>
+                <p class="pull-right">Your role: <span sec:authentication="principal.authorities">ROLE</span></p>
                 <h1>Start BLANK</h1>
                 <p class="lead">Blockchain Leveraged Automotive N... K...</p>
             </div>
@@ -97,7 +106,8 @@
 </div>
 
 
-<script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
-<script src="../static/js/bootstrap.min.js"></script>
-<script src="../static/js/custom.js"></script>
+<script src="../static/js/jquery-1.10.2.min.js" th:src="@{/js/jquery-1.10.2.min.js}"></script>
+<script src="../static/js/bootstrap.min.js" th:src="@{/js/bootstrap.min.js}"></script>
+<script src="../static/js/custom.js" th:src="@{/js/custom.js}"></script>
+</body>
 </html>

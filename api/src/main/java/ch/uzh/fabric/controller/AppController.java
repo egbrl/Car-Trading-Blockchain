@@ -505,9 +505,9 @@ public class AppController {
 		return "login";
 	}
 
-	@RequestMapping("/chain")
-	public String chain(){
-		return chain.toString();
+	@RequestMapping("/test")
+	public String test(){
+		return "basic-template";
 	}
 
 
