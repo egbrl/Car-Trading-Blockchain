@@ -1,9 +1,7 @@
 package ch.uzh.fabric.controller;
 
 import ch.uzh.fabric.config.*;
-import ch.uzh.fabric.model.Car;
-import ch.uzh.fabric.model.CarData;
-import ch.uzh.fabric.model.ProposalData;
+import ch.uzh.fabric.model.*;
 import ch.uzh.fabric.model.User;
 import com.google.gson.*;
 import org.hyperledger.fabric.sdk.*;
@@ -163,7 +161,7 @@ public class AppController {
 	}
 
 	@RequestMapping("/car/create")
-	public String createCar(Authentication authentication, @RequestBody CarData carData, @RequestBody ProposalData proposalData) {
+	public String createCar(Authentication authentication, @RequestBody Car carData, @RequestBody ProposalData proposalData) {
 		String username;
 		String garageRole;
 
@@ -178,9 +176,6 @@ public class AppController {
 			garageRole = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
 			out("read username and role from bootstraped code values");
 		}
-
-		out(username);
-		out(garageRole);
 
 		ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
 				.setVersion(CHAIN_CODE_VERSION)
@@ -291,7 +286,21 @@ public class AppController {
 				.registerTypeAdapter(Date.class, deser).create();
 
 		// Create first garage user car
-		createCar(null, new CarData(TEST_VIN), new ProposalData("4+1",null,null,200));
+		createCar(null, new Car(
+				new Certificate(
+						null,
+						null,
+						null,
+						null,
+						"white",
+						"C350",
+						"Mercedes"), null, TEST_VIN),
+				new ProposalData(
+						"4+1",
+						null,
+						null,
+						200)
+		);
 
 		System.out.println("Hyperledger network is ready to use");
 	}

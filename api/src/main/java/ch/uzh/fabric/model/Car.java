@@ -5,12 +5,12 @@ import java.util.Date;
 
 public class Car {
     private Certificate certificate;
-    private Date created_ts;
+    private Date createdTs;
     private String vin;
 
-    public Car(Certificate certificate, Date created_ts, String vin) {
+    public Car(Certificate certificate, Date createdTs, String vin) {
         this.certificate = certificate;
-        this.created_ts = created_ts;
+        this.createdTs = createdTs;
         this.vin = vin;
     }
 
@@ -19,7 +19,7 @@ public class Car {
     }
 
     public Date getCreated_ts() {
-        return created_ts;
+        return createdTs;
     }
 
     public String getVin() {
@@ -31,10 +31,19 @@ public class Car {
     }
 
     public void setCreated_ts(Date created_ts) {
-        this.created_ts = created_ts;
+        this.createdTs = created_ts;
     }
 
     public void setVin(String vin) {
         this.vin = vin;
     }
+
+    public boolean isConfirmed() {
+        return !this.certificate.getVin().isEmpty();
+    }
+
+    public boolean isRegistered() {
+        return !this.certificate.getNumberplate().isEmpty();
+    }
+
 }

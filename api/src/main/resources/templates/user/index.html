@@ -4,7 +4,7 @@
     <meta charset="utf-8"/>
     <title>BLANK WebApp</title>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <link rel="stylesheet" href="../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
     <link rel="stylesheet" href="../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
 </head>
@@ -21,46 +21,18 @@
         </div>
         <div class="navbar-collapse collapse" id="navbar-main">
             <ul class="nav navbar-nav">
-                <li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="themes">Themes <span class="caret"></span></a>
-                    <ul class="dropdown-menu" aria-labelledby="themes">
-                        <li><a href="#">Default</a></li>
-                        <li class="divider"></li>
-                        <li><a href="#">Cerulean</a></li>
-                        <li><a href="#">Cosmo</a></li>
-                        <li><a href="#">Cyborg</a></li>
-                        <li><a href="#">Darkly</a></li>
-                        <li><a href="#">Flatly</a></li>
-                        <li><a href="#">Journal</a></li>
-                        <li><a href="#">Lumen</a></li>
-                    </ul>
+                <li class="active">
+                    <a href="#" th:href="@{/garage}" >My Cars</a>
                 </li>
                 <li>
-                    <a href="#">Help</a>
-                </li>
-                <li>
-                    <a href="#">Blog</a>
-                </li>
-                <li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="download">Slate <span class="caret"></span></a>
-                    <ul class="dropdown-menu" aria-labelledby="download">
-                        <li><a href="#">Open Sandbox</a></li>
-                        <li class="divider"></li>
-                        <li><a href="#">bootstrap.min.css</a></li>
-                        <li><a href="#">bootstrap.css</a></li>
-                        <li class="divider"></li>
-                        <li><a href="#">variables.less</a></li>
-                        <li><a href="#">bootswatch.less</a></li>
-                        <li class="divider"></li>
-                        <li><a href="#">_variables.scss</a></li>
-                        <li><a href="#">_bootswatch.scss</a></li>
-                    </ul>
+                    <a href="#">Import Car</a>
                 </li>
             </ul>
 
             <ul class="nav navbar-nav navbar-right">
                 <li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="themes"><strong><span sec:authentication="name">Username</span></strong>&nbsp;<span class="caret"></span></a>
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="themes"><strong><span
+                            sec:authentication="name">Username</span></strong>&nbsp;<span class="caret"></span></a>
                     <ul class="dropdown-menu" aria-labelledby="themes">
                         <li><a href="#">Account</a></li>
                         <li class="divider"></li>
@@ -76,29 +48,45 @@
 
 <div class="container">
 
-    <div class="page-header" id="banner">
+    <div class="page-header" style="border-bottom: none">
         <div class="row">
             <div>
                 <p class="pull-right">Your role: <span sec:authentication="principal.authorities">ROLE</span></p>
-                <h1>Cars</h1>
-                <table>
-                    <tr>
-                        <th>VIN</th>
-                        <th>Created At</th>
-                        <th>Registered</th>
-                        <th>Confirmed</th>
-                    </tr>
-                    <tr th:each="car : ${cars}">
-                        <td th:text="${car.vin}"></td>
-                        <td th:text="${car.created_ts}"></td>
-                        <td th:text="${car.certificate.vin.isEmpty()}"></td>
-                        <td th:text="${car.certificate.numberplate.isEmpty()}"></td>
-                    </tr>
-                </table>
+                <h1>My Cars</h1>
             </div>
         </div>
     </div>
+    <div>
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Type</th>
+                <th>Brand</th>
+                <th>Color</th>
+                <th>VIN</th>
+                <th>Numberplate</th>
+                <th>Insurer</th>
+                <th>Registration</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="car,iterStat : ${cars}">
+                <th th:text="${iterStat.count}" scope="row"></th>
+                <td th:text="${car.certificate.type}">M3</td>
+                <td th:text="${car.certificate.brand}">BMW</td>
+                <td th:text="${car.certificate.color}">black</td>
+                <td th:text="${car.vin}">WVWZZZ6RZHY260780</td>
+                <td th:text="${car.certificate.numberplate}">ZH 1234</td>
+                <td th:text="${car.certificate.insurer}">AXA Winterthur</td>
+                <td th:text="${car.isRegistered()}">Yes</td>
+                <td><button type="button" class="btn btn-danger">revoke</button></td>
+            </tr>
 
+            </tbody>
+        </table>
+    </div>
 
     <footer>
         <div class="row">
@@ -107,8 +95,13 @@
                 <ul class="list-unstyled">
                     <li class="pull-right"><a href="#top">Back to top</a></li>
                 </ul>
-                <p>&copy; by BLANK 2017 :: Made by 4 Students at <a href="http://www.ifi.uzh.ch/en/imrg.html" rel="nofollow" target="_blank">IMRG</a> of the <a href="http://www.uzh.ch" target="_blank" rel="nofollow">University of Zurich</a>.</p>
-                <p>Based on <a href="https://hyperledger-fabric.readthedocs.io/en/latest/" rel="nofollow" target="_blank">Hyperledger Fabric</a> and <a href="https://projects.spring.io/spring-framework/" rel="nofollow" target="_blank">Spring Framework</a>.</p>
+                <p>&copy; by BLANK 2017 :: Made by 4 Students at <a href="http://www.ifi.uzh.ch/en/imrg.html"
+                                                                    rel="nofollow" target="_blank">IMRG</a> of the <a
+                        href="http://www.uzh.ch" target="_blank" rel="nofollow">University of Zurich</a>.</p>
+                <p>Based on <a href="https://hyperledger-fabric.readthedocs.io/en/latest/" rel="nofollow"
+                               target="_blank">Hyperledger Fabric</a> and <a
+                        href="https://projects.spring.io/spring-framework/" rel="nofollow" target="_blank">Spring
+                    Framework</a>.</p>
 
             </div>
         </div>
