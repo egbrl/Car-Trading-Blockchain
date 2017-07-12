@@ -1,9 +1,11 @@
 package ch.uzh.fabric.controller;
 
 import ch.uzh.fabric.config.*;
+import ch.uzh.fabric.model.Car;
 import ch.uzh.fabric.model.CarData;
 import ch.uzh.fabric.model.ProposalData;
-import com.google.gson.Gson;
+import ch.uzh.fabric.model.User;
+import com.google.gson.*;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.*;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
@@ -21,10 +23,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.*;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -51,7 +55,23 @@ public class AppController {
 	private HFClient client;
 	private Chain chain;
 
-	private Gson g = new Gson();
+	private JsonSerializer<Date> ser = new JsonSerializer<Date>() {
+		@Override
+		public JsonElement serialize(Date src, Type typeOfSrc, JsonSerializationContext
+				context) {
+			return src == null ? null : new JsonPrimitive(src.getTime());
+		}
+	};
+
+	private JsonDeserializer<Date> deser = new JsonDeserializer<Date>() {
+		@Override
+		public Date deserialize(JsonElement json, Type typeOfT,
+								JsonDeserializationContext context) throws JsonParseException {
+			return json == null ? null : new Date(json.getAsLong());
+		}
+	};
+
+	Gson g = null;
 
 
 	/*
@@ -60,13 +80,86 @@ public class AppController {
 	 */
 
 	@RequestMapping("/")
-	public String root() {
-		return "redirect:/login";
+	public String root(Authentication authentication) {
+		try {
+			authentication.isAuthenticated();
+			return "redirect:/index";
+		} catch (Exception e) {
+			return "redirect:/login";
+		}
 	}
 
 	@RequestMapping("/index")
-	public String index() {
-		return "index";
+	public String index(Authentication authentication, Model model) {
+		String username = authentication.getName();
+		String role = authentication.getAuthorities().toArray()[0].toString();
+
+		ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
+				.setVersion(CHAIN_CODE_VERSION)
+				.setPath(CHAIN_CODE_PATH).build();
+
+		QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
+		queryByChaincodeRequest.setArgs(new String[]{username, role});
+		queryByChaincodeRequest.setFcn("readUser");
+		queryByChaincodeRequest.setChaincodeID(chainCodeID);
+
+		Collection<ProposalResponse> queryProposals;
+
+		try {
+			queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
+		} catch (InvalidArgumentException | ProposalException e) {
+			throw new CompletionException(e);
+		}
+
+		User user = null;
+		HashMap<String, Car> carList = new HashMap<>();
+		for (ProposalResponse proposalResponse : queryProposals) {
+			if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
+				ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
+						+ ". Messages: " + proposalResponse.getMessage()
+						+ ". Was verified : " + proposalResponse.isVerified());
+				out(result.errorMessage.toString());
+			} else {
+				String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
+				user = g.fromJson(payload, User.class);
+				for (String vin : user.getCars()) {
+					carList.put(vin, new Car(null, null, vin));
+				}
+
+				out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
+			}
+		}
+
+		for (Car car : carList.values()) {
+			QueryByChaincodeRequest carRequest = client.newQueryProposalRequest();
+			carRequest.setArgs(new String[]{username, role, car.getVin()});
+			carRequest.setFcn("readCar");
+			carRequest.setChaincodeID(chainCodeID);
+
+			Collection<ProposalResponse> carQueryProps;
+			try {
+				carQueryProps = chain.queryByChaincode(carRequest);
+			} catch (InvalidArgumentException | ProposalException e) {
+				throw new CompletionException(e);
+			}
+
+			for (ProposalResponse proposalResponse : carQueryProps) {
+				if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
+					ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
+							+ ". Messages: " + proposalResponse.getMessage()
+							+ ". Was verified : " + proposalResponse.isVerified());
+					out(result.errorMessage.toString());
+				} else {
+					String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
+					car = g.fromJson(payload, Car.class);
+					carList.replace(car.getVin(), car);
+					out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
+				}
+			}
+		}
+
+		model.addAttribute("cars", carList.values());
+		return "user/index";
 	}
 
 	@RequestMapping("/car/create")
@@ -85,6 +178,9 @@ public class AppController {
 			garageRole = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
 			out("read username and role from bootstraped code values");
 		}
+
+		out(username);
+		out(garageRole);
 
 		ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
 				.setVersion(CHAIN_CODE_VERSION)
@@ -173,12 +269,17 @@ public class AppController {
 		initSampleStore();
 		setupclient();
 		getconfig();
+
 		enrolladmin();
 		enrollusers();
 		enrollorgadmin();
 		constructchain();
 		installchaincode();
 		instantiatechaincode();
+
+		g = new GsonBuilder()
+				.registerTypeAdapter(Date.class, ser)
+				.registerTypeAdapter(Date.class, deser).create();
 
 		// Create first garage user car
 		createCar(null, new CarData(TEST_VIN), new ProposalData("4+1",null,null,200));

@@ -121,6 +121,9 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return t.readCar(stub, username, args[0])
 
 	// USER FUNCTIONS
+	case "readUser":
+		return t.readUser(stub, username)
+
 	case "createUser":
 		if len(args) != 0 {
 			return shim.Error("'creatUser' expects a username to create a new user")

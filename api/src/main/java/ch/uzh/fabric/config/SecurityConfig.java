@@ -16,11 +16,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .antMatchers("/css/**", "/index").permitAll()
-                .antMatchers("/user/**").hasRole("USER")
-                .antMatchers("/garage/**").hasRole("GARAGE")
-                .antMatchers("/insurance/**").hasRole("INSURANCE")
-                .antMatchers("/dot/**").hasRole("DOT")
+                .antMatchers("/css/**").permitAll()
+                .antMatchers("/user/**").hasRole("user")
+                .antMatchers("/garage/**", "/index").hasRole(BOOTSTRAP_GARAGE_ROLE)
+                .antMatchers("/insurance/**").hasRole("insurance")
+                .antMatchers("/dot/**").hasRole("dot")
                 .and()
                 .formLogin().loginPage("/login").failureUrl("/login-error");
     }
@@ -29,15 +29,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
         auth
                 .inMemoryAuthentication()
-                .withUser("user").password("password").roles("USER");
+                .withUser("user").password("password").roles("user");
         auth
                 .inMemoryAuthentication()
                 .withUser(BOOTSTRAP_GARAGE_USER).password("password").roles(BOOTSTRAP_GARAGE_ROLE);
         auth
                 .inMemoryAuthentication()
-                .withUser("insurance").password("password").roles("INSURANCE");
+                .withUser("insurance").password("password").roles("insurance");
         auth
                 .inMemoryAuthentication()
-                .withUser("dot").password("password").roles("DOT");
+                .withUser("dot").password("password").roles("dot");
     }
 }

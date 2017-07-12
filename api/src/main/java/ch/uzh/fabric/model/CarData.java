@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class CarData {
 
     private String vin;
+    private String createdTs;
 
     public CarData(String vin) {
         this.vin = vin;

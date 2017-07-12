@@ -1,13 +1,126 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
-    <head>
-        <title>Hello Spring Security</title>
-        <meta charset="utf-8" />
-        <link rel="stylesheet" href="/css/main.css" th:href="@{/css/main.css}" />
-    </head>
-    <body>
-        <div th:substituteby="index::logout"></div>
-        <h1>This is a secured page!</h1>
-        <p><a href="/index" th:href="@{/index}">Back to home page</a></p>
-    </body>
+<head>
+    <meta charset="utf-8"/>
+    <title>BLANK WebApp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <link rel="stylesheet" href="../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
+    <link rel="stylesheet" href="../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
+</head>
+<body>
+<div class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <a href="../" class="navbar-brand">BLANK WebApp</a>
+            <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <div class="navbar-collapse collapse" id="navbar-main">
+            <ul class="nav navbar-nav">
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="themes">Themes <span class="caret"></span></a>
+                    <ul class="dropdown-menu" aria-labelledby="themes">
+                        <li><a href="#">Default</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#">Cerulean</a></li>
+                        <li><a href="#">Cosmo</a></li>
+                        <li><a href="#">Cyborg</a></li>
+                        <li><a href="#">Darkly</a></li>
+                        <li><a href="#">Flatly</a></li>
+                        <li><a href="#">Journal</a></li>
+                        <li><a href="#">Lumen</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#">Help</a>
+                </li>
+                <li>
+                    <a href="#">Blog</a>
+                </li>
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="download">Slate <span class="caret"></span></a>
+                    <ul class="dropdown-menu" aria-labelledby="download">
+                        <li><a href="#">Open Sandbox</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#">bootstrap.min.css</a></li>
+                        <li><a href="#">bootstrap.css</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#">variables.less</a></li>
+                        <li><a href="#">bootswatch.less</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#">_variables.scss</a></li>
+                        <li><a href="#">_bootswatch.scss</a></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="themes"><strong><span sec:authentication="name">Username</span></strong>&nbsp;<span class="caret"></span></a>
+                    <ul class="dropdown-menu" aria-labelledby="themes">
+                        <li><a href="#">Account</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#">Logout</a></li>
+
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+<div class="container">
+
+    <div class="page-header" id="banner">
+        <div class="row">
+            <div>
+                <p class="pull-right">Your role: <span sec:authentication="principal.authorities">ROLE</span></p>
+                <h1>Cars</h1>
+                <table>
+                    <tr>
+                        <th>VIN</th>
+                        <th>Created At</th>
+                        <th>Registered</th>
+                        <th>Confirmed</th>
+                    </tr>
+                    <tr th:each="car : ${cars}">
+                        <td th:text="${car.vin}"></td>
+                        <td th:text="${car.created_ts}"></td>
+                        <td th:text="${car.certificate.vin.isEmpty()}"></td>
+                        <td th:text="${car.certificate.numberplate.isEmpty()}"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <footer>
+        <div class="row">
+            <div class="col-lg-12">
+
+                <ul class="list-unstyled">
+                    <li class="pull-right"><a href="#top">Back to top</a></li>
+                </ul>
+                <p>&copy; by BLANK 2017 :: Made by 4 Students at <a href="http://www.ifi.uzh.ch/en/imrg.html" rel="nofollow" target="_blank">IMRG</a> of the <a href="http://www.uzh.ch" target="_blank" rel="nofollow">University of Zurich</a>.</p>
+                <p>Based on <a href="https://hyperledger-fabric.readthedocs.io/en/latest/" rel="nofollow" target="_blank">Hyperledger Fabric</a> and <a href="https://projects.spring.io/spring-framework/" rel="nofollow" target="_blank">Spring Framework</a>.</p>
+
+            </div>
+        </div>
+
+    </footer>
+
+
+</div>
+
+
+<script src="../static/js/jquery-1.10.2.min.js" th:src="@{/js/jquery-1.10.2.min.js}"></script>
+<script src="../static/js/bootstrap.min.js" th:src="@{/js/bootstrap.min.js}"></script>
+<script src="../static/js/custom.js" th:src="@{/js/custom.js}"></script>
+</body>
 </html>

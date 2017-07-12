@@ -139,6 +139,21 @@ func (t *CarChaincode) getUser(stub shim.ChaincodeStubInterface, username string
 }
 
 /*
+ * Reads a User from ledger
+ */
+func (t *CarChaincode) readUser(stub shim.ChaincodeStubInterface, username string) pb.Response {
+	user, err := t.getUser(stub, username)
+
+	if err != nil {
+		return shim.Error("Error reading user")
+	}
+
+	userAsBytes, _ := json.Marshal(user)
+
+	return shim.Success(userAsBytes)
+}
+
+/*
  * Writes updated user back to ledger
  */
 func (t *CarChaincode) saveUser(stub shim.ChaincodeStubInterface, user User) error {

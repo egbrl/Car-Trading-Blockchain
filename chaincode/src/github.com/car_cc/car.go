@@ -82,7 +82,7 @@ func (t *CarChaincode) createCar(stub shim.ChaincodeStubInterface, username stri
 	}
 
 	// add car birth date
-	car.CreatedTs = time.Now().Unix()
+	car.CreatedTs = strconv.FormatInt(time.Now().Unix(), 10)
 
 	// check for existing garage user with that name
 	user, err := t.getUser(stub, username)
