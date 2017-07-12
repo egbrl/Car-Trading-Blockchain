@@ -11,6 +11,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     public static final String BOOTSTRAP_GARAGE_USER = "garage";
     public static final String BOOTSTRAP_GARAGE_ROLE = "garage";
+    public static final String BOOTSTRAP_PRIVATE_USER = "user";
+    public static final String BOOTSTRAP_PRIVATE_USER_ROLE = "user";
+    public static final String BOOTSTRAP_INSURANCE_USER = "insurance";
+    public static final String BOOTSTRAP_INSURANCE_ROLE = "insurance";
+    public static final String BOOTSTRAP_DOT_USER = "dot";
+    public static final String BOOTSTRAP_DOT_ROLE = "dot";
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -29,15 +35,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
         auth
                 .inMemoryAuthentication()
-                .withUser("user").password("password").roles("user");
+                .withUser(BOOTSTRAP_PRIVATE_USER).password("password").roles(BOOTSTRAP_PRIVATE_USER_ROLE);
         auth
                 .inMemoryAuthentication()
                 .withUser(BOOTSTRAP_GARAGE_USER).password("password").roles(BOOTSTRAP_GARAGE_ROLE);
         auth
                 .inMemoryAuthentication()
-                .withUser("insurance").password("password").roles("insurance");
+                .withUser(BOOTSTRAP_INSURANCE_USER).password("password").roles(BOOTSTRAP_INSURANCE_ROLE);
         auth
                 .inMemoryAuthentication()
-                .withUser("dot").password("password").roles("dot");
+                .withUser(BOOTSTRAP_DOT_USER).password("password").roles(BOOTSTRAP_DOT_ROLE);
     }
 }

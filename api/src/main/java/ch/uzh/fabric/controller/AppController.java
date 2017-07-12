@@ -250,6 +250,15 @@ public class AppController {
 		return "basic-template";
 	}
 
+	@RequestMapping("/garage")
+	public String garage(){
+		return "garage";
+	}
+
+	@RequestMapping("/garage/import-car")
+	public String importCar(){
+		return "garage/import-car";
+	}
 
 
 
