@@ -31,6 +31,9 @@ function clean(){
   #   docker rm -f `docker ps -aq`
   # fi
 
+  echo "Building car app image (if not latest already)"
+  docker build -t egabb/car_cc_app:latest .
+
 }
 
 function up(){
