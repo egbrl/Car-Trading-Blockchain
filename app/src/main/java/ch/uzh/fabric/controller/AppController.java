@@ -241,28 +241,7 @@ public class AppController {
 		model.addAttribute("loginError", true);
 		return "login";
 	}
-
-	/* Template Tests */
-
-	@RequestMapping("/test")
-	public String test(){
-		return "/test/basic-template";
-	}
-
-	@RequestMapping("/test/garage")
-	public String garage(){
-		return "test/garage/garage";
-	}
-
-	@RequestMapping("/test/garage/import-car")
-	public String importCar(){
-		return "test/garage/import-car";
-	}
-
-
-
-
-
+	
 	/*
 	 *	INITIALIZE FUNCTIONS
 	 *
