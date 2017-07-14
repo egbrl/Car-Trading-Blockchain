@@ -5,8 +5,8 @@
     <title>BLANK WebApp</title>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <link rel="stylesheet" href="../../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
-    <link rel="stylesheet" href="../../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
+    <link rel="stylesheet" href="../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
+    <link rel="stylesheet" href="../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
 </head>
 <body>
 <div class="navbar navbar-default navbar-fixed-top">
@@ -20,24 +20,49 @@
             </button>
         </div>
         <div class="navbar-collapse collapse" id="navbar-main">
-            <ul class="nav navbar-nav">
-                <li class="active">
-                    <a href="#" th:href="@{/garage}" >My Cars</a>
-                </li>
-                <li>
-                    <a href="#">Import Car</a>
-                </li>
-            </ul>
-
-            <div th:replace="menu/user-menu"></div>
+            <div th:switch="${role}">
+                <div th:case="'GARAGE'">
+                    <ul th:replace="menu/mainmenu-garage"></ul>
+                </div>
+                <div th:case="'INSURANCE'">
+                    <ul th:replace="menu/mainmenu-insurance"></ul>
+                </div>
+                <div th:case="'USER'">
+                    <ul th:replace="menu/mainmenu-user"></ul>
+                </div>
+                <div th:case="'DOT'">
+                    <ul th:replace="menu/mainmenu-dot"></ul>
+                </div>
+            </div>
+            <div th:replace="menu/usermenu"></div>
         </div>
     </div>
 </div>
 
 
 <div class="container">
+    <div class="page-header" style="border-bottom: none">
+        <div class="row">
+            <div>
+                <p class="pull-right">Role: <span th:text="${role}">ROLE</span></p>
+                <div th:switch="${role}">
+                    <div th:case="'GARAGE'">
+                        <h1>My Cars</h1>
+                    </div>
+                    <div th:case="'INSURANCE'">
+                        <h1>My Insurance Inquiries</h1>
+                    </div>
+                    <div th:case="'USER'">
+                        <h1>My Cars</h1>
+                    </div>
+                    <div th:case="'DOT'">
+                        <h1>My Registration/Confirmation Inquiries</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <div th:replace="header/page-header"></div>
     <div>
         <table class="table table-hover">
             <thead>
@@ -65,7 +90,6 @@
                 <td th:text="${car.isRegistered()}">Yes</td>
                 <td><button type="button" class="btn btn-danger">revoke</button></td>
             </tr>
-
             </tbody>
         </table>
     </div>
@@ -94,8 +118,8 @@
 </div>
 
 
-<script src="../../static/js/jquery-1.10.2.min.js" th:src="@{/js/jquery-1.10.2.min.js}"></script>
-<script src="../../static/js/bootstrap.min.js" th:src="@{/js/bootstrap.min.js}"></script>
-<script src="../../static/js/custom.js" th:src="@{/js/custom.js}"></script>
+<script src="../static/js/jquery-1.10.2.min.js" th:src="@{/js/jquery-1.10.2.min.js}"></script>
+<script src="../static/js/bootstrap.min.js" th:src="@{/js/bootstrap.min.js}"></script>
+<script src="../static/js/custom.js" th:src="@{/js/custom.js}"></script>
 </body>
 </html>
