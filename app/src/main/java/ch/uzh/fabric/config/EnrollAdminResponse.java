@@ -1,9 +1,5 @@
 package ch.uzh.fabric.config;
 
-/**
- *
- * @author ian
- */
 public class EnrollAdminResponse extends JsonObject {
     private String name;
     private String organization;

@@ -1,9 +1,5 @@
 package ch.uzh.fabric.config;
 
-/**
- * Created by shaun on 13.01.17.
- */
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
