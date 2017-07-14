@@ -160,6 +160,7 @@ public class AppController {
 		}
 
 		model.addAttribute("cars", carList.values());
+		model.addAttribute("role", role.substring(5).toUpperCase());
 		return "index";
 	}
 
