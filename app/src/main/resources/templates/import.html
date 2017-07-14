@@ -29,7 +29,7 @@
                 </li>
             </ul>
 
-            <div th:include="menu/user-menu"></div>
+            <div th:replace="menu/user-menu"></div>
         </div>
     </div>
 </div>
@@ -37,14 +37,7 @@
 
 <div class="container">
 
-    <div class="page-header" style="border-bottom: none">
-        <div class="row">
-            <div>
-                <p class="pull-right">Your role: <span sec:authentication="principal.authorities">ROLE</span></p>
-                <h1>Import Car</h1>
-            </div>
-        </div>
-    </div>
+    <div th:replace="header/page-header"></div>
     <div>
         <form class="form-horizontal" th:action="@{/login}" method="post">
             <div class="form-group">

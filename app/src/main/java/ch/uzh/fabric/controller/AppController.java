@@ -241,7 +241,7 @@ public class AppController {
 		model.addAttribute("loginError", true);
 		return "login";
 	}
-	
+
 	/*
 	 *	INITIALIZE FUNCTIONS
 	 *
