@@ -17,7 +17,7 @@ cd fixtures
 bash fabric.sh restart
 ```
 
-This will assemble and install the docker image for the car API. It will then download the required fabric images and spin up the fabric network. The web app can be accessed on [http://localhost:8080](http://localhost:8080).
+This will assemble and install the docker image for the car app. It will then download the required fabric images and spin up the fabric network. The web app can be accessed on [http://localhost:8080](http://localhost:8080).
 
 ## Fetch Cars Directly on Peer(s)
 To check out the bootstrapped car, log into the docker containers of `peer0` in `org1` and query the car:
