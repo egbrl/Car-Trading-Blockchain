@@ -1,7 +1,7 @@
 <div class="page-header" style="border-bottom: none">
     <div class="row">
         <div>
-            <p class="pull-right">Your role: <span sec:authentication="principal.authorities">ROLE</span></p>
+            <p class="pull-right">Your role: <span sec:authentication="principal.authorities[0]"></span></p>
             <h1>Import Car</h1>
         </div>
     </div>

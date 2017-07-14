@@ -1,10 +1,14 @@
 package ch.uzh.fabric.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.core.GrantedAuthorityDefaults;
+import org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler;
 
 import java.util.ArrayList;
 
@@ -25,11 +29,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http
                 .authorizeRequests()
 
-                .antMatchers("/css/**", "/js/**", "/login", "/login-error", "/test/**").permitAll()
-                /*.antMatchers("/index").hasAnyRole(BOOTSTRAP_GARAGE_ROLE,
-                                                             BOOTSTRAP_PRIVATE_USER_ROLE,
-                                                             BOOTSTRAP_INSURANCE_ROLE,
-                                                             BOOTSTRAP_DOT_ROLE)*/
+                .antMatchers("/css/**", "/fonts/**", "/img/**", "/js/**", "/login", "/login-error", "/test/**").permitAll()
                 .antMatchers("/import").hasRole(BOOTSTRAP_GARAGE_ROLE)
                 .anyRequest().authenticated()
                 .and()
@@ -51,4 +51,5 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .inMemoryAuthentication()
                 .withUser(BOOTSTRAP_DOT_USER).password("password").roles(BOOTSTRAP_DOT_ROLE);
     }
+
 }

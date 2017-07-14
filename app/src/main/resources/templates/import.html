@@ -5,6 +5,8 @@
     <title>BLANK WebApp</title>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <link rel="stylesheet" href="../../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
     <link rel="stylesheet" href="../../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
 </head>
@@ -22,10 +24,10 @@
         <div class="navbar-collapse collapse" id="navbar-main">
             <ul class="nav navbar-nav">
                 <li>
-                    <a href="#" th:href="@{/garage}" >My Cars</a>
+                    <a href="#" th:href="@{/index}">My Cars</a>
                 </li>
                 <li class="active">
-                    <a href="#" >Import Car</a>
+                    <a href="#" th:href="@{/import}">Import Car</a>
                 </li>
             </ul>
 
@@ -38,33 +40,48 @@
 <div class="container">
 
     <div th:replace="header/page-header"></div>
+    <p th:if="${error}" style="color: red" th:text="${error}">Car Error</p>
     <div>
-        <form class="form-horizontal" th:action="@{/login}" method="post">
+        <form class="form-horizontal" th:action="@{/import}" method="post">
             <div class="form-group">
                 <div class="col-sm-6">
                     <label for="vin">Vehicle identification number</label>
-                    <input type="text" class="form-control" id="vin" name="vin" placeholder="eg. XWERG11241251ASW" />
+                    <input type="text" class="form-control" id="vin" th:field="*{car.vin}" placeholder="eg. XWERG11241251ASW" />
                 </div>
             </div>
             <div class="form-group">
                 <div class="col-sm-6">
-                    <label for="NumberOfDoors">Additional information (Form. 13.20 A)</label>
-                    <input type="number" class="form-control" id="NumberOfDoors" name="NumberOfDoors" placeholder="Number of doors (eg. 5)"/>
+                    <label for="NumberOfDoors">Additional information</label>
+                    <input type="text" class="form-control" id="color" th:field="*{car.Certificate.color}" placeholder="Color (eg. black)"/>
                 </div>
                 <div class="col-sm-6">
                     <label for="NumberOfCylinders">&nbsp;</label>
-                    <input type="number" class="form-control" id="NumberOfCylinders" name="NumberOfCylinders" placeholder="Number of cylinders (eg. 4)"/>
+                    <input type="text" class="form-control" id="type" th:field="*{car.Certificate.type}" placeholder="Type (eg. C350)"/>
                 </div>
-
             </div>
             <div class="form-group">
                 <div class="col-sm-6">
-                    <input type="number" class="form-control" id="NumberOfAxis" name="NumberOfAxis" placeholder="Number of axis (eg. 2)"/>
+                    <input type="text" class="form-control" id="brand" th:field="*{car.Certificate.brand}" placeholder="Brand (eg. Mercedes)"/>
+                </div>
+            </div>
+            <hr />
+            <div class="form-group">
+                <div class="col-sm-6">
+                    <label for="NumberOfDoors">Audit Report (Form. 13.20 A)</label>
+                    <input type="text" class="form-control" id="NumberOfDoors" th:field="*{proposalData.numberOfDoors}" placeholder="Number of doors (eg. 4+1)"/>
                 </div>
                 <div class="col-sm-6">
-                    <input type="number" class="form-control" id="MaxSpeed" name="MaxSpeed" placeholder="Maximum speed (eg. 180 km/h)"/>
+                    <label for="NumberOfCylinders">&nbsp;</label>
+                    <input type="number" class="form-control" id="NumberOfCylinders" th:field="*{proposalData.numberOfCylinders}" placeholder="Number of cylinders (eg. 4)"/>
                 </div>
-
+            </div>
+            <div class="form-group">
+                <div class="col-sm-6">
+                    <input type="number" class="form-control" id="NumberOfAxis" th:field="*{proposalData.numberOfAxis}" placeholder="Number of axis (eg. 2)"/>
+                </div>
+                <div class="col-sm-6">
+                    <input type="number" class="form-control" id="MaxSpeed" th:field="*{proposalData.maxSpeed}" placeholder="Maximum speed [km/h] (eg. 180)"/>
+                </div>
             </div>
             <div class="form-group">
                 <div class="col-sm-6">

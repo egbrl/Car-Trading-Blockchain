@@ -15,9 +15,10 @@ import org.hyperledger.fabric_ca.sdk.exception.EnrollmentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestWrapper;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
@@ -163,19 +164,23 @@ public class AppController {
 	}
 
 	@RequestMapping(value="/import", method=RequestMethod.GET)
-	public String createCar() {
+	public String showImportForm(Model model, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
 		return "import";
 	}
 
 	@RequestMapping(value="/import", method=RequestMethod.POST)
-	public String createCar(Authentication authentication, @RequestBody Car carData, @RequestBody ProposalData proposalData) {
+	public String createCar(Model model, Authentication authentication, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
+		out(carData.toString());
+		out(proposalData.toString());
+
 		String username;
 		String garageRole;
 
 		try {
 			// Authenticated web app request
 			username = authentication.getName();
-			garageRole = authentication.getAuthorities().toArray()[0].toString();
+			// Role can only be "garage", if security is configured correctly
+			garageRole = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
 			out("read username and role from web request");
 		} catch (NullPointerException e) {
 			// Can only be the bootstrap script
@@ -183,6 +188,9 @@ public class AppController {
 			garageRole = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
 			out("read username and role from bootstraped code values");
 		}
+
+		out(username);
+		out(garageRole);
 
 		ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
 				.setVersion(CHAIN_CODE_VERSION)
@@ -223,7 +231,8 @@ public class AppController {
 			e.printStackTrace();
 			ErrorInfo result = new ErrorInfo(500, "", "CompletionException " + e.getMessage());
 			//return result;
-			return "user/index";
+			model.addAttribute("error", e.getMessage());
+			return "import";
 		}
 
 		ErrorInfo result = new ErrorInfo(0, "", "OK");
@@ -269,7 +278,7 @@ public class AppController {
 				.registerTypeAdapter(Date.class, deser).create();
 
 		// Create first garage user car
-		createCar(null, new Car(
+		createCar(null, null, new Car(
 				new Certificate(
 						null,
 						null,
@@ -328,7 +337,7 @@ public class AppController {
 		return result;
 	}
 
-	private List<EnrollAdminResponse> enrolladmin() throws EnrollmentException, org.hyperledger.fabric_ca.sdk.exception.InvalidArgumentException, Exception {
+	private List<EnrollAdminResponse> enrolladmin() throws Exception {
 
 		List<EnrollAdminResponse> result = new ArrayList<>();
 
@@ -353,7 +362,7 @@ public class AppController {
 		return result;
 	}
 
-	private List<EnrollAdminResponse> enrollusers() throws EnrollmentException, org.hyperledger.fabric_ca.sdk.exception.InvalidArgumentException, Exception {
+	private List<EnrollAdminResponse> enrollusers() throws Exception {
 		List<EnrollAdminResponse> result = new ArrayList<>();
 
 		for (SampleOrg sampleOrg : testSampleOrgs) {

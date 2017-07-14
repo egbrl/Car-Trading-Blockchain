@@ -9,6 +9,10 @@ public class Certificate {
     private String type;
     private String brand;
 
+    public Certificate() {
+
+    }
+
     public Certificate(String username, String insurer, String numberplate, String vin, String color, String type, String brand) {
         this.username = username;
         this.insurer = insurer;
