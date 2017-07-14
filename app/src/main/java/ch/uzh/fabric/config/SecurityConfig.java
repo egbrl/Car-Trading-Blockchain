@@ -6,6 +6,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 
+import java.util.ArrayList;
+
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
@@ -22,11 +24,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .antMatchers("/css/**").permitAll()
-                .antMatchers("/user/**").hasRole("user")
-                .antMatchers("/garage/**", "/index").hasRole(BOOTSTRAP_GARAGE_ROLE)
-                .antMatchers("/insurance/**").hasRole("insurance")
-                .antMatchers("/dot/**").hasRole("dot")
+
+                .antMatchers("/css/**", "/js/**", "/login", "/login-error", "/test/**").permitAll()
+                /*.antMatchers("/index").hasAnyRole(BOOTSTRAP_GARAGE_ROLE,
+                                                             BOOTSTRAP_PRIVATE_USER_ROLE,
+                                                             BOOTSTRAP_INSURANCE_ROLE,
+                                                             BOOTSTRAP_DOT_ROLE)*/
+                .antMatchers("/import").hasRole(BOOTSTRAP_GARAGE_ROLE)
+                .anyRequest().authenticated()
                 .and()
                 .formLogin().loginPage("/login").failureUrl("/login-error");
     }

@@ -1,7 +1,9 @@
 package ch.uzh.fabric.controller;
 
 import ch.uzh.fabric.config.*;
-import ch.uzh.fabric.model.*;
+import ch.uzh.fabric.model.Car;
+import ch.uzh.fabric.model.Certificate;
+import ch.uzh.fabric.model.ProposalData;
 import ch.uzh.fabric.model.User;
 import com.google.gson.*;
 import org.hyperledger.fabric.sdk.*;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
@@ -24,7 +27,6 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.nio.file.Paths;
-import java.security.Principal;
 import java.util.*;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
@@ -157,10 +159,15 @@ public class AppController {
 		}
 
 		model.addAttribute("cars", carList.values());
-		return "user/index";
+		return "index";
 	}
 
-	@RequestMapping("/car/create")
+	@RequestMapping(value="/import", method=RequestMethod.GET)
+	public String createCar() {
+		return "import";
+	}
+
+	@RequestMapping(value="/import", method=RequestMethod.POST)
 	public String createCar(Authentication authentication, @RequestBody Car carData, @RequestBody ProposalData proposalData) {
 		String username;
 		String garageRole;
@@ -221,12 +228,7 @@ public class AppController {
 
 		ErrorInfo result = new ErrorInfo(0, "", "OK");
 		//return result;
-		return "user/index";
-	}
-
-	@RequestMapping("/user/index")
-	public String userIndex() {
-		return "user/index";
+		return "import";
 	}
 
 	@RequestMapping("/login")
@@ -240,19 +242,21 @@ public class AppController {
 		return "login";
 	}
 
+	/* Template Tests */
+
 	@RequestMapping("/test")
 	public String test(){
-		return "basic-template";
+		return "/test/basic-template";
 	}
 
-	@RequestMapping("/garage")
+	@RequestMapping("/test/garage")
 	public String garage(){
-		return "garage";
+		return "test/garage/garage";
 	}
 
-	@RequestMapping("/garage/import-car")
+	@RequestMapping("/test/garage/import-car")
 	public String importCar(){
-		return "garage/import-car";
+		return "test/garage/import-car";
 	}
 
 
@@ -400,7 +404,7 @@ public class AppController {
 		return result;
 	}
 
-	private List<EnrollAdminResponse> enrollorgadmin() throws EnrollmentException, org.hyperledger.fabric_ca.sdk.exception.InvalidArgumentException, Exception {
+	private List<EnrollAdminResponse> enrollorgadmin() throws Exception {
 		List<EnrollAdminResponse> result = new ArrayList<>();
 
 		for (SampleOrg sampleOrg : testSampleOrgs) {

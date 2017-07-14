@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <title>BLANK WebApp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <link rel="stylesheet" href="../../../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
+    <link rel="stylesheet" href="../../../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
+</head>
+<body>
+<div class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <a href="../" class="navbar-brand">BLANK WebApp</a>
+            <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <div class="navbar-collapse collapse" id="navbar-main">
+            <ul class="nav navbar-nav">
+                <li>
+                    <a href="#" th:href="@{/garage}" >My Cars</a>
+                </li>
+                <li class="active">
+                    <a href="#" >Import Car</a>
+                </li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="themes"><strong><span
+                            sec:authentication="name">Username</span></strong>&nbsp;<span class="caret"></span></a>
+                    <ul class="dropdown-menu" aria-labelledby="themes">
+                        <li><a href="#">Account</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#">Logout</a></li>
+
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+<div class="container">
+
+    <div class="page-header" style="border-bottom: none">
+        <div class="row">
+            <div>
+                <p class="pull-right">Your role: <span sec:authentication="principal.authorities">ROLE</span></p>
+                <h1>Import Car</h1>
+            </div>
+        </div>
+    </div>
+    <div>
+        <form class="form-horizontal" th:action="@{/login}" method="post">
+            <div class="form-group">
+                <div class="col-sm-6">
+                    <label for="vin">Vehicle identification number</label>
+                    <input type="text" class="form-control" id="vin" name="vin" placeholder="eg. XWERG11241251ASW" />
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-6">
+                    <label for="NumberOfDoors">Additional information (Form. 13.20 A)</label>
+                    <input type="number" class="form-control" id="NumberOfDoors" name="NumberOfDoors" placeholder="Number of doors (eg. 5)"/>
+                </div>
+                <div class="col-sm-6">
+                    <label for="NumberOfCylinders">&nbsp;</label>
+                    <input type="number" class="form-control" id="NumberOfCylinders" name="NumberOfCylinders" placeholder="Number of cylinders (eg. 4)"/>
+                </div>
+
+            </div>
+            <div class="form-group">
+                <div class="col-sm-6">
+                    <input type="number" class="form-control" id="NumberOfAxis" name="NumberOfAxis" placeholder="Number of axis (eg. 2)"/>
+                </div>
+                <div class="col-sm-6">
+                    <input type="number" class="form-control" id="MaxSpeed" name="MaxSpeed" placeholder="Maximum speed (eg. 180 km/h)"/>
+                </div>
+
+            </div>
+            <div class="form-group">
+                <div class="col-sm-6">
+                    <button type="submit" class="btn btn-default"><span style="color: #e6e6e6">Submit</span></button>
+                </div>
+            </div>
+        </form>
+
+    </div>
+
+    <footer>
+        <div class="row">
+            <div class="col-lg-12">
+
+                <ul class="list-unstyled">
+                    <li class="pull-right"><a href="#top">Back to top</a></li>
+                </ul>
+                <p>&copy; by BLANK 2017 :: Made by 4 Students at <a href="http://www.ifi.uzh.ch/en/imrg.html"
+                                                                    rel="nofollow" target="_blank">IMRG</a> of the <a
+                        href="http://www.uzh.ch" target="_blank" rel="nofollow">University of Zurich</a>.</p>
+                <p>Based on <a href="https://hyperledger-fabric.readthedocs.io/en/latest/" rel="nofollow"
+                               target="_blank">Hyperledger Fabric</a> and <a
+                        href="https://projects.spring.io/spring-framework/" rel="nofollow" target="_blank">Spring
+                    Framework</a>.</p>
+
+            </div>
+        </div>
+
+    </footer>
+
+
+</div>
+
+
+<script src="../../static/js/jquery-1.10.2.min.js" th:src="@{/js/jquery-1.10.2.min.js}"></script>
+<script src="../../static/js/bootstrap.min.js" th:src="@{/js/bootstrap.min.js}"></script>
+<script src="../../static/js/custom.js" th:src="@{/js/custom.js}"></script>
+</body>
+</html>
