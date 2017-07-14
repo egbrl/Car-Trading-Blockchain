@@ -44,7 +44,14 @@
 
 <div class="container">
 
-    <p class="pull-right">Role: <span th:text="${role}">ROLE</span></p>
+    <div class="page-header" style="border-bottom: none">
+        <div class="row">
+            <div>
+                <p class="pull-right">Role: <span th:text="${role}">ROLE</span></p>
+                <h1>Import Car</h1>
+            </div>
+        </div>
+    </div>
     <p th:if="${error}" style="color: red" th:utext="${error}">Car Error</p>
     <div>
         <form class="form-horizontal" th:action="@{/import}" method="post">
