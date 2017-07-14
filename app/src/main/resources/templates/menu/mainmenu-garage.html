@@ -1,10 +1,10 @@
 <ul class="nav navbar-nav">
-    <li class="active">
+    <li th:class="${currentPage} eq 'index' ? 'active'">
         <a href="index.html" th:href="@{/}">
             <span class="glyphicon glyphicon-dashboard" aria-hidden="true"></span>&nbsp;My Cars
         </a>
     </li>
-    <li>
+    <li th:class="${currentPage} eq 'import' ? 'active'">
         <a href="import.html" th:href="@{/import}">
             <span class="glyphicon glyphicon-copy" aria-hidden="true"></span>&nbsp;Import Car
         </a>

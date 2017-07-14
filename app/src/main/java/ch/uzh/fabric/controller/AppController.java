@@ -6,6 +6,7 @@ import ch.uzh.fabric.model.Certificate;
 import ch.uzh.fabric.model.ProposalData;
 import ch.uzh.fabric.model.User;
 import com.google.gson.*;
+import io.grpc.StatusRuntimeException;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.*;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
@@ -165,7 +166,10 @@ public class AppController {
 	}
 
 	@RequestMapping(value="/import", method=RequestMethod.GET)
-	public String showImportForm(Model model, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
+	public String showImportForm(Model model, Authentication authentication, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
+		String username = authentication.getName();
+		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+		model.addAttribute("role", role.toUpperCase());
 		return "import";
 	}
 
@@ -180,8 +184,9 @@ public class AppController {
 		try {
 			// Authenticated web app request
 			username = authentication.getName();
-			// Role can only be "garage", if security is configured correctly
-			garageRole = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
+			// Role should only be "garage", if security is configured correctly
+			// garageRole = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
+			garageRole = authentication.getAuthorities().toArray()[0].toString().substring(5);
 			out("read username and role from web request");
 		} catch (NullPointerException e) {
 			// Can only be the bootstrap script
@@ -232,12 +237,15 @@ public class AppController {
 			e.printStackTrace();
 			ErrorInfo result = new ErrorInfo(500, "", "CompletionException " + e.getMessage());
 			//return result;
-			model.addAttribute("error", e.getMessage());
-			return "import";
+			model.addAttribute("error", "Choose another VIN");
 		}
 
-		ErrorInfo result = new ErrorInfo(0, "", "OK");
-		//return result;
+		try {
+			model.addAttribute("role", garageRole.toUpperCase());
+		} catch (NullPointerException e) {
+			// It's ok, we are in bootstrap mode..
+		}
+
 		return "import";
 	}
 

@@ -50,4 +50,8 @@ public class Car {
         return !this.certificate.getNumberplate().isEmpty();
     }
 
+    public boolean isInsured() {
+        return !this.certificate.getInsurer().isEmpty();
+    }
+
 }

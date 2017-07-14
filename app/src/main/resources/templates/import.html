@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" th:with="currentPage='import'">
 <head>
     <meta charset="utf-8"/>
     <title>BLANK WebApp</title>
@@ -22,16 +22,21 @@
             </button>
         </div>
         <div class="navbar-collapse collapse" id="navbar-main">
-            <ul class="nav navbar-nav">
-                <li>
-                    <a href="#" th:href="@{/index}">My Cars</a>
-                </li>
-                <li class="active">
-                    <a href="#" th:href="@{/import}">Import Car</a>
-                </li>
-            </ul>
-
-            <div th:replace="menu/user-menu"></div>
+            <div th:switch="${role}">
+                <div th:case="'GARAGE'">
+                    <ul th:replace="menu/mainmenu-garage"></ul>
+                </div>
+                <div th:case="'INSURANCE'">
+                    <ul th:replace="menu/mainmenu-insurance"></ul>
+                </div>
+                <div th:case="'USER'">
+                    <ul th:replace="menu/mainmenu-user"></ul>
+                </div>
+                <div th:case="'DOT'">
+                    <ul th:replace="menu/mainmenu-dot"></ul>
+                </div>
+            </div>
+            <div th:replace="menu/usermenu"></div>
         </div>
     </div>
 </div>
@@ -39,8 +44,8 @@
 
 <div class="container">
 
-    <div th:replace="header/page-header"></div>
-    <p th:if="${error}" style="color: red" th:text="${error}">Car Error</p>
+    <p class="pull-right">Role: <span th:text="${role}">ROLE</span></p>
+    <p th:if="${error}" style="color: red" th:utext="${error}">Car Error</p>
     <div>
         <form class="form-horizontal" th:action="@{/import}" method="post">
             <div class="form-group">
