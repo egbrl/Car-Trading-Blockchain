@@ -26,10 +26,16 @@ function clean(){
     docker images | grep 'dev-peer' | awk '{print $1}' | xargs docker rmi -f
   fi
 
+  # lines=`docker ps -aq | wc -l`
+  # if [ "$lines" -gt 0 ]; then
+  #   docker rm -f `docker ps -aq`
+  # fi
+
 }
 
 function up(){
-  docker-compose up --force-recreate
+  # docker-compose up --force-recreate
+  docker-compose up
 }
 
 function down(){
