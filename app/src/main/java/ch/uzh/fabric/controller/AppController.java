@@ -1,9 +1,7 @@
 package ch.uzh.fabric.controller;
 
 import ch.uzh.fabric.config.*;
-import ch.uzh.fabric.model.Car;
-import ch.uzh.fabric.model.Certificate;
-import ch.uzh.fabric.model.ProposalData;
+import ch.uzh.fabric.model.*;
 import ch.uzh.fabric.model.User;
 import com.google.gson.*;
 import org.hyperledger.fabric.sdk.*;
@@ -93,6 +91,23 @@ public class AppController {
 	public String index(Authentication authentication, Model model) {
 		String username = authentication.getName();
 		String role = authentication.getAuthorities().toArray()[0].toString();
+
+		// Redirect to DOT and INSURANCE index page
+		if(role == "ROLE_dot") {
+			try {
+				authentication.isAuthenticated();
+				return "redirect:/dot/index";
+			} catch (Exception e) {
+				return "redirect:/login";
+			}
+		} else if (role == "ROLE_insurance") {
+			try {
+				authentication.isAuthenticated();
+				return "redirect:/insurance/index";
+			} catch (Exception e) {
+				return "redirect:/login";
+			}
+		}
 
 		ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
 				.setVersion(CHAIN_CODE_VERSION)
@@ -243,6 +258,94 @@ public class AppController {
 		return "login";
 	}
 
+
+	@RequestMapping("/dot/index")
+	public String dot(Model model, Authentication authentication) {
+		String username = authentication.getName();
+		String role = authentication.getAuthorities().toArray()[0].toString();
+		String roleArg = "dot";
+
+		ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
+				.setVersion(CHAIN_CODE_VERSION)
+				.setPath(CHAIN_CODE_PATH).build();
+
+		QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
+		queryByChaincodeRequest.setArgs(new String[]{username, roleArg});
+		queryByChaincodeRequest.setFcn("readRegistrationProposals");
+		queryByChaincodeRequest.setChaincodeID(chainCodeID);
+
+		Collection<ProposalResponse> queryProposals;
+
+		try {
+			queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
+		} catch (InvalidArgumentException | ProposalException e) {
+			throw new CompletionException(e);
+		}
+
+		ProposalData proposalData = null;
+		HashMap<String, ProposalData> registrationProposalMap = new HashMap<>();
+		HashMap<String, ProposalAndCar> proposalAndCarMap = new HashMap<>();
+		/*
+		for (ProposalResponse proposalResponse : queryProposals) {
+			if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
+				ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
+						+ ". Messages: " + proposalResponse.getMessage()
+						+ ". Was verified : " + proposalResponse.isVerified());
+				out(result.errorMessage.toString());
+			} else {
+				String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
+				registrationProposalMap = g.fromJson(payload, new HashMap<String, ProposalData>().getClass());
+
+				for (HashMap.Entry<String, ProposalData> entry : registrationProposalMap.entrySet()) {
+					ProposalAndCar proposalAndCar = new ProposalAndCar(entry.getValue(), null);
+					proposalAndCarMap.put(entry.getKey(), proposalAndCar);
+				}
+
+				out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
+			}
+		}
+
+		for (String vin : proposalAndCarMap.keySet()) {
+			QueryByChaincodeRequest carRequest = client.newQueryProposalRequest();
+			carRequest.setArgs(new String[]{username, role, vin});
+			carRequest.setFcn("readCar");
+			carRequest.setChaincodeID(chainCodeID);
+
+			Collection<ProposalResponse> carQueryProps;
+			try {
+				carQueryProps = chain.queryByChaincode(carRequest);
+			} catch (InvalidArgumentException | ProposalException e) {
+				throw new CompletionException(e);
+			}
+
+			for (ProposalResponse proposalResponse : carQueryProps) {
+				if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
+					ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
+							+ ". Messages: " + proposalResponse.getMessage()
+							+ ". Was verified : " + proposalResponse.isVerified());
+					out(result.errorMessage.toString());
+				} else {
+					String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
+					Car car = new Car(null, null, null);
+					car = g.fromJson(payload, Car.class);
+
+					ProposalAndCar proposalAndCarObject = proposalAndCarMap.get(vin);
+					proposalAndCarObject.setCar(car);
+
+					proposalAndCarMap.replace(vin, proposalAndCarObject);
+					out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
+				}
+			}
+		} */
+
+		model.addAttribute("proposalAndCarData", proposalAndCarMap.values());
+		model.addAttribute("role", role.substring(5).toUpperCase());
+
+
+		return "dot/index";
+	}
+
+
 	/*
 	 *	INITIALIZE FUNCTIONS
 	 *
@@ -280,9 +383,10 @@ public class AppController {
 						"C350",
 						"Mercedes"), null, TEST_VIN),
 				new ProposalData(
+						"ZH 1234",
 						"4+1",
-						null,
-						null,
+						4,
+						2,
 						200)
 		);
 
