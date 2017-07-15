@@ -15,44 +15,37 @@ public class ProposalData {
         this.maxSpeed = maxSpeed;
     }
 
-    public Integer getMaxSpeed() {
-        return maxSpeed;
-    }
-
-    public Integer getNumberOfAxis() {
-        return numberOfAxis;
-    }
-
-    public Integer getNumberOfCylinders() {
-        return numberOfCylinders;
-    }
-
-    public String getCar() {
-        return car;
-    }
 
     public String getNumberOfDoors() {
         return numberOfDoors;
-    }
-
-    public void setCar(String car) {
-        this.car = car;
-    }
-
-    public void setMaxSpeed(Integer maxSpeed) {
-        this.maxSpeed = maxSpeed;
-    }
-
-    public void setNumberOfAxis(Integer numberOfAxis) {
-        this.numberOfAxis = numberOfAxis;
-    }
-
-    public void setNumberOfCylinders(Integer numberOfCylinders) {
-        this.numberOfCylinders = numberOfCylinders;
     }
 
     public void setNumberOfDoors(String numberOfDoors) {
         this.numberOfDoors = numberOfDoors;
     }
 
+    public Integer getNumberOfCylinders() {
+        return numberOfCylinders;
+    }
+
+
+    public void setNumberOfCylinders(Integer numberOfCylinders) {
+        this.numberOfCylinders = numberOfCylinders;
+    }
+
+    public Integer getNumberOfAxis() {
+        return numberOfAxis;
+    }
+
+    public void setNumberOfAxis(Integer numberOfAxis) {
+        this.numberOfAxis = numberOfAxis;
+    }
+
+    public Integer getMaxSpeed() {
+        return maxSpeed;
+    }
+
+    public void setMaxSpeed(Integer maxSpeed) {
+        this.maxSpeed = maxSpeed;
+    }
 }

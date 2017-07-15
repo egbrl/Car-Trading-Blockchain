@@ -8,6 +8,10 @@ public class Car {
     private Date createdTs;
     private String vin;
 
+    public Car() {
+
+    }
+
     public Car(Certificate certificate, Date createdTs, String vin) {
         this.certificate = certificate;
         this.createdTs = createdTs;
@@ -44,6 +48,10 @@ public class Car {
 
     public boolean isRegistered() {
         return !this.certificate.getNumberplate().isEmpty();
+    }
+
+    public boolean isInsured() {
+        return !this.certificate.getInsurer().isEmpty();
     }
 
 }
