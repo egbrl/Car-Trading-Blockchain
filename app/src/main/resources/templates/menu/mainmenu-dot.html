@@ -1,10 +1,10 @@
 <ul class="nav navbar-nav">
-    <li class="active">
+    <li th:class="${currentPage} eq 'dot/index' ? 'active'">
         <a href="index.html" th:href="@{/dot/index}">
             <span class="glyphicon glyphicon-dashboard" aria-hidden="true"></span>&nbsp;My Inquiries
         </a>
     </li>
-    <li>
+    <li th:class="${currentPage} eq 'dot/all-cars' ? 'active'">
         <a href="all-cars.html" th:href="@{/dot/all-cars}">
             <span class="glyphicon glyphicon-th-list" aria-hidden="true"></span>&nbsp;All Cars
         </a>
