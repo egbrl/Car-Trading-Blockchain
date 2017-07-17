@@ -3023,6 +3023,7 @@ select[multiple].input-lg {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  color: #757575;
 }
 .btn:focus,
 .btn:active:focus,
