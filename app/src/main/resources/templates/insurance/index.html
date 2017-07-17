@@ -75,13 +75,19 @@
             </thead>
             <tbody>
             <tr th:each="proposal,iterStat : ${insurer.proposals}">
-                <th th:text="${iterStat.count}" scope="row"></th>
-                <td th:text="${proposal.user}">Username</td>
-                <td th:text="${proposal.car}">VIN</td>
-                <td><button type="button" class="btn btn-success">insure</button></td>
+                <form th:id="'insuranceAccept' + ${iterStat.count}" th:action="@{/insurance/acceptInsurance}" method="post">
+                    <th th:text="${iterStat.count}" scope="row"></th>
+                    <td th:text="${proposal.user}">Username</td>
+                    <td>
+                        <span th:text="${proposal.car}">VIN</span>
+                        <input type="hidden" name="vin" th:text="${proposal.car}"/>
+                    </td>
+                    <td><button type="button" th:onclick="'document.getElementById(\'insuranceAccept' + ${iterStat.count} + '\').submit()'" class="btn btn-success">insure</button></td>
+                </form>
             </tr>
             </tbody>
         </table>
+
     </div>
 
     <footer>

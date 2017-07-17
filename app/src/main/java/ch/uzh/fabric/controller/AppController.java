@@ -106,7 +106,7 @@ public class AppController {
 			} catch (Exception e) {
 				return "redirect:/login";
 			}
-		} else if (role.equals("ROLE_insurance")) {
+		} else if (role.equals("ROLE_insurer")) {
 			try {
 				authentication.isAuthenticated();
 				return "redirect:/insurance/index";
@@ -347,6 +347,52 @@ public class AppController {
 
 		model.addAttribute("insurer", insurer);
 		return "insurance/index";
+	}
+
+	@RequestMapping("/insurance/acceptInsurance")
+	public String acceptInsurance(Model model, Authentication authentication, @RequestParam("vin") String vin) {
+		String username = authentication.getName();
+		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+
+		try {
+			ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
+					.setVersion(AppController.CHAIN_CODE_VERSION)
+					.setPath(AppController.CHAIN_CODE_PATH).build();
+
+			Collection<ProposalResponse> successful = new LinkedList<>();
+			Collection<ProposalResponse> failed = new LinkedList<>();
+
+			TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
+			transactionProposalRequest.setChaincodeID(chainCodeID);
+			transactionProposalRequest.setFcn("insuranceAccept");
+
+			transactionProposalRequest.setArgs(new String[]{username, role, vin, "AXA"});
+			out("sending transaction proposal for 'insureProposal' to all peers");
+
+			Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
+			for (ProposalResponse response : invokePropResp) {
+				if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
+					out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
+					successful.add(response);
+				} else {
+					failed.add(response);
+				}
+			}
+			out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
+					invokePropResp.size(), successful.size(), failed.size());
+			if (failed.size() > 0) {
+				throw new ProposalException("Not enough endorsers for invoke");
+
+			}
+			out("Successfully received transaction proposal responses.");
+			out("Sending chain code transaction to orderer");
+			chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+		} catch (Exception e) {
+			out(e.toString());
+			e.printStackTrace();
+		}
+
+		return "redirect:/insurance/index";
 	}
 
 	@RequestMapping(value="/insure", method=RequestMethod.GET)
