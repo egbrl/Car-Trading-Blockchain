@@ -221,7 +221,93 @@ public class AppController {
 
 
 	@RequestMapping("/dot/index")
-	public String dot(Model model, Authentication authentication) {
+	public String dotRegistration(Model model, Authentication authentication) {
+		String username = authentication.getName();
+		String role = authentication.getAuthorities().toArray()[0].toString();
+		String roleArg = "dot";
+
+		ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
+				.setVersion(CHAIN_CODE_VERSION)
+				.setPath(CHAIN_CODE_PATH).build();
+
+		QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
+		queryByChaincodeRequest.setArgs(new String[]{username, roleArg});
+		queryByChaincodeRequest.setFcn("readRegistrationProposalsAsList");
+		queryByChaincodeRequest.setChaincodeID(chainCodeID);
+
+		Collection<ProposalResponse> queryProposals;
+
+		try {
+			queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
+		} catch (InvalidArgumentException | ProposalException e) {
+			throw new CompletionException(e);
+		}
+
+		HashMap<String, ProposalAndCar> proposalAndCarMap = new HashMap<>();
+		ArrayList<ProposalData> proposalDataArraylist = new ArrayList<ProposalData>();
+
+		for (ProposalResponse proposalResponse : queryProposals) {
+			if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
+				ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
+						+ ". Messages: " + proposalResponse.getMessage()
+						+ ". Was verified : " + proposalResponse.isVerified());
+				out(result.errorMessage.toString());
+			} else {
+				String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
+				ProposalData[] arr = g.fromJson(payload, ProposalData[].class);
+				proposalDataArraylist = new ArrayList<ProposalData>(Arrays.asList(arr));
+				Iterator<ProposalData> iterator = proposalDataArraylist.iterator();
+				while (iterator.hasNext()) {
+					ProposalData proposalData = iterator.next();
+					ProposalAndCar proposalAndCar = new ProposalAndCar(proposalData, null);
+					proposalAndCarMap.put(proposalData.getCar(), proposalAndCar);
+				}
+				out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
+			}
+		}
+
+		for (String vin : proposalAndCarMap.keySet()) {
+			QueryByChaincodeRequest carRequest = client.newQueryProposalRequest();
+			carRequest.setArgs(new String[]{username, roleArg, vin});
+			carRequest.setFcn("readCar");
+			carRequest.setChaincodeID(chainCodeID);
+
+			Collection<ProposalResponse> carQueryProps;
+			try {
+				carQueryProps = chain.queryByChaincode(carRequest);
+			} catch (InvalidArgumentException | ProposalException e) {
+				throw new CompletionException(e);
+			}
+
+			for (ProposalResponse proposalResponse : carQueryProps) {
+				if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
+					ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
+							+ ". Messages: " + proposalResponse.getMessage()
+							+ ". Was verified : " + proposalResponse.isVerified());
+					out(result.errorMessage.toString());
+				} else {
+					String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
+					Car car = new Car(null, null, null);
+					car = g.fromJson(payload, Car.class);
+
+					ProposalAndCar proposalAndCarObject = proposalAndCarMap.get(vin);
+					proposalAndCarObject.setCar(car);
+
+					proposalAndCarMap.replace(vin, proposalAndCarObject);
+					out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
+				}
+			}
+		}
+
+		model.addAttribute("proposalAndCarData", proposalAndCarMap.values());
+		model.addAttribute("role", role.substring(5).toUpperCase());
+
+
+		return "dot/index";
+	}
+
+	@RequestMapping("/dot/confirmation")
+	public String dotConfirmation(Model model, Authentication authentication) {
 		String username = authentication.getName();
 		String role = authentication.getAuthorities().toArray()[0].toString();
 		String roleArg = "dot";
@@ -308,6 +394,7 @@ public class AppController {
 
 		return "dot/index";
 	}
+
 
 	@RequestMapping("/insurance/index")
 	public String insuranceIndex(Model model, Authentication authentication) {

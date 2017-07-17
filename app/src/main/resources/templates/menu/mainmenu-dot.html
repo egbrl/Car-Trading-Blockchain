@@ -1,7 +1,12 @@
 <ul class="nav navbar-nav">
     <li th:class="${currentPage} eq 'dot/index' ? 'active'">
         <a href="index.html" th:href="@{/dot/index}">
-            <span class="glyphicon glyphicon-dashboard" aria-hidden="true"></span>&nbsp;My Inquiries
+            <span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>&nbsp;Registration
+        </a>
+    </li>
+    <li th:class="${currentPage} eq 'dot/confirmation' ? 'active'">
+        <a href="confirmation.html" th:href="@{/dot/confirmation}">
+            <span class="glyphicon glyphicon-plus-sign" aria-hidden="true"></span>&nbsp;Confirmation
         </a>
     </li>
     <li th:class="${currentPage} eq 'dot/all-cars' ? 'active'">
