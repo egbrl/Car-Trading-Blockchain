@@ -134,8 +134,8 @@ public class AppController {
 	public String createCar(Model model, Authentication authentication, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
 		proposalData.setCar(carData.getVin());
 
-		out(carData.toString());
-		out(proposalData.toString());
+		out("Vin: " + carData.getVin() + " _Brand: " +carData.getCertificate().getBrand());
+		out("Doors:" + proposalData.getNumberOfDoors() + "_max speed: " + proposalData.getMaxSpeed());
 
 		String username;
 		String garageRole;

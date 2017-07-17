@@ -57,8 +57,8 @@ type Certificate struct {
  */
 type RegistrationProposal struct {
 	Car               string `json:"car"`
-	NumberOfDoors     string `json:"number_of_doors"`     // '4+1' for a passenger car
-	NumberOfCylinders int    `json:"number_of_cylinders"` // 3, 4, 6, 8 ?
-	NumberOfAxis      int    `json:"number_of_axis"`      // typically 2
-	MaxSpeed          int    `json:"max_speed"`           // maximum speed as tested
+	NumberOfDoors     string `json:"numberOfDoors"`     // '4+1' for a passenger car
+	NumberOfCylinders int    `json:"numberOfCylinders"` // 3, 4, 6, 8 ?
+	NumberOfAxis      int    `json:"numberOfAxis"`      // typically 2
+	MaxSpeed          int    `json:"maxSpeed"`          // maximum speed as tested
 }
