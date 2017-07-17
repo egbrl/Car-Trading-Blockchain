@@ -81,7 +81,7 @@
             </tr>
             </thead>
             <tbody>
-            <tr th:each="proposalAndCarData,iterStat : ${pAndC}">
+            <tr th:each="pAndC,iterStat : ${proposalAndCarData}">
                 <th th:text="${iterStat.count}" scope="row"></th>
                 <td th:text="${pAndC.car.certificate.type}">M3</td>
                 <td th:text="${pAndC.car.certificate.brand}">BMW</td>

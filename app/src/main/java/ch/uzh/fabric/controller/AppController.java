@@ -99,14 +99,14 @@ public class AppController {
 		String role = authentication.getAuthorities().toArray()[0].toString();
 
 		// Redirect to DOT and INSURANCE index page
-		if(role == "ROLE_dot") {
+		if(role.equals("ROLE_dot")) {
 			try {
 				authentication.isAuthenticated();
 				return "redirect:/dot/index";
 			} catch (Exception e) {
 				return "redirect:/login";
 			}
-		} else if (role == "ROLE_insurance") {
+		} else if (role.equals("ROLE_insurance")) {
 			try {
 				authentication.isAuthenticated();
 				return "redirect:/insurance/index";
@@ -132,6 +132,8 @@ public class AppController {
 
 	@RequestMapping(value="/import", method=RequestMethod.POST)
 	public String createCar(Model model, Authentication authentication, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
+		proposalData.setCar(carData.getVin());
+
 		out(carData.toString());
 		out(proposalData.toString());
 
@@ -230,7 +232,7 @@ public class AppController {
 
 		QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
 		queryByChaincodeRequest.setArgs(new String[]{username, roleArg});
-		queryByChaincodeRequest.setFcn("readRegistrationProposals");
+		queryByChaincodeRequest.setFcn("readRegistrationProposalsAsList");
 		queryByChaincodeRequest.setChaincodeID(chainCodeID);
 
 		Collection<ProposalResponse> queryProposals;
@@ -241,10 +243,9 @@ public class AppController {
 			throw new CompletionException(e);
 		}
 
-		ProposalData proposalData = null;
-		HashMap<String, ProposalData> registrationProposalMap = new HashMap<>();
 		HashMap<String, ProposalAndCar> proposalAndCarMap = new HashMap<>();
-		/*
+		ArrayList<ProposalData> proposalDataArraylist = new ArrayList<ProposalData>();
+
 		for (ProposalResponse proposalResponse : queryProposals) {
 			if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
 				ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
@@ -253,20 +254,21 @@ public class AppController {
 				out(result.errorMessage.toString());
 			} else {
 				String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-				registrationProposalMap = g.fromJson(payload, new HashMap<String, ProposalData>().getClass());
-
-				for (HashMap.Entry<String, ProposalData> entry : registrationProposalMap.entrySet()) {
-					ProposalAndCar proposalAndCar = new ProposalAndCar(entry.getValue(), null);
-					proposalAndCarMap.put(entry.getKey(), proposalAndCar);
+				ProposalData[] arr = g.fromJson(payload, ProposalData[].class);
+				proposalDataArraylist = new ArrayList<ProposalData>(Arrays.asList(arr));
+				Iterator<ProposalData> iterator = proposalDataArraylist.iterator();
+				while (iterator.hasNext()) {
+					ProposalData proposalData = iterator.next();
+					ProposalAndCar proposalAndCar = new ProposalAndCar(proposalData, null);
+					proposalAndCarMap.put(proposalData.getCar(), proposalAndCar);
 				}
-
 				out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
 			}
 		}
 
 		for (String vin : proposalAndCarMap.keySet()) {
 			QueryByChaincodeRequest carRequest = client.newQueryProposalRequest();
-			carRequest.setArgs(new String[]{username, role, vin});
+			carRequest.setArgs(new String[]{username, roleArg, vin});
 			carRequest.setFcn("readCar");
 			carRequest.setChaincodeID(chainCodeID);
 
@@ -289,14 +291,17 @@ public class AppController {
 					car = g.fromJson(payload, Car.class);
 
 					ProposalAndCar proposalAndCarObject = proposalAndCarMap.get(vin);
+					out("VIN:" + car.getVin());
+					out("maxSpeed: " + proposalAndCarObject.getProposalData().toString());
 					proposalAndCarObject.setCar(car);
 
 					proposalAndCarMap.replace(vin, proposalAndCarObject);
 					out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
 				}
 			}
-		} */
+		}
 
+		out("Size of proposalAndCarMap: " + proposalAndCarMap.values().size());
 		model.addAttribute("proposalAndCarData", proposalAndCarMap.values());
 		model.addAttribute("role", role.substring(5).toUpperCase());
 
