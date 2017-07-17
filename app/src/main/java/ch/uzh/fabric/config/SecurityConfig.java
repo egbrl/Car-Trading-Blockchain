@@ -19,8 +19,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public static final String BOOTSTRAP_GARAGE_ROLE = "garage";
     public static final String BOOTSTRAP_PRIVATE_USER = "user";
     public static final String BOOTSTRAP_PRIVATE_USER_ROLE = "user";
-    public static final String BOOTSTRAP_INSURANCE_USER = "insurance";
-    public static final String BOOTSTRAP_INSURANCE_ROLE = "insurance";
+    public static final String BOOTSTRAP_INSURANCE_USER = "insurer";
+    public static final String BOOTSTRAP_INSURANCE_ROLE = "insurer";
     public static final String BOOTSTRAP_DOT_USER = "dot";
     public static final String BOOTSTRAP_DOT_ROLE = "dot";
 
@@ -31,6 +31,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
                 .antMatchers("/css/**", "/fonts/**", "/img/**", "/js/**", "/login", "/login-error", "/test/**").permitAll()
                 .antMatchers("/import").hasRole(BOOTSTRAP_GARAGE_ROLE)
+                .antMatchers("/insure").hasAnyRole(BOOTSTRAP_GARAGE_ROLE, BOOTSTRAP_PRIVATE_USER_ROLE)
+                .antMatchers("/insurance/**").hasRole(BOOTSTRAP_INSURANCE_ROLE)
                 .anyRequest().authenticated()
                 .and()
                 .formLogin().loginPage("/login").failureUrl("/login-error");
