@@ -94,6 +94,24 @@ func (t *CarChaincode) readRegistrationProposals(stub shim.ChaincodeStubInterfac
 }
 
 /*
+ * Reads all registration proposals and returns them as an array
+ */
+func (t *CarChaincode) readRegistrationProposalsList(stub shim.ChaincodeStubInterface) pb.Response {
+	proposalIndex, err := t.getRegistrationProposals(stub)
+	if err != nil {
+		return shim.Error("Error reading registration proposal index")
+	}
+	var registrationProposalList []RegistrationProposal
+
+	for _, v := range proposalIndex {
+		registrationProposalList = append(registrationProposalList, v)
+	}
+
+	indexListAsBytes, _ := json.Marshal(registrationProposalList)
+	return shim.Success(indexListAsBytes)
+}
+
+/*
  * Returns a registration proposal for a car.
  */
 func (t *CarChaincode) getRegistrationProposal(stub shim.ChaincodeStubInterface, car string) pb.Response {

@@ -218,6 +218,30 @@ func (t *CarChaincode) readCar(stub shim.ChaincodeStubInterface, username string
 }
 
 /*
+ * Reads a car as DOT
+ *
+ * Extra function for DOT to read cars
+ *
+ * On success,
+ * returns the car.
+ */
+func (t *CarChaincode) readCarAsDot(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response {
+	if vin == "" {
+		return shim.Error("'readCar' expects a non-empty VIN to do the look up")
+	}
+
+	// fetch the car from the ledger
+	carResponse := t.read(stub, vin)
+	car := Car{}
+	err := json.Unmarshal(carResponse.Payload, &car)
+	if err != nil {
+		return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
+	}
+
+	return shim.Success(carResponse.Payload)
+}
+
+/*
  * Sell a car to a new owner (receiver).
  *
  * The car can only be sold if the buyer/receiver
@@ -446,7 +470,6 @@ func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username strin
 
 	// attach the car to the receiver (new car owner)
 	newOwner.Cars = append(newOwner.Cars, car.Vin)
-
 
 	// write back the new owner (reveiver) to state
 	err = t.saveUser(stub, newOwner)

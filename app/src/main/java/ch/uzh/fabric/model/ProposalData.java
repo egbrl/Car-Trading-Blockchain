@@ -7,14 +7,28 @@ public class ProposalData {
     private Integer numberOfAxis;
     private Integer maxSpeed;
 
+    public ProposalData() {
+    }
+
     public ProposalData(String carVin, String numberOfDoors, Integer numberOfCylinders, Integer numberOfAxis, Integer maxSpeed) {
+        this(numberOfDoors, numberOfCylinders, numberOfAxis, maxSpeed);
         this.car = carVin;
+    }
+
+    public ProposalData(String numberOfDoors, Integer numberOfCylinders, Integer numberOfAxis, Integer maxSpeed) {
         this.numberOfDoors = numberOfDoors;
         this.numberOfCylinders = numberOfCylinders;
         this.numberOfAxis = numberOfAxis;
         this.maxSpeed = maxSpeed;
     }
 
+    public String getCar() {
+        return car;
+    }
+
+    public void setCar(String car) {
+        this.car = car;
+    }
 
     public String getNumberOfDoors() {
         return numberOfDoors;
@@ -27,7 +41,6 @@ public class ProposalData {
     public Integer getNumberOfCylinders() {
         return numberOfCylinders;
     }
-
 
     public void setNumberOfCylinders(Integer numberOfCylinders) {
         this.numberOfCylinders = numberOfCylinders;

@@ -117,8 +117,11 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "readCar":
 		if len(args) != 1 {
 			return shim.Error("'readCar' expects a car vin to do the look up")
+		} else if role == "dot" {
+			return t.readCarAsDot(stub, username, args[0])
+		} else {
+			return t.readCar(stub, username, args[0])
 		}
-		return t.readCar(stub, username, args[0])
 
 	// USER FUNCTIONS
 	case "readUser":
@@ -225,9 +228,8 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if role != "dot" {
 			// only the DOT is allowed to read registration proposals
 			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to read registration proposals.", role))
-		} else {
-			return t.readRegistrationProposals(stub)
 		}
+		return t.readRegistrationProposalsList(stub)
 
 	case "register":
 		if len(args) != 1 {
@@ -252,9 +254,8 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "getRevocationProposals":
 		if role != "dot" {
 			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to query revocation proposals.", role))
-		} else {
-			return t.getRevocationProposals(stub)
 		}
+		return t.getRevocationProposals(stub)
 
 	// INSURANCE FUNCTIONS
 	case "insuranceAccept":
