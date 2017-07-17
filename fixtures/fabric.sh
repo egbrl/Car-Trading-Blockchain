@@ -26,10 +26,11 @@ function clean(){
     docker images | grep 'dev-peer' | awk '{print $1}' | xargs docker rmi -f
   fi
 
-  # lines=`docker ps -aq | wc -l`
-  # if [ "$lines" -gt 0 ]; then
-  #   docker rm -f `docker ps -aq`
-  # fi
+  lines=`docker ps -aq | wc -l`
+  if [ "$lines" -gt 0 ]; then
+    docker stop -f `docker ps -aq`
+    docker rm -f `docker ps -aq`
+  fi
 
   echo "Building car app image (if not latest already)"
   docker build -t egabb/car_cc_app:latest .

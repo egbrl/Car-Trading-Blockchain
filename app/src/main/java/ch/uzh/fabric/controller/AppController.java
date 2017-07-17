@@ -290,7 +290,7 @@ public class AppController {
 
 		QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
 		queryByChaincodeRequest.setArgs(new String[]{username, roleArg});
-		queryByChaincodeRequest.setFcn("readRegistrationProposals");
+		queryByChaincodeRequest.setFcn("readRegistrationProposalsAsList");
 		queryByChaincodeRequest.setChaincodeID(chainCodeID);
 
 		Collection<ProposalResponse> queryProposals;
