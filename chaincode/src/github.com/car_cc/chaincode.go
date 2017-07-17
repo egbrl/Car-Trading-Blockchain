@@ -158,11 +158,10 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	case "insureProposal":
 		if len(args) != 2 {
 			return shim.Error("'insureProposal' expects a car vin and an insurance company")
-		} else if role != "user" {
-			// only normal users are allowed to do insurance proposals
-			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create an insurance proposal.", role))
-		} else {
+		} else if role == "user" || role == "garage" {
 			return t.insureProposal(stub, username, args[0], args[1])
+		} else {
+			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create an insurance proposal.", role))
 		}
 
 	case "sell":
