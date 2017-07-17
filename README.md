@@ -52,9 +52,6 @@ Or to run only some tests (TestTransferCar test in this case):
 go test -run TestTransferCar
 ```
 
-## Documentation
-On [Google Drive](https://docs.google.com/document/d/1U7C9dJmDg_-l5gKeseZEKqc5ooru2wMxZ8BwhkbjIbk/edit?usp=sharing)
-
 ## References
 * Docker setup from [yeasy(v1.0)](https://github.com/yeasy/docker-compose-files/tree/master/hyperledger/1.0).
 * Spring template and inspiration: [https://bitbucket.org/isparkes/fabric-sdk-spring-boot-rest-poc/](https://bitbucket.org/isparkes/fabric-sdk-spring-boot-rest-poc/)
