@@ -3,6 +3,7 @@ package ch.uzh.fabric.controller;
 import ch.uzh.fabric.config.*;
 import ch.uzh.fabric.model.*;
 import ch.uzh.fabric.model.User;
+import ch.uzh.fabric.service.CarService;
 import com.google.gson.*;
 import io.grpc.StatusRuntimeException;
 import org.hyperledger.fabric.sdk.*;
@@ -20,6 +21,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
@@ -44,9 +46,9 @@ public class AppController {
 	private static final String TESTUSER_1_NAME = "user1";
 	private static final String FOO_CHAIN_NAME = "foo";
 	private static final String PROJECT_ROOT = "/var/egabb/";
-	private static final String CHAIN_CODE_NAME = "car_cc_go";
-	private static final String CHAIN_CODE_PATH = "github.com/car_cc";
-	private static final String CHAIN_CODE_VERSION = "1";
+	public static final String CHAIN_CODE_NAME = "car_cc_go";
+	public static final String CHAIN_CODE_PATH = "github.com/car_cc";
+	public static final String CHAIN_CODE_VERSION = "1";
 
 	private static final String TEST_VIN = "WVWZZZ6RZHY260780";
 
@@ -54,6 +56,8 @@ public class AppController {
 	private SampleStore sampleStore;
 	private HFClient client;
 	private Chain chain;
+
+	private CarService carService = new CarService();
 
 	private JsonSerializer<Date> ser = new JsonSerializer<Date>() {
 		@Override
@@ -111,69 +115,7 @@ public class AppController {
 			}
 		}
 
-		ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
-				.setVersion(CHAIN_CODE_VERSION)
-				.setPath(CHAIN_CODE_PATH).build();
-
-		QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
-		queryByChaincodeRequest.setArgs(new String[]{username, role});
-		queryByChaincodeRequest.setFcn("readUser");
-		queryByChaincodeRequest.setChaincodeID(chainCodeID);
-
-		Collection<ProposalResponse> queryProposals;
-
-		try {
-			queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
-		} catch (InvalidArgumentException | ProposalException e) {
-			throw new CompletionException(e);
-		}
-
-		User user = null;
-		HashMap<String, Car> carList = new HashMap<>();
-		for (ProposalResponse proposalResponse : queryProposals) {
-			if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
-				ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
-						+ ". Messages: " + proposalResponse.getMessage()
-						+ ". Was verified : " + proposalResponse.isVerified());
-				out(result.errorMessage.toString());
-			} else {
-				String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-				user = g.fromJson(payload, User.class);
-				for (String vin : user.getCars()) {
-					carList.put(vin, new Car(null, null, vin));
-				}
-
-				out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
-			}
-		}
-
-		for (Car car : carList.values()) {
-			QueryByChaincodeRequest carRequest = client.newQueryProposalRequest();
-			carRequest.setArgs(new String[]{username, role, car.getVin()});
-			carRequest.setFcn("readCar");
-			carRequest.setChaincodeID(chainCodeID);
-
-			Collection<ProposalResponse> carQueryProps;
-			try {
-				carQueryProps = chain.queryByChaincode(carRequest);
-			} catch (InvalidArgumentException | ProposalException e) {
-				throw new CompletionException(e);
-			}
-
-			for (ProposalResponse proposalResponse : carQueryProps) {
-				if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
-					ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
-							+ ". Messages: " + proposalResponse.getMessage()
-							+ ". Was verified : " + proposalResponse.isVerified());
-					out(result.errorMessage.toString());
-				} else {
-					String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-					car = g.fromJson(payload, Car.class);
-					carList.replace(car.getVin(), car);
-					out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
-				}
-			}
-		}
+		HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
 
 		model.addAttribute("cars", carList.values());
 		model.addAttribute("role", role.substring(5).toUpperCase());
@@ -365,6 +307,115 @@ public class AppController {
 
 
 		return "dot/index";
+	}
+
+	@RequestMapping("/insurance/index")
+	public String insuranceIndex(Model model, Authentication authentication) {
+		String username = authentication.getName();
+		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+
+		ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
+				.setVersion(AppController.CHAIN_CODE_VERSION)
+				.setPath(AppController.CHAIN_CODE_PATH).build();
+
+		QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
+		queryByChaincodeRequest.setArgs(new String[]{username, role, "AXA"});
+		queryByChaincodeRequest.setFcn("getInsurer");
+		queryByChaincodeRequest.setChaincodeID(chainCodeID);
+
+		Collection<ProposalResponse> queryProposals;
+
+		try {
+			queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
+		} catch (InvalidArgumentException | ProposalException e) {
+			throw new CompletionException(e);
+		}
+
+		Insurer insurer = null;
+		for (ProposalResponse proposalResponse : queryProposals) {
+			if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
+				ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
+						+ ". Messages: " + proposalResponse.getMessage()
+						+ ". Was verified : " + proposalResponse.isVerified());
+				System.out.println(result.errorMessage.toString());
+			} else {
+				String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
+				insurer = g.fromJson(payload, Insurer.class);
+				out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
+			}
+		}
+
+		model.addAttribute("insurer", insurer);
+		return "insurance/index";
+	}
+
+	@RequestMapping(value="/insure", method=RequestMethod.GET)
+	public String showInsureForm(Model model, Authentication authentication) {
+		String username = authentication.getName();
+		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+		HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
+
+		model.addAttribute("cars", carList.values());
+		model.addAttribute("role", role.toUpperCase());
+		return "insure";
+	}
+
+	@RequestMapping(value="/insure", method=RequestMethod.POST)
+	public String insuranceProposal(Model model, Authentication authentication, @RequestParam("vin") String vin, @RequestParam("company") String company) {
+		out(vin);
+		out(company);
+
+		String username = authentication.getName();
+		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+
+		out(username);
+		out(role);
+
+		ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
+				.setVersion(CHAIN_CODE_VERSION)
+				.setPath(CHAIN_CODE_PATH).build();
+
+		try {
+			Collection<ProposalResponse> successful = new LinkedList<>();
+			Collection<ProposalResponse> failed = new LinkedList<>();
+
+			TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
+			transactionProposalRequest.setChaincodeID(chainCodeID);
+			transactionProposalRequest.setFcn("insureProposal");
+
+			transactionProposalRequest.setArgs(new String[]{username, role, vin, company});
+			out("sending transaction proposal for 'insureProposal' to all peers");
+
+			Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
+			for (ProposalResponse response : invokePropResp) {
+				if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
+					out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
+					successful.add(response);
+				} else {
+					failed.add(response);
+				}
+			}
+			out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
+					invokePropResp.size(), successful.size(), failed.size());
+			if (failed.size() > 0) {
+				throw new ProposalException("Not enough endorsers for invoke");
+
+			}
+			out("Successfully received transaction proposal responses.");
+
+			out("Sending chain code transaction to orderer");
+			chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+		} catch (Exception e) {
+			out(e.toString());
+			e.printStackTrace();
+			ErrorInfo result = new ErrorInfo(500, "", "CompletionException " + e.getMessage());
+			//return result;
+			//model.addAttribute("error", "");
+		}
+
+		model.addAttribute("role", role.toUpperCase());
+		model.addAttribute("success", "Successfully created insurance proposal.");
+		return "insure";
 	}
 
 

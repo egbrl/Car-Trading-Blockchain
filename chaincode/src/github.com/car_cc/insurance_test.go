@@ -19,8 +19,9 @@ func TestIsInsured(t *testing.T) {
 }
 
 func TestInsureProposal(t *testing.T) {
-    username := "amag"
-    vin      := "WVW ZZZ 6RZ HY26 0780"
+    username         := "amag"
+    vin              := "WVW ZZZ 6RZ HY26 0780"
+    insuranceCompany := "axa"
 
     // create and name a new chaincode mock
     carChaincode := &CarChaincode{}
@@ -42,7 +43,7 @@ func TestInsureProposal(t *testing.T) {
     fmt.Printf("Successfully created car with ts '%d'\n", car.CreatedTs)
 
     // make an insurance proposal for AXA
-    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("insureProposal", username, "user", vin, "axa"))
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("insureProposal", username, "user", vin, insuranceCompany))
     proposal := InsureProposal {}
     err = json.Unmarshal(response.Payload, &proposal)
     if (err != nil) {
@@ -50,6 +51,24 @@ func TestInsureProposal(t *testing.T) {
     }
 
     fmt.Println(proposal)
+
+    // the list of proposals for AXA should contain the proposal
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("getInsurer", username, "insurer", insuranceCompany))
+    insurer := Insurer {}
+    err = json.Unmarshal(response.Payload, &insurer)
+    if (err != nil) {
+        t.Error("Error fetching insurance records")
+    }
+
+    fmt.Println(insurer)
+
+    if len(insurer.Proposals) != 1 {
+        t.Error("There should be a proposal now")
+    } else if (insurer.Proposals[0].User != username) {
+        t.Error("Wrong username. This proposal is from the wrong user.")
+    } else if (insurer.Proposals[0].Car != vin) {
+        t.Error("Wrong VIN. This proposal is for the wrong car.")
+    }
 }
 
 func TestGetInsurerAndInsuranceAccept(t *testing.T) {
@@ -86,6 +105,20 @@ func TestGetInsurerAndInsuranceAccept(t *testing.T) {
 
     fmt.Println(proposal)
 
+    // the list of proposals for AXA should contain the proposal
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("getInsurer", username, "insurer", insuranceCompany))
+    insurer := Insurer {}
+    err = json.Unmarshal(response.Payload, &insurer)
+    if (err != nil) {
+        t.Error("Error fetching insurance records")
+    }
+
+    fmt.Println(insurer)
+
+    if len(insurer.Proposals) != 1 {
+        t.Error("There should be a proposal now")
+    }
+
     // accept the proposal as axa insurance company
     // this would be allowed, but the car is not registered yet
     response = stub.MockInvoke(uuid, util.ToChaincodeArgs("insuranceAccept", username, "insurer", vin, insuranceCompany))
@@ -121,7 +154,7 @@ func TestGetInsurerAndInsuranceAccept(t *testing.T) {
 
     // the list of proposals for AXA should be empty by now
     response = stub.MockInvoke(uuid, util.ToChaincodeArgs("getInsurer", username, "insurer", insuranceCompany))
-    insurer := Insurer {}
+    insurer = Insurer {}
     err = json.Unmarshal(response.Payload, &insurer)
     if (err != nil) {
         t.Error("Error fetching insurance records")

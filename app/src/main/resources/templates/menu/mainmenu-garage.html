@@ -5,8 +5,13 @@
         </a>
     </li>
     <li th:class="${currentPage} eq 'import' ? 'active'">
-        <a href="import.html" th:href="@{/import}">
+        <a href="#" th:href="@{/import}">
             <span class="glyphicon glyphicon-copy" aria-hidden="true"></span>&nbsp;Import Car
+        </a>
+    </li>
+    <li th:class="${currentPage} eq 'insure' ? 'active'">
+        <a href="#" th:href="@{/insure}">
+            <span class="glyphicon glyphicon-copy" aria-hidden="true"></span>&nbsp;Insure Car
         </a>
     </li>
 </ul>
