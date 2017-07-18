@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.annotation.PostConstruct;
+import javax.validation.constraints.Null;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -430,14 +431,20 @@ public class AppController {
 			}
 		}
 
-		for (InsureProposal proposal : insurer.getProposals()) {
-			out("IsRegistered before checking: "+proposal.isRegistered());
-			Car car = carService.getCar(client, chain, proposal.getUser(), "user", proposal.getCar());
-			proposal.setRegistered(car.isRegistered());
-		}
+		try {
 
-		for (InsureProposal proposal : insurer.getProposals()) {
-			out("IsRegistered after checking: "+proposal.isRegistered());
+			for (InsureProposal proposal : insurer.getProposals()) {
+				out("IsRegistered before checking: " + proposal.isRegistered());
+				Car car = carService.getCar(client, chain, proposal.getUser(), "user", proposal.getCar());
+				proposal.setRegistered(car.isRegistered());
+			}
+
+			for (InsureProposal proposal : insurer.getProposals()) {
+				out("IsRegistered after checking: " + proposal.isRegistered());
+			}
+
+		} catch (NullPointerException e) {
+			// Insurer not yet created, because no proposals on this insurer exist
 		}
 
 
