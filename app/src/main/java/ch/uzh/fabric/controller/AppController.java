@@ -11,6 +11,7 @@ import org.hyperledger.fabric_ca.sdk.HFCAClient;
 import org.hyperledger.fabric_ca.sdk.RegistrationRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -21,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.annotation.PostConstruct;
-import javax.validation.constraints.Null;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -75,6 +75,9 @@ public class AppController {
 
     Gson g = null;
 
+	@Autowired
+	private ProfileProperties profileProperties;
+
 
 	/*
      *	URL MAPPINGS
@@ -89,6 +92,58 @@ public class AppController {
 		} catch (Exception e) {
 			return "redirect:/login";
 		}
+	}
+
+	@RequestMapping(value="/account", method=RequestMethod.GET)
+	public String account(Authentication authentication, Model model) {
+		String username = authentication.getName();
+		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+
+		ProfileProperties.User user = null;
+
+		// look for an existing user profile
+		for (ProfileProperties.User userProperties : profileProperties.getUsers()) {
+			if (userProperties.getName().equals(username) && userProperties.getRole().equals(role)) {
+				user = userProperties;
+			}
+		}
+
+		// if no settings for this user found,
+		// create a new profile and append it to the list
+		// of global user profiles
+		if (user == null) {
+			user = new ProfileProperties.User();
+			user.setName(username);
+			user.setRole(role);
+
+			List<ProfileProperties.User> users = profileProperties.getUsers();
+			users.add(user);
+			profileProperties.setUsers(users);
+		}
+
+		model.addAttribute("orgName", user.getOrganization());
+		model.addAttribute("role", role.toUpperCase());
+		return "account";
+	}
+
+	@RequestMapping(value="/account", method=RequestMethod.POST)
+	public String accountChange(Authentication authentication, Model model, @RequestParam("orgName") String orgName) {
+		String username = authentication.getName();
+		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+
+		ProfileProperties.User user = null;
+		for (ProfileProperties.User userProps : profileProperties.getUsers()) {
+			if (userProps.getName().equals(username) && userProps.getRole().equals(role)) {
+				userProps.setOrganization(orgName);
+				user = userProps;
+			}
+		}
+
+		// we can guarantee that 'user' is not 'null', i.e. exists
+		// because we create the user in the 'GET' request already
+		model.addAttribute("orgName", user.getOrganization());
+		model.addAttribute("role", role.toUpperCase());
+		return "account";
 	}
 
 	@RequestMapping("/index")
@@ -464,7 +519,9 @@ public class AppController {
 				.setPath(AppController.CHAIN_CODE_PATH).build();
 
 		QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
-		queryByChaincodeRequest.setArgs(new String[]{username, role, "AXA"});
+
+		String companyName = ProfileProperties.getOrganization(profileProperties, username, role);
+		queryByChaincodeRequest.setArgs(new String[]{username, role, companyName});
 		queryByChaincodeRequest.setFcn("getInsurer");
 		queryByChaincodeRequest.setChaincodeID(chainCodeID);
 
@@ -515,10 +572,9 @@ public class AppController {
 
 	@RequestMapping("/insurance/acceptInsurance")
 	public String acceptInsurance(RedirectAttributes redirAttr, Authentication authentication, @RequestParam("vin") String vin, @RequestParam("userToInsure") String userToInsure) {
-		out("vin"+vin);
-		String company = "AXA";
 		String username = authentication.getName();
 		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+		String company = ProfileProperties.getOrganization(profileProperties, username, role);
 
 		try {
 			ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
