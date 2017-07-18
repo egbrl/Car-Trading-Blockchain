@@ -24,7 +24,7 @@
                 <div th:case="'GARAGE'">
                     <ul th:replace="/menu/mainmenu-garage"></ul>
                 </div>
-                <div th:case="'INSURANCE'">
+                <div th:case="'INSURER'">
                     <ul th:replace="/menu/mainmenu-insurance"></ul>
                 </div>
                 <div th:case="'USER'">
@@ -49,8 +49,8 @@
                     <div th:case="'GARAGE'">
                         <h1>My Cars</h1>
                     </div>
-                    <div th:case="'INSURANCE'">
-                        <h1 th:text="(${insurer.name}) Insurance Inquiries">My Insurance Inquiries</h1>
+                    <div th:case="'INSURER'">
+                        <h1 th:text="${insurer.name} + ' Insurance Inquiries'">My Insurance Inquiries</h1>
                     </div>
                     <div th:case="'USER'">
                         <h1>My Cars</h1>
@@ -64,6 +64,7 @@
     </div>
 
     <div>
+        <p th:if="${success}" style="color: green"><span class="glyphicon glyphicon-ok-circled" aria-hidden="true" /> <span th:utext="${success}" /></p>
         <table class="table table-hover">
             <thead>
             <tr>
@@ -77,10 +78,13 @@
             <tr th:each="proposal,iterStat : ${insurer.proposals}">
                 <form th:id="'insuranceAccept' + ${iterStat.count}" th:action="@{/insurance/acceptInsurance}" method="post">
                     <th th:text="${iterStat.count}" scope="row"></th>
-                    <td th:text="${proposal.user}">Username</td>
+                    <td>
+                        <span th:text="${proposal.user}">Username</span>
+                        <input type="hidden" name="userToInsure" th:value="${proposal.user}"/>
+                    </td>
                     <td>
                         <span th:text="${proposal.car}">VIN</span>
-                        <input type="hidden" name="vin" th:text="${proposal.car}"/>
+                        <input type="hidden" name="vin" th:value="${proposal.car}"/>
                     </td>
                     <td><button type="button" th:onclick="'document.getElementById(\'insuranceAccept' + ${iterStat.count} + '\').submit()'" class="btn btn-success">insure</button></td>
                 </form>

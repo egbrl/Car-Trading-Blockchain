@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
@@ -397,7 +398,7 @@ public class AppController {
 
 
 	@RequestMapping("/insurance/index")
-	public String insuranceIndex(Model model, Authentication authentication) {
+	public String insuranceIndex(Model model, Authentication authentication, @RequestParam(required = false) String success) {
 		String username = authentication.getName();
 		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
 
@@ -432,12 +433,16 @@ public class AppController {
 			}
 		}
 
+		model.addAttribute("success", success);
+		model.addAttribute("role", role.toUpperCase());
 		model.addAttribute("insurer", insurer);
 		return "insurance/index";
 	}
 
 	@RequestMapping("/insurance/acceptInsurance")
-	public String acceptInsurance(Model model, Authentication authentication, @RequestParam("vin") String vin) {
+	public String acceptInsurance(RedirectAttributes redirAttr, Authentication authentication, @RequestParam("vin") String vin, @RequestParam("userToInsure") String userToInsure) {
+		out("vin"+vin);
+		String company = "AXA";
 		String username = authentication.getName();
 		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
 
@@ -453,8 +458,8 @@ public class AppController {
 			transactionProposalRequest.setChaincodeID(chainCodeID);
 			transactionProposalRequest.setFcn("insuranceAccept");
 
-			transactionProposalRequest.setArgs(new String[]{username, role, vin, "AXA"});
-			out("sending transaction proposal for 'insureProposal' to all peers");
+			transactionProposalRequest.setArgs(new String[]{username, role, userToInsure, vin, company});
+			out("sending transaction proposal for 'insuranceAccept' to all peers");
 
 			Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
 			for (ProposalResponse response : invokePropResp) {
@@ -479,6 +484,7 @@ public class AppController {
 			e.printStackTrace();
 		}
 
+		redirAttr.addAttribute("success", "Insurance proposal accepted. '"+company+"' now insures car '"+vin+"' of user '"+userToInsure+"'.");
 		return "redirect:/insurance/index";
 	}
 
@@ -547,7 +553,7 @@ public class AppController {
 		}
 
 		model.addAttribute("role", role.toUpperCase());
-		model.addAttribute("success", "Successfully created insurance proposal.");
+		model.addAttribute("success", "Insurance proposal saved. '"+company+"' will get back to you for confirmation.");
 		return "insure";
 	}
 

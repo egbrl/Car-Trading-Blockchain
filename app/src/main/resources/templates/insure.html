@@ -52,7 +52,7 @@
             </div>
         </div>
     </div>
-    <p th:if="${success}" style="color: green" th:utext="${success}">Proposal Success Msg</p>
+    <p th:if="${success}" style="color: green"><span class="glyphicon glyphicon-saved" aria-hidden="true" /> <span th:utext="${success}" /></p>
     <div>
         <form class="form-horizontal" th:action="@{/insure}" method="post">
             <div class="form-group">
