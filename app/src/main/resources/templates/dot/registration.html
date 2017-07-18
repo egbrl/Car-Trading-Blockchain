@@ -64,6 +64,7 @@
     </div>
 
     <div>
+        <p th:if="${success}" style="color: green"><span class="glyphicon glyphicon-ok-circled" aria-hidden="true" /> <span th:utext="${success}" /></p>
         <table class="table table-hover">
             <thead>
             <tr>
@@ -92,12 +93,21 @@
                 <td th:text="${pAndC.proposalData.numberOfAxis}">AXA Winterthur</td>
                 <td th:text="${pAndC.proposalData.maxSpeed}">AXA Winterthur</td>
                 <td th:text="${pAndC.car.isRegistered()}">Yes</td>
-                <td><button type="button" class="btn btn-success">Accept registration</button></td>
+                <td>
+                    <button type="button" class="btn btn-success"
+                            th:onclick="'document.getElementById(\'registrationAccept' + ${iterStat.count} + '\').submit()'">
+                        approve request
+                    </button>
+                </td>
+                <form th:id="'registrationAccept' + ${iterStat.count}" th:action="@{/dot/registration/accept}"
+                      method="post">
+                    <input type="hidden" name="vin" th:value="${pAndC.car.vin}"/>
+                </form>
             </tr>
             </tbody>
         </table>
+        <div style="text-align: center;"><p th:if="${noProposals}" style="color: lightsalmon">No pending requests.</p></div>
     </div>
-
     <footer>
         <div class="row">
             <div class="col-lg-12">

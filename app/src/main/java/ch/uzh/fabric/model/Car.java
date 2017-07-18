@@ -42,11 +42,11 @@ public class Car {
         this.vin = vin;
     }
 
-    public boolean isConfirmed() {
+    public boolean isRegistered() {
         return !this.certificate.getVin().isEmpty();
     }
 
-    public boolean isRegistered() {
+    public boolean isConfirmed() {
         return !this.certificate.getNumberplate().isEmpty();
     }
 

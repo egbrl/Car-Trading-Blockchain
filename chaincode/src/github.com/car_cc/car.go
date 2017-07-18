@@ -186,6 +186,30 @@ func (t *CarChaincode) getCar(stub shim.ChaincodeStubInterface, username string,
 }
 
 /*
+ * Reads a car as DOT
+ *
+ * The DOT is allowed to read all cars
+ *
+ * On success,
+ * returns the car.
+ */
+func (t *CarChaincode) getCarAsDot(stub shim.ChaincodeStubInterface, vin string) (Car, error) {
+	if vin == "" {
+		return Car{}, errors.New("'readCar' expects a non-empty VIN to do the look up")
+	}
+
+	// fetch the car from the ledger
+	carResponse := t.read(stub, vin)
+	car := Car{}
+	err := json.Unmarshal(carResponse.Payload, &car)
+	if err != nil {
+		return Car{}, errors.New("Failed to fetch car with vin '" + vin + "' from ledger")
+	}
+
+	return car, nil
+}
+
+/*
  * Reads a car.
  *
  * Only the car owner can read the car.

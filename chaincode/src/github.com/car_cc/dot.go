@@ -147,7 +147,10 @@ func (t *CarChaincode) getRegistrationProposal(stub shim.ChaincodeStubInterface,
 func (t *CarChaincode) registerCar(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response {
 	// reading the car already checks that the user
 	// is the actual owner of the car
-	car, err := t.getCar(stub, username, vin)
+	car, err := t.getCarAsDot(stub, vin)
+	if err != nil {
+		return shim.Error(fmt.Sprintf("Error getting car as DOT"))
+	}
 	if vin != car.Vin {
 		return shim.Error(fmt.Sprintf("Cannot register, invalid VIN.\nCar VIN is '%s' and you want to register VIN '%s'", car.Vin, vin))
 	}
@@ -165,9 +168,8 @@ func (t *CarChaincode) registerCar(stub shim.ChaincodeStubInterface, username st
 
 	// create a certificate, approve vin
 	// and update the car in the ledger
-	cert := Certificate{Username: username,
-		Vin: vin}
-	car.Certificate = cert
+	car.Certificate.Username = username
+	car.Certificate.Vin = vin
 	carAsBytes, _ := json.Marshal(car)
 	err = stub.PutState(car.Vin, carAsBytes)
 	if err != nil {

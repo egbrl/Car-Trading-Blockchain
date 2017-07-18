@@ -89,7 +89,7 @@
                         <td th:text="${car.certificate.numberplate}">ZH 1234</td>
                     </div>
                     <div th:case="false">
-                        <div th:switch="${car.isRegistered()}">
+                        <div th:switch="${car.isInsured()}">
                             <div th:case="true">
                                 <td><button type="button" class="btn btn-success">confirm</button></td>
                             </div>
@@ -117,7 +117,7 @@
                 <td>
                     <div th:switch="${car.isRegistered()}">
                         <div th:case="true">
-                            <span class="glyphicon glyphicon-ok-sign" aria-hidden="true"> </span>&nbsp;OK
+                            <span class="glyphicon glyphicon-ok" aria-hidden="true" style="color: lightgreen"></span>&nbsp;OK
                         </div>
                         <div th:case="false">
                             <span class="glyphicon glyphicon-hourglass" aria-hidden="true"> </span>&nbsp;pending
@@ -125,7 +125,7 @@
                     </div>
                 </td>
                 <td>
-                    <div th:switch="${car.isRegistered()}">
+                    <div th:switch="${car.isConfirmed()}">
                         <div th:case="true">
                             <button type="button" class="btn btn-danger">revoke</button>
                         </div>
