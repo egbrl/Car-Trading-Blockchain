@@ -106,10 +106,16 @@
                     <div th:case="false">
                         <div th:switch="${car.isRegistered()}">
                             <div th:case="true">
-                                <td><button type="button" class="btn btn-success">insure</button></td>
+                                <td>
+                                    <a href="#" th:href="@{/insure(activeVin=${car.vin})}">
+                                        <button type="button" class="btn btn-success">insure</button>
+                                    </a>
+                                </td>
                             </div>
                             <div th:case="false">
-                                <td><button type="button" class="btn disabled">insure</button></td>
+                                <td>
+                                    <button type="button" class="btn disabled">insure</button>
+                                </td>
                             </div>
                         </div>
                     </div>

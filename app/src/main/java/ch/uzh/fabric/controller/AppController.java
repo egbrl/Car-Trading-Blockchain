@@ -2,20 +2,16 @@ package ch.uzh.fabric.controller;
 
 import ch.uzh.fabric.config.*;
 import ch.uzh.fabric.model.*;
-import ch.uzh.fabric.model.User;
 import ch.uzh.fabric.service.CarService;
 import com.google.gson.*;
-import io.grpc.StatusRuntimeException;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.*;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 import org.hyperledger.fabric_ca.sdk.RegistrationRequest;
-import org.hyperledger.fabric_ca.sdk.exception.EnrollmentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestWrapper;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -127,6 +123,7 @@ public class AppController {
 	public String showImportForm(Model model, Authentication authentication, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
 		String username = authentication.getName();
 		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+
 		model.addAttribute("role", role.toUpperCase());
 		return "import";
 	}
@@ -500,13 +497,21 @@ public class AppController {
 	}
 
 	@RequestMapping(value="/insure", method=RequestMethod.GET)
-	public String showInsureForm(Model model, Authentication authentication, @RequestParam(required = false) String success) {
+	public String showInsureForm(Model model, Authentication authentication, @RequestParam(required = false) String success, @RequestParam(required = false) String activeVin) {
 		String username = authentication.getName();
 		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
 		HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
 
+		ArrayList<Car> registeredCarList = new ArrayList<>();
+		for (Car car : carList.values()) {
+			if (car.isRegistered()) {
+				registeredCarList.add(car);
+			}
+		}
+
+		model.addAttribute("activeVin", activeVin);
 		model.addAttribute("success", success);
-		model.addAttribute("cars", carList.values());
+		model.addAttribute("cars", registeredCarList);
 		model.addAttribute("role", role.toUpperCase());
 		return "insure";
 	}

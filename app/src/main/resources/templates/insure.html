@@ -63,7 +63,7 @@
                 <div class="col-sm-6">
                     <label for="vin">Car</label>
                     <select name="vin" id="vin" class="form-control">
-                        <option th:each="car : ${cars}" th:value="${car.vin}" th:text="${car.vin}"></option>
+                        <option th:each="car : ${cars}" th:value="${car.vin}" th:text="${car.vin}" th:selected="${car.vin}==${activeVin}"></option>
                     </select>
                 </div>
             </div>
