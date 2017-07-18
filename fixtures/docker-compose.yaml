@@ -11,6 +11,7 @@ services:
       - ../app/:/var/egabb/app
       - ../fixtures/:/var/egabb/fixtures
       - ../chaincode/:/var/egabb/chaincode
+      - $HOME/.m2/:/root/.m2:ro
     container_name: car_cc_app
 
   ca0:
