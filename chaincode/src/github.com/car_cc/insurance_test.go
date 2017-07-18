@@ -121,7 +121,7 @@ func TestGetInsurerAndInsuranceAccept(t *testing.T) {
 
     // accept the proposal as axa insurance company
     // this would be allowed, but the car is not registered yet
-    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("insuranceAccept", username, "insurer", vin, insuranceCompany))
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("insuranceAccept", "insurance-user-test-xyz", "insurer", username, vin, insuranceCompany))
     err = json.Unmarshal(response.Payload, &proposal)
     if (err == nil) {
         t.Error("Insuring a car before registration is impossible. How could you possibly trust this VIN in the certificate?")
@@ -139,14 +139,14 @@ func TestGetInsurerAndInsuranceAccept(t *testing.T) {
     }
 
     // accept my own proposal as user
-    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("insuranceAccept", username, "user", vin, insuranceCompany))
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("insuranceAccept", username, "user", username, vin, insuranceCompany))
     err = json.Unmarshal(response.Payload, &proposal)
     if (err == nil) {
         t.Error("Normal user should not be allowed to accept his own insurance proposals")
     }
 
     // accept the proposal as axa insurance company
-    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("insuranceAccept", username, "insurer", vin, insuranceCompany))
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("insuranceAccept", "insurance-user-test-xyz", "insurer", username, vin, insuranceCompany))
     err = json.Unmarshal(response.Payload, &proposal)
     if (err != nil) {
         t.Error("Error creating insurance contract")

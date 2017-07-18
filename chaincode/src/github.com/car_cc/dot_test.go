@@ -163,7 +163,7 @@ func TestRevocationIndex(t *testing.T) {
 	}
 
 	// and let axa insure the car
-	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("insuranceAccept", username, "insurer", vin, insuranceCompany))
+	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("insuranceAccept", "insurance-username-test-xyz", "insurer", username, vin, insuranceCompany))
 	err = json.Unmarshal(response.Payload, &proposal)
 	if err != nil {
 		t.Error("Error while accepting insurance proposal")
@@ -297,7 +297,7 @@ func TestConfirmRevokeAndDelete(t *testing.T) {
 	}
 
 	// and let axa insure the car
-	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("insuranceAccept", username, "insurer", vin, insuranceCompany))
+	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("insuranceAccept", "insurance-username-test-xyz", "insurer", username, vin, insuranceCompany))
 	err = json.Unmarshal(response.Payload, &proposal)
 	if err != nil {
 		t.Error("Error while accepting insurance proposal")
