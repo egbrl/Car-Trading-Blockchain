@@ -2,20 +2,16 @@ package ch.uzh.fabric.controller;
 
 import ch.uzh.fabric.config.*;
 import ch.uzh.fabric.model.*;
-import ch.uzh.fabric.model.User;
 import ch.uzh.fabric.service.CarService;
 import com.google.gson.*;
-import io.grpc.StatusRuntimeException;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.*;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 import org.hyperledger.fabric_ca.sdk.RegistrationRequest;
-import org.hyperledger.fabric_ca.sdk.exception.EnrollmentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestWrapper;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -25,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.annotation.PostConstruct;
+import javax.validation.constraints.Null;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -84,142 +81,142 @@ public class AppController {
 	 *
 	 */
 
-    @RequestMapping("/")
-    public String root(Authentication authentication) {
-        try {
-            authentication.isAuthenticated();
-            return "redirect:/index";
-        } catch (Exception e) {
-            return "redirect:/login";
-        }
-    }
+	@RequestMapping("/")
+	public String root(Authentication authentication) {
+		try {
+			authentication.isAuthenticated();
+			return "redirect:/index";
+		} catch (Exception e) {
+			return "redirect:/login";
+		}
+	}
 
-    @RequestMapping("/index")
-    public String index(Authentication authentication, Model model) {
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString();
+	@RequestMapping("/index")
+	public String index(Authentication authentication, Model model) {
+		String username = authentication.getName();
+		String role = authentication.getAuthorities().toArray()[0].toString();
 
-        // Redirect to DOT and INSURANCE index page
-        if (role.equals("ROLE_dot")) {
-            try {
-                authentication.isAuthenticated();
-                return "redirect:/dot/registration";
-            } catch (Exception e) {
-                return "redirect:/login";
-            }
-        } else if (role.equals("ROLE_insurer")) {
-            try {
-                authentication.isAuthenticated();
-                return "redirect:/insurance/index";
-            } catch (Exception e) {
-                return "redirect:/login";
-            }
-        }
+		// Redirect to DOT and INSURANCE index page
+		if(role.equals("ROLE_dot")) {
+			try {
+				authentication.isAuthenticated();
+				return "redirect:/dot/registration";
+			} catch (Exception e) {
+				return "redirect:/login";
+			}
+		} else if (role.equals("ROLE_insurer")) {
+			try {
+				authentication.isAuthenticated();
+				return "redirect:/insurance/index";
+			} catch (Exception e) {
+				return "redirect:/login";
+			}
+		}
 
-        HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
+		HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
 
-        model.addAttribute("cars", carList.values());
-        model.addAttribute("role", role.substring(5).toUpperCase());
-        return "index";
-    }
+		model.addAttribute("cars", carList.values());
+		model.addAttribute("role", role.substring(5).toUpperCase());
+		return "index";
+	}
 
-    @RequestMapping(value = "/import", method = RequestMethod.GET)
-    public String showImportForm(Model model, Authentication authentication, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
-        model.addAttribute("role", role.toUpperCase());
-        return "import";
-    }
+	@RequestMapping(value="/import", method=RequestMethod.GET)
+	public String showImportForm(Model model, Authentication authentication, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
+		String username = authentication.getName();
+		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
 
-    @RequestMapping(value = "/import", method = RequestMethod.POST)
-    public String createCar(Model model, Authentication authentication, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
-        proposalData.setCar(carData.getVin());
+		model.addAttribute("role", role.toUpperCase());
+		return "import";
+	}
 
-        out("Vin: " + carData.getVin() + " _Brand: " + carData.getCertificate().getBrand());
-        out("Doors:" + proposalData.getNumberOfDoors() + "_max speed: " + proposalData.getMaxSpeed());
+	@RequestMapping(value="/import", method=RequestMethod.POST)
+	public String createCar(Model model, Authentication authentication, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
+		proposalData.setCar(carData.getVin());
 
-        String username;
-        String garageRole;
+		out("Vin: " + carData.getVin() + " _Brand: " +carData.getCertificate().getBrand());
+		out("Doors:" + proposalData.getNumberOfDoors() + "_max speed: " + proposalData.getMaxSpeed());
 
-        try {
-            // Authenticated web app request
-            username = authentication.getName();
-            // Role should only be "garage", if security is configured correctly
-            // garageRole = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
-            garageRole = authentication.getAuthorities().toArray()[0].toString().substring(5);
-            out("read username and role from web request");
-        } catch (NullPointerException e) {
-            // Can only be the bootstrap script
-            username = SecurityConfig.BOOTSTRAP_GARAGE_USER;
-            garageRole = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
-            out("read username and role from bootstraped code values");
-        }
+		String username;
+		String garageRole;
 
-        out(username);
-        out(garageRole);
+		try {
+			// Authenticated web app request
+			username = authentication.getName();
+			// Role should only be "garage", if security is configured correctly
+			// garageRole = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
+			garageRole = authentication.getAuthorities().toArray()[0].toString().substring(5);
+			out("read username and role from web request");
+		} catch (NullPointerException e) {
+			// Can only be the bootstrap script
+			username = SecurityConfig.BOOTSTRAP_GARAGE_USER;
+			garageRole = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
+			out("read username and role from bootstraped code values");
+		}
 
-        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
-                .setVersion(CHAIN_CODE_VERSION)
-                .setPath(CHAIN_CODE_PATH).build();
+		out(username);
+		out(garageRole);
 
-        try {
-            Collection<ProposalResponse> successful = new LinkedList<>();
-            Collection<ProposalResponse> failed = new LinkedList<>();
+		ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
+				.setVersion(CHAIN_CODE_VERSION)
+				.setPath(CHAIN_CODE_PATH).build();
 
-            TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
-            transactionProposalRequest.setChaincodeID(chainCodeID);
-            transactionProposalRequest.setFcn("create");
+		try {
+			Collection<ProposalResponse> successful = new LinkedList<>();
+			Collection<ProposalResponse> failed = new LinkedList<>();
 
-            transactionProposalRequest.setArgs(new String[]{username, garageRole, g.toJson(carData), g.toJson(proposalData)});
-            out("sending transaction proposal to 'create' a car to all peers");
+			TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
+			transactionProposalRequest.setChaincodeID(chainCodeID);
+			transactionProposalRequest.setFcn("create");
 
-            Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
-            for (ProposalResponse response : invokePropResp) {
-                if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
-                    out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
-                    successful.add(response);
-                } else {
-                    failed.add(response);
-                }
-            }
-            out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
-                    invokePropResp.size(), successful.size(), failed.size());
-            if (failed.size() > 0) {
-                throw new ProposalException("Not enough endorsers for invoke");
+			transactionProposalRequest.setArgs(new String[]{username, garageRole, g.toJson(carData), g.toJson(proposalData)});
+			out("sending transaction proposal to 'create' a car to all peers");
 
-            }
-            out("Successfully received transaction proposal responses.");
+			Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
+			for (ProposalResponse response : invokePropResp) {
+				if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
+					out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
+					successful.add(response);
+				} else {
+					failed.add(response);
+				}
+			}
+			out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
+					invokePropResp.size(), successful.size(), failed.size());
+			if (failed.size() > 0) {
+				throw new ProposalException("Not enough endorsers for invoke");
 
-            out("Sending chain code transaction to orderer");
-            chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
-        } catch (Exception e) {
-            out(e.toString());
-            e.printStackTrace();
-            ErrorInfo result = new ErrorInfo(500, "", "CompletionException " + e.getMessage());
-            //return result;
-            model.addAttribute("error", "Choose another VIN");
-        }
+			}
+			out("Successfully received transaction proposal responses.");
 
-        try {
-            model.addAttribute("role", garageRole.toUpperCase());
-        } catch (NullPointerException e) {
-            // It's ok, we are in bootstrap mode..
-        }
+			out("Sending chain code transaction to orderer");
+			chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+		} catch (Exception e) {
+			out(e.toString());
+			e.printStackTrace();
+			ErrorInfo result = new ErrorInfo(500, "", "CompletionException " + e.getMessage());
+			//return result;
+			model.addAttribute("error", "Choose another VIN");
+		}
 
-        return "import";
-    }
+		try {
+			model.addAttribute("role", garageRole.toUpperCase());
+		} catch (NullPointerException e) {
+			// It's ok, we are in bootstrap mode..
+		}
 
-    @RequestMapping("/login")
-    public String login() {
-        return "login";
-    }
+		return "import";
+	}
 
-    @RequestMapping("/login-error")
-    public String loginError(Model model) {
-        model.addAttribute("loginError", true);
-        return "login";
-    }
+	@RequestMapping("/login")
+	public String login() {
+		return "login";
+	}
 
+	@RequestMapping("/login-error")
+	public String loginError(Model model) {
+		model.addAttribute("loginError", true);
+		return "login";
+	}
 
     @RequestMapping("/dot/registration")
     public String dotRegistration(Model model, Authentication authentication) {
@@ -457,166 +454,190 @@ public class AppController {
         return "dot/index";
     }
 
+	@RequestMapping("/insurance/index")
+	public String insuranceIndex(Model model, Authentication authentication, @RequestParam(required = false) String success) {
+		String username = authentication.getName();
+		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
 
-    @RequestMapping("/insurance/index")
-    public String insuranceIndex(Model model, Authentication authentication, @RequestParam(required = false) String success) {
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+		ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
+				.setVersion(AppController.CHAIN_CODE_VERSION)
+				.setPath(AppController.CHAIN_CODE_PATH).build();
 
-        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
-                .setVersion(AppController.CHAIN_CODE_VERSION)
-                .setPath(AppController.CHAIN_CODE_PATH).build();
+		QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
+		queryByChaincodeRequest.setArgs(new String[]{username, role, "AXA"});
+		queryByChaincodeRequest.setFcn("getInsurer");
+		queryByChaincodeRequest.setChaincodeID(chainCodeID);
 
-        QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
-        queryByChaincodeRequest.setArgs(new String[]{username, role, "AXA"});
-        queryByChaincodeRequest.setFcn("getInsurer");
-        queryByChaincodeRequest.setChaincodeID(chainCodeID);
+		Collection<ProposalResponse> queryProposals;
 
-        Collection<ProposalResponse> queryProposals;
+		try {
+			queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
+		} catch (InvalidArgumentException | ProposalException e) {
+			throw new CompletionException(e);
+		}
 
-        try {
-            queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
-        } catch (InvalidArgumentException | ProposalException e) {
-            throw new CompletionException(e);
-        }
+		Insurer insurer = null;
+		for (ProposalResponse proposalResponse : queryProposals) {
+			if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
+				ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
+						+ ". Messages: " + proposalResponse.getMessage()
+						+ ". Was verified : " + proposalResponse.isVerified());
+				System.out.println(result.errorMessage.toString());
+			} else {
+				String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
+				insurer = g.fromJson(payload, Insurer.class);
+				out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
+			}
+		}
 
-        Insurer insurer = null;
-        for (ProposalResponse proposalResponse : queryProposals) {
-            if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
-                ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
-                        + ". Messages: " + proposalResponse.getMessage()
-                        + ". Was verified : " + proposalResponse.isVerified());
-                System.out.println(result.errorMessage.toString());
-            } else {
-                String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-                insurer = g.fromJson(payload, Insurer.class);
-                out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
-            }
-        }
+		try {
 
-        model.addAttribute("success", success);
-        model.addAttribute("role", role.toUpperCase());
-        model.addAttribute("insurer", insurer);
-        return "insurance/index";
-    }
+			for (InsureProposal proposal : insurer.getProposals()) {
+				out("IsRegistered before checking: " + proposal.isRegistered());
+				Car car = carService.getCar(client, chain, proposal.getUser(), "user", proposal.getCar());
+				proposal.setRegistered(car.isRegistered());
+			}
 
-    @RequestMapping("/insurance/acceptInsurance")
-    public String acceptInsurance(RedirectAttributes redirAttr, Authentication authentication, @RequestParam("vin") String vin, @RequestParam("userToInsure") String userToInsure) {
-        out("vin" + vin);
-        String company = "AXA";
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+			for (InsureProposal proposal : insurer.getProposals()) {
+				out("IsRegistered after checking: " + proposal.isRegistered());
+			}
 
-        try {
-            ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
-                    .setVersion(AppController.CHAIN_CODE_VERSION)
-                    .setPath(AppController.CHAIN_CODE_PATH).build();
+		} catch (NullPointerException e) {
+			// Insurer not yet created, because no proposals on this insurer exist
+		}
 
-            Collection<ProposalResponse> successful = new LinkedList<>();
-            Collection<ProposalResponse> failed = new LinkedList<>();
 
-            TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
-            transactionProposalRequest.setChaincodeID(chainCodeID);
-            transactionProposalRequest.setFcn("insuranceAccept");
+		model.addAttribute("success", success);
+		model.addAttribute("role", role.toUpperCase());
+		model.addAttribute("insurer", insurer);
+		return "insurance/index";
+	}
 
-            transactionProposalRequest.setArgs(new String[]{username, role, userToInsure, vin, company});
-            out("sending transaction proposal for 'insuranceAccept' to all peers");
+	@RequestMapping("/insurance/acceptInsurance")
+	public String acceptInsurance(RedirectAttributes redirAttr, Authentication authentication, @RequestParam("vin") String vin, @RequestParam("userToInsure") String userToInsure) {
+		out("vin"+vin);
+		String company = "AXA";
+		String username = authentication.getName();
+		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
 
-            Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
-            for (ProposalResponse response : invokePropResp) {
-                if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
-                    out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
-                    successful.add(response);
-                } else {
-                    failed.add(response);
-                }
-            }
-            out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
-                    invokePropResp.size(), successful.size(), failed.size());
-            if (failed.size() > 0) {
-                throw new ProposalException("Not enough endorsers for invoke");
+		try {
+			ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
+					.setVersion(AppController.CHAIN_CODE_VERSION)
+					.setPath(AppController.CHAIN_CODE_PATH).build();
 
-            }
-            out("Successfully received transaction proposal responses.");
-            out("Sending chain code transaction to orderer");
-            chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
-        } catch (Exception e) {
-            out(e.toString());
-            e.printStackTrace();
-        }
+			Collection<ProposalResponse> successful = new LinkedList<>();
+			Collection<ProposalResponse> failed = new LinkedList<>();
 
-        redirAttr.addAttribute("success", "Insurance proposal accepted. '" + company + "' now insures car '" + vin + "' of user '" + userToInsure + "'.");
-        return "redirect:/insurance/index";
-    }
+			TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
+			transactionProposalRequest.setChaincodeID(chainCodeID);
+			transactionProposalRequest.setFcn("insuranceAccept");
 
-    @RequestMapping(value = "/insure", method = RequestMethod.GET)
-    public String showInsureForm(Model model, Authentication authentication) {
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
-        HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
+			transactionProposalRequest.setArgs(new String[]{username, role, userToInsure, vin, company});
+			out("sending transaction proposal for 'insuranceAccept' to all peers");
 
-        model.addAttribute("cars", carList.values());
-        model.addAttribute("role", role.toUpperCase());
-        return "insure";
-    }
+			Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
+			for (ProposalResponse response : invokePropResp) {
+				if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
+					out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
+					successful.add(response);
+				} else {
+					failed.add(response);
+				}
+			}
+			out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
+					invokePropResp.size(), successful.size(), failed.size());
+			if (failed.size() > 0) {
+				throw new ProposalException("Not enough endorsers for invoke");
 
-    @RequestMapping(value = "/insure", method = RequestMethod.POST)
-    public String insuranceProposal(Model model, Authentication authentication, @RequestParam("vin") String vin, @RequestParam("company") String company) {
-        out(vin);
-        out(company);
+			}
+			out("Successfully received transaction proposal responses.");
+			out("Sending chain code transaction to orderer");
+			chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+		} catch (Exception e) {
+			out(e.toString());
+			e.printStackTrace();
+		}
 
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+		redirAttr.addAttribute("success", "Insurance proposal accepted. '"+company+"' now insures car '"+vin+"' of user '"+userToInsure+"'.");
+		return "redirect:/insurance/index";
+	}
 
-        out(username);
-        out(role);
+	@RequestMapping(value="/insure", method=RequestMethod.GET)
+	public String showInsureForm(Model model, Authentication authentication, @RequestParam(required = false) String success, @RequestParam(required = false) String activeVin) {
+		String username = authentication.getName();
+		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+		HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
 
-        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
-                .setVersion(CHAIN_CODE_VERSION)
-                .setPath(CHAIN_CODE_PATH).build();
+		ArrayList<Car> registeredCarList = new ArrayList<>();
+		for (Car car : carList.values()) {
+			if (car.isRegistered()) {
+				registeredCarList.add(car);
+			}
+		}
 
-        try {
-            Collection<ProposalResponse> successful = new LinkedList<>();
-            Collection<ProposalResponse> failed = new LinkedList<>();
+		model.addAttribute("activeVin", activeVin);
+		model.addAttribute("success", success);
+		model.addAttribute("cars", registeredCarList);
+		model.addAttribute("role", role.toUpperCase());
+		return "insure";
+	}
 
-            TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
-            transactionProposalRequest.setChaincodeID(chainCodeID);
-            transactionProposalRequest.setFcn("insureProposal");
+	@RequestMapping(value="/insure", method=RequestMethod.POST)
+	public String insuranceProposal(RedirectAttributes redirAttr, Authentication authentication, @RequestParam("vin") String vin, @RequestParam("company") String company) {
+		out(vin);
+		out(company);
 
-            transactionProposalRequest.setArgs(new String[]{username, role, vin, company});
-            out("sending transaction proposal for 'insureProposal' to all peers");
+		String username = authentication.getName();
+		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
 
-            Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
-            for (ProposalResponse response : invokePropResp) {
-                if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
-                    out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
-                    successful.add(response);
-                } else {
-                    failed.add(response);
-                }
-            }
-            out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
-                    invokePropResp.size(), successful.size(), failed.size());
-            if (failed.size() > 0) {
-                throw new ProposalException("Not enough endorsers for invoke");
+		out(username);
+		out(role);
 
-            }
-            out("Successfully received transaction proposal responses.");
+		ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
+				.setVersion(CHAIN_CODE_VERSION)
+				.setPath(CHAIN_CODE_PATH).build();
 
-            out("Sending chain code transaction to orderer");
-            chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
-        } catch (Exception e) {
-            out(e.toString());
-            e.printStackTrace();
-            ErrorInfo result = new ErrorInfo(500, "", "CompletionException " + e.getMessage());
-            //return result;
-            //model.addAttribute("error", "");
-        }
+		try {
+			Collection<ProposalResponse> successful = new LinkedList<>();
+			Collection<ProposalResponse> failed = new LinkedList<>();
 
-        model.addAttribute("role", role.toUpperCase());
-        model.addAttribute("success", "Insurance proposal saved. '" + company + "' will get back to you for confirmation.");
-        return "insure";
-    }
+			TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
+			transactionProposalRequest.setChaincodeID(chainCodeID);
+			transactionProposalRequest.setFcn("insureProposal");
+
+			transactionProposalRequest.setArgs(new String[]{username, role, vin, company});
+			out("sending transaction proposal for 'insureProposal' to all peers");
+
+			Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
+			for (ProposalResponse response : invokePropResp) {
+				if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
+					out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
+					successful.add(response);
+				} else {
+					failed.add(response);
+				}
+			}
+			out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
+					invokePropResp.size(), successful.size(), failed.size());
+			if (failed.size() > 0) {
+				throw new ProposalException("Not enough endorsers for invoke");
+
+			}
+			out("Successfully received transaction proposal responses.");
+
+			out("Sending chain code transaction to orderer");
+			chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+		} catch (Exception e) {
+			out(e.toString());
+			e.printStackTrace();
+			ErrorInfo result = new ErrorInfo(500, "", "CompletionException " + e.getMessage());
+			//return result;
+			//model.addAttribute("error", "");
+		}
+
+		redirAttr.addAttribute("success", "Insurance proposal saved. '"+company+"' will get back to you for confirmation.");
+		return "redirect:/insure";
+	}
 
 
 	/*
