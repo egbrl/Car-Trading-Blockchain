@@ -101,9 +101,9 @@ func (t *CarChaincode) insuranceAccept(stub shim.ChaincodeStubInterface, usernam
 			// check if we can create an insurance contract
 			// we can only create an insurance contract,
 			// if we are sure the car VIN is approved by the DOT
-			// if !IsRegistered(&car) {
-			//	return shim.Error("Go register your car first")
-			// }
+			if !IsRegistered(&car) {
+				return shim.Error("Go register your car first")
+			}
 
 			// insure the car
 			car.Certificate.Insurer = company

@@ -433,6 +433,17 @@ public class AppController {
 			}
 		}
 
+		for (InsureProposal proposal : insurer.getProposals()) {
+			out("IsRegistered before checking: "+proposal.isRegistered());
+			Car car = carService.getCar(client, chain, proposal.getUser(), "user", proposal.getCar());
+			proposal.setRegistered(car.isRegistered());
+		}
+
+		for (InsureProposal proposal : insurer.getProposals()) {
+			out("IsRegistered after checking: "+proposal.isRegistered());
+		}
+
+
 		model.addAttribute("success", success);
 		model.addAttribute("role", role.toUpperCase());
 		model.addAttribute("insurer", insurer);
@@ -489,18 +500,19 @@ public class AppController {
 	}
 
 	@RequestMapping(value="/insure", method=RequestMethod.GET)
-	public String showInsureForm(Model model, Authentication authentication) {
+	public String showInsureForm(Model model, Authentication authentication, @RequestParam(required = false) String success) {
 		String username = authentication.getName();
 		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
 		HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
 
+		model.addAttribute("success", success);
 		model.addAttribute("cars", carList.values());
 		model.addAttribute("role", role.toUpperCase());
 		return "insure";
 	}
 
 	@RequestMapping(value="/insure", method=RequestMethod.POST)
-	public String insuranceProposal(Model model, Authentication authentication, @RequestParam("vin") String vin, @RequestParam("company") String company) {
+	public String insuranceProposal(RedirectAttributes redirAttr, Authentication authentication, @RequestParam("vin") String vin, @RequestParam("company") String company) {
 		out(vin);
 		out(company);
 
@@ -552,9 +564,8 @@ public class AppController {
 			//model.addAttribute("error", "");
 		}
 
-		model.addAttribute("role", role.toUpperCase());
-		model.addAttribute("success", "Insurance proposal saved. '"+company+"' will get back to you for confirmation.");
-		return "insure";
+		redirAttr.addAttribute("success", "Insurance proposal saved. '"+company+"' will get back to you for confirmation.");
+		return "redirect:/insure";
 	}
 
 
