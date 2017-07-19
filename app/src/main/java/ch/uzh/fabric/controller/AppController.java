@@ -506,7 +506,7 @@ public class AppController {
         model.addAttribute("proposalAndCarData", proposalAndCarMap.values());
         model.addAttribute("role", role.toUpperCase());
 
-        return "dot/index";
+        return "dot/confirmation";
     }
 
 	@RequestMapping("/insurance/index")
@@ -561,6 +561,7 @@ public class AppController {
 
 		} catch (NullPointerException e) {
 			// Insurer not yet created, because no proposals on this insurer exist
+			insurer = new Insurer(ProfileProperties.getOrganization(profileProperties, username, role), null);
 		}
 
 

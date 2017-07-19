@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" th:with="currentPage='insurance/index'">
 <head>
     <meta charset="utf-8"/>
-    <title>BLANK WebApp</title>
+    <title>Insure Cars</title>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <link rel="stylesheet" href="../../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
@@ -14,23 +14,7 @@
 <div class="container">
     <div class="page-header" style="border-bottom: none">
         <div class="row">
-            <div>
-                <p class="pull-right">Role: <span th:text="${role}">ROLE</span></p>
-                <div th:switch="${role}">
-                    <div th:case="'GARAGE'">
-                        <h1>My Cars</h1>
-                    </div>
-                    <div th:case="'INSURER'">
-                        <h1 th:text="${insurer.name} + ' Insurance Inquiries'">My Insurance Inquiries</h1>
-                    </div>
-                    <div th:case="'USER'">
-                        <h1>My Cars</h1>
-                    </div>
-                    <div th:case="'DOT'">
-                        <h1>My Registration/Confirmation Inquiries</h1>
-                    </div>
-                </div>
-            </div>
+            <h1 th:text="${insurer.name} + ' Insurance Inquiries'">My Insurance Inquiries</h1>
         </div>
     </div>
 
