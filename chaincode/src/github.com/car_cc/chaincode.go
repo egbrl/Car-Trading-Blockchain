@@ -104,6 +104,12 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	switch function {
 
 	// GENERAL FUNCTIONS
+	case "getHistory":
+		if len(args) != 1 {
+			return shim.Error("'getHistory' expects a car vin")
+		}
+		return t.getHistory(stub, args[0])
+
 	case "read":
 		if len(args) != 1 {
 			return shim.Error("'read' expects a key to do the look up")

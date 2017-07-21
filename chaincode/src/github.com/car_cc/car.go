@@ -11,6 +11,28 @@ import (
 	pb "github.com/hyperledger/fabric/protos/peer"
 )
 
+func (t *CarChaincode) getHistory(stub shim.ChaincodeStubInterface, vin string) pb.Response {
+	hist, err := stub.GetHistoryForKey(vin)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	var carHistory []Car
+	for hist.HasNext() {
+		mod, _ := hist.Next()
+		var car Car
+		err := json.Unmarshal(mod.GetValue(), &car)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+
+		carHistory = append(carHistory, car)
+	}
+
+	carHistoryAsBytes, _ := json.Marshal(carHistory)
+	return shim.Success(carHistoryAsBytes)
+}
+
 /*
  * Returns the car index
  */
