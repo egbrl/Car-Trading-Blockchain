@@ -10,3 +10,8 @@ logging:
 spring:
   thymeleaf:
     cache: false
+
+profile:
+  users[0].name: "insurer"
+  users[0].organization: "AXA"
+  users[0].role: "insurer"

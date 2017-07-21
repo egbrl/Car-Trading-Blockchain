@@ -1,0 +1,29 @@
+<div class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <a href="/" class="navbar-brand"><img alt="Brand" th:src="@{/img/Logo_Final.png}" /> carchain</a>
+            <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <div class="navbar-collapse collapse" id="navbar-main">
+            <div th:switch="${role}">
+                <div th:case="'GARAGE'">
+                    <ul th:replace="menu/mainmenu-garage"></ul>
+                </div>
+                <div th:case="'INSURER'">
+                    <ul th:replace="menu/mainmenu-insurance"></ul>
+                </div>
+                <div th:case="'USER'">
+                    <ul th:replace="menu/mainmenu-user"></ul>
+                </div>
+                <div th:case="'DOT'">
+                    <ul th:replace="menu/mainmenu-dot"></ul>
+                </div>
+            </div>
+            <div th:replace="menu/usermenu"></div>
+        </div>
+    </div>
+</div>

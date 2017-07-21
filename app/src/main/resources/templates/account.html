@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" th:with="currentPage='account'">
+<head>
+    <meta charset="utf-8"/>
+    <title>carchain Account Page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <link rel="stylesheet" href="../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
+    <link rel="stylesheet" href="../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
+    <style>
+        .form tr th {
+            vertical-align: middle !important;
+            text-align: right !important;
+        }
+    </style>
+</head>
+<body>
+<div th:replace="navigation" />
+
+<div class="container">
+    <div class="page-header" style="border-bottom: none">
+        <div class="row">
+            <div>
+                <p class="pull-right">Role: <span th:text="${role}">ROLE</span></p>
+                <h1>Account Settings</h1>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <form th:action="@{/account}" method="post">
+        <table class="table form table-hover">
+                <thead>
+                </thead>
+                <tbody>
+                <tr>
+                    <th>Organization Name:</th>
+                    <td>
+                        <input type="text" class="form-control" th:value="${orgName}" name="orgName" />
+                    </td>
+                </tr>
+                </tbody>
+                <tfoot>
+                    <td></td>
+                    <td><button type="submit" class="btn btn-default"><span style="color: #e6e6e6">Submit</span></button></td>
+                </tfoot>
+
+            </table>
+        </form>
+    </div>
+
+    <div th:replace="footer" />
+
+
+</div>
+
+
+<script src="../static/js/jquery-1.10.2.min.js" th:src="@{/js/jquery-1.10.2.min.js}"></script>
+<script src="../static/js/bootstrap.min.js" th:src="@{/js/bootstrap.min.js}"></script>
+<script src="../static/js/custom.js" th:src="@{/js/custom.js}"></script>
+</body>
+</html>
