@@ -454,6 +454,18 @@ public class AppController {
         return "dot/index";
     }
 
+    @RequestMapping("/dot/all-cars")
+    public String allCars(Authentication authentication, Model model) {
+        String username = authentication.getName();
+        String role = authentication.getAuthorities().toArray()[0].toString();
+
+        HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
+
+        model.addAttribute("cars", carList.values());
+        model.addAttribute("role", role.substring(5).toUpperCase());
+        return "index";
+    }
+
 	@RequestMapping("/insurance/index")
 	public String insuranceIndex(Model model, Authentication authentication, @RequestParam(required = false) String success) {
 		String username = authentication.getName();

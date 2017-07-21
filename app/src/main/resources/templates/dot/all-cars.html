@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" th:with="currentPage='dot/all-cars'">
+<head>
+    <meta charset="utf-8"/>
+    <title>BLANK WebApp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <link rel="stylesheet" href="../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
+    <link rel="stylesheet" href="../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
+</head>
+<body>
+<div class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <a href="/" class="navbar-brand">BLANK WebApp</a>
+            <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <div class="navbar-collapse collapse" id="navbar-main">
+            <div th:switch="${role}">
+                <div th:case="'GARAGE'">
+                    <ul th:replace="menu/mainmenu-garage"></ul>
+                </div>
+                <div th:case="'INSURANCE'">
+                    <ul th:replace="menu/mainmenu-insurance"></ul>
+                </div>
+                <div th:case="'USER'">
+                    <ul th:replace="menu/mainmenu-user"></ul>
+                </div>
+                <div th:case="'DOT'">
+                    <ul th:replace="menu/mainmenu-dot"></ul>
+                </div>
+            </div>
+            <div th:replace="menu/usermenu"></div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="page-header" style="border-bottom: none">
+        <div class="row">
+            <div>
+                <p class="pull-right">Role: <span th:text="${role}">ROLE</span></p>
+                <div th:switch="${role}">
+                    <div th:case="'GARAGE'">
+                        <h1>My Cars</h1>
+                    </div>
+                    <div th:case="'INSURANCE'">
+                        <h1>My Insurance Inquiries</h1>
+                    </div>
+                    <div th:case="'USER'">
+                        <h1>My Cars</h1>
+                    </div>
+                    <div th:case="'DOT'">
+                        <h1>My Registration/Confirmation Inquiries</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Type</th>
+                <th>Brand</th>
+                <th>Color</th>
+                <th>VIN</th>
+                <th>Numberplate</th>
+                <th>Insurer</th>
+                <th>Registration</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="car,iterStat : ${cars}">
+                <th th:text="${iterStat.count}" scope="row"></th>
+                <td th:text="${car.certificate.type}">M3</td>
+                <td th:text="${car.certificate.brand}">BMW</td>
+                <td th:text="${car.certificate.color}">black</td>
+                <td th:text="${car.vin}">WVWZZZ6RZHY260780</td>
+                <div th:switch="${car.isConfirmed()}">
+                    <div th:case="true">
+                        <td th:text="${car.certificate.numberplate}">ZH 1234</td>
+                    </div>
+                    <div th:case="false">
+                        <div th:switch="${car.isInsured()}">
+                            <div th:case="true">
+                                <td><button type="button" class="btn btn-success">confirm</button></td>
+                            </div>
+                            <div th:case="false">
+                                <td><button type="button" class="btn disabled">confirm</button></td>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div th:switch="${car.isInsured()}">
+                    <div th:case="true">
+                        <td th:text="${car.certificate.insurer}">AXA Winterthur</td>
+                    </div>
+                    <div th:case="false">
+                        <div th:switch="${car.isRegistered()}">
+                            <div th:case="true">
+                                <td>
+                                    <a href="#" th:href="@{/insure(activeVin=${car.vin})}">
+                                        <button type="button" class="btn btn-success">insure</button>
+                                    </a>
+                                </td>
+                            </div>
+                            <div th:case="false">
+                                <td>
+                                    <button type="button" class="btn disabled">insure</button>
+                                </td>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <td>
+                    <div th:switch="${car.isRegistered()}">
+                        <div th:case="true">
+                            <span class="glyphicon glyphicon-ok" aria-hidden="true" style="color: lightgreen"></span>&nbsp;OK
+                        </div>
+                        <div th:case="false">
+                            <span class="glyphicon glyphicon-hourglass" aria-hidden="true"> </span>&nbsp;pending
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div th:switch="${car.isConfirmed()}">
+                        <div th:case="true">
+                            <button type="button" class="btn btn-danger">revoke</button>
+                        </div>
+                        <div th:case="false">
+                            <button type="button" class="btn disabled">revoke</button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <footer>
+        <div class="row">
+            <div class="col-lg-12">
+
+                <ul class="list-unstyled">
+                    <li class="pull-right"><a href="#top">Back to top</a></li>
+                </ul>
+                <p>&copy; by BLANK 2017 :: Made by 4 Students at <a href="http://www.ifi.uzh.ch/en/imrg.html"
+                                                                    rel="nofollow" target="_blank">IMRG</a> of the <a
+                        href="http://www.uzh.ch" target="_blank" rel="nofollow">University of Zurich</a>.</p>
+                <p>Based on <a href="https://hyperledger-fabric.readthedocs.io/en/latest/" rel="nofollow"
+                               target="_blank">Hyperledger Fabric</a> and <a
+                        href="https://projects.spring.io/spring-framework/" rel="nofollow" target="_blank">Spring
+                    Framework</a>.</p>
+
+            </div>
+        </div>
+
+    </footer>
+
+
+</div>
+
+
+<script src="../static/js/jquery-1.10.2.min.js" th:src="@{/js/jquery-1.10.2.min.js}"></script>
+<script src="../static/js/bootstrap.min.js" th:src="@{/js/bootstrap.min.js}"></script>
+<script src="../static/js/custom.js" th:src="@{/js/custom.js}"></script>
+</body>
+</html>
