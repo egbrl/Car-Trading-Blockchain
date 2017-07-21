@@ -10,6 +10,7 @@ import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -138,5 +139,39 @@ public class CarService {
         }
 
         return car;
+    }
+
+    public Car[] getCarHistory(HFClient client, Chain chain, String username, String role, String vin) {
+        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
+                .setVersion(AppController.CHAIN_CODE_VERSION)
+                .setPath(AppController.CHAIN_CODE_PATH).build();
+
+        QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
+        queryByChaincodeRequest.setArgs(new String[]{username, role, vin});
+        queryByChaincodeRequest.setFcn("getHistory");
+        queryByChaincodeRequest.setChaincodeID(chainCodeID);
+
+        Collection<ProposalResponse> queryProposals;
+
+        try {
+            queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
+        } catch (InvalidArgumentException | ProposalException e) {
+            throw new CompletionException(e);
+        }
+
+        Car[] history = null;
+        for (ProposalResponse proposalResponse : queryProposals) {
+            if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
+                ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
+                        + ". Messages: " + proposalResponse.getMessage()
+                        + ". Was verified : " + proposalResponse.isVerified());
+                System.out.println(result.errorMessage.toString());
+            } else {
+                String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
+                history = g.fromJson(payload, Car[].class);
+            }
+        }
+
+        return history;
     }
 }

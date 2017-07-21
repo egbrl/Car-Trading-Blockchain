@@ -689,6 +689,17 @@ public class AppController {
 		return "redirect:/insure";
 	}
 
+	@RequestMapping(value="/history", method=RequestMethod.GET)
+	public String history(Model model, Authentication authentication, @RequestParam String vin) {
+		String username = authentication.getName();
+		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+		Car[] history = carService.getCarHistory(client, chain, username, role, vin);
+
+		model.addAttribute("vin", vin);
+		model.addAttribute("cars", history);
+		model.addAttribute("role", role.toUpperCase());
+		return "history";
+	}
 
 	/*
      *	INITIALIZE FUNCTIONS

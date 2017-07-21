@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" th:with="currentPage='history'">
+<head>
+    <meta charset="utf-8"/>
+    <title>Car History</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link rel="stylesheet" href="../../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
+    <link rel="stylesheet" href="../../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
+</head>
+<body>
+<div th:replace="navigation" />
+
+<div class="container">
+
+    <div class="page-header" style="border-bottom: none">
+        <div class="row">
+            <div>
+                <p class="pull-right">Role: <span th:text="${role}">ROLE</span></p>
+                <h1 th:text="${vin} +' History'"></h1>
+            </div>
+        </div>
+    </div>
+    <div>
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th><abbr title="Revision Number">Rev#</abbr></th>
+                <th>Type</th>
+                <th>Brand</th>
+                <th>Color</th>
+                <th>VIN</th>
+                <th>Numberplate</th>
+                <th>Insurer</th>
+                <th>Registration</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="car, iterStat : ${cars}">
+                <th th:text="${iterStat.count}" scope="row"></th>
+                <td th:text="${car.certificate.type}">M3</td>
+                <td th:text="${car.certificate.brand}">BMW</td>
+                <td th:text="${car.certificate.color}">black</td>
+                <td th:text="${car.vin}">WVWZZZ6RZHY260780</td>
+                <td th:text="${car.certificate.numberplate}">ZH 1234</td>
+                <td th:text="${car.certificate.insurer}">AXA Winterthur</td>
+                <td>
+                    <div th:switch="${car.isRegistered()}">
+                        <div th:case="true">
+                            <span class="glyphicon glyphicon-ok" aria-hidden="true" style="color: lightgreen"></span>&nbsp;OK
+                        </div>
+                        <div th:case="false">
+                            <span class="glyphicon glyphicon-hourglass" aria-hidden="true"> </span>&nbsp;pending
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div th:replace="footer" />
+
+</div>
+
+
+<script src="../../static/js/jquery-1.10.2.min.js" th:src="@{/js/jquery-1.10.2.min.js}"></script>
+<script src="../../static/js/bootstrap.min.js" th:src="@{/js/bootstrap.min.js}"></script>
+<script src="../../static/js/custom.js" th:src="@{/js/custom.js}"></script>
+</body>
+</html>

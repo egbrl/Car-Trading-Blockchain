@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <link rel="stylesheet" href="../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
+    <link rel="stylesheet" href="../css/bootstrap.icon-large.min.css" th:href="@{/css/bootstrap.icon-large.min.css}"/>
     <link rel="stylesheet" href="../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
 </head>
 <body>
@@ -46,7 +47,8 @@
                 <th>Numberplate</th>
                 <th>Insurer</th>
                 <th>Registration</th>
-                <th></th>
+                <th><abbr title="Revoke">REV</abbr></th>
+                <th><abbr title="History">HIS</abbr></th>
             </tr>
             </thead>
             <tbody>
@@ -102,6 +104,12 @@
                             <button type="button" class="btn disabled">revoke</button>
                         </div>
                     </div>
+                </td>
+                <td>
+                    <a th:href="@{/history(vin=${car.vin})}">
+                        <!--<span class="glyphicon glyphicon-fast-backward" aria-hidden="true" />-->
+                        <i class="icon-history icon-large"></i>
+                    </a>
                 </td>
             </tr>
             </tbody>
