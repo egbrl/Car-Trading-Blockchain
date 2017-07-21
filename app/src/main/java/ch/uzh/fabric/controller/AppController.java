@@ -625,16 +625,9 @@ public class AppController {
 		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
 		HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
 
-		ArrayList<Car> registeredCarList = new ArrayList<>();
-		for (Car car : carList.values()) {
-			if (car.isRegistered()) {
-				registeredCarList.add(car);
-			}
-		}
-
 		model.addAttribute("activeVin", activeVin);
 		model.addAttribute("success", success);
-		model.addAttribute("cars", registeredCarList);
+		model.addAttribute("cars", carList.values());
 		model.addAttribute("role", role.toUpperCase());
 		return "insure";
 	}

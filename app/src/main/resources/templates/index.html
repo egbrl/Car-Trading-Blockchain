@@ -76,20 +76,11 @@
                         <td th:text="${car.certificate.insurer}">AXA Winterthur</td>
                     </div>
                     <div th:case="false">
-                        <div th:switch="${car.isRegistered()}">
-                            <div th:case="true">
-                                <td>
-                                    <a href="#" th:href="@{/insure(activeVin=${car.vin})}">
-                                        <button type="button" class="btn btn-success">insure</button>
-                                    </a>
-                                </td>
-                            </div>
-                            <div th:case="false">
-                                <td>
-                                    <button type="button" class="btn disabled">insure</button>
-                                </td>
-                            </div>
-                        </div>
+                        <td>
+                            <a href="#" th:href="@{/insure(activeVin=${car.vin})}">
+                                <button type="button" class="btn btn-success">insure</button>
+                            </a>
+                        </td>
                     </div>
                 </div>
                 <td>
