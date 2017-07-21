@@ -75,6 +75,7 @@ func TestGetInsurerAndInsuranceAccept(t *testing.T) {
     username         := "amag"
     vin              := "WVW ZZZ 6RZ HY26 0780"
     insuranceCompany := "axa"
+    competitor       := "mobiliar"
 
     // create and name a new chaincode mock
     carChaincode := &CarChaincode{}
@@ -104,6 +105,9 @@ func TestGetInsurerAndInsuranceAccept(t *testing.T) {
     }
 
     fmt.Println(proposal)
+
+    // make a competing insurance proposal for mobiliar
+    stub.MockInvoke(uuid, util.ToChaincodeArgs("insureProposal", username, "user", vin, competitor))
 
     // the list of proposals for AXA should contain the proposal
     response = stub.MockInvoke(uuid, util.ToChaincodeArgs("getInsurer", username, "insurer", insuranceCompany))
@@ -164,6 +168,21 @@ func TestGetInsurerAndInsuranceAccept(t *testing.T) {
 
     if len(insurer.Proposals) != 0 {
         t.Error("After creating an insurance contract, the proposal should be removed from the list of open insurance proposals")
+    }
+
+    // the list of proposals for the competitor should be empty by now too
+    // because the contract has been established with AXA already
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("getInsurer", username, "insurer", competitor))
+    insurer = Insurer {}
+    err = json.Unmarshal(response.Payload, &insurer)
+    if (err != nil) {
+        t.Error("Error fetching insurance records")
+    }
+
+    fmt.Printf("Competitor: %v\n", insurer)
+
+    if len(insurer.Proposals) != 0 {
+        t.Error("After creating an insurance contract, the competitor proposal should be removed")
     }
 
     // the car should have a certificate with the new insurer added

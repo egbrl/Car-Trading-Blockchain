@@ -119,10 +119,36 @@ func (t *CarChaincode) insuranceAccept(stub shim.ChaincodeStubInterface, usernam
 		}
 	}
 
-	// write udpated insurer index back to ledger
+	// write insurer back to local copy of index
 	insurer.Proposals = newProposals
 	insurerIndex[company] = insurer
-	indexAsBytes, _ := json.Marshal(insurerIndex)
+
+	// create an empty index which will hold the new insurer
+	// index, but without competing insurance proposals from
+	// other companies on the same username and vin combination
+	indexWithoutCompetingProposals := make(map[string]Insurer)
+
+	// remove all other proposals for this user and vin
+	for companyName, competitorInsurance := range insurerIndex {
+		var newCompetitorProposals []InsureProposal
+		for _, proposal := range competitorInsurance.Proposals {
+			if proposal.User == username && proposal.Car == vin {
+				// we found another proposal from the same user,
+				// for the same car at another insurance cmpy
+				// remove this proposal, because the car is now
+				// insured and we remove the possibility of this other
+				// cmpy to accept this proposal
+			} else {
+				newCompetitorProposals = append(newCompetitorProposals, proposal)
+			}
+		}
+		competitorInsurance.Proposals = newCompetitorProposals
+		indexWithoutCompetingProposals[companyName] = competitorInsurance
+	}
+
+	// write udpated insurer index back to ledger
+
+	indexAsBytes, _ := json.Marshal(indexWithoutCompetingProposals)
 	err = stub.PutState(insurerIndexStr, indexAsBytes)
 	if err != nil {
 		return shim.Error("Error writing insurer index")
