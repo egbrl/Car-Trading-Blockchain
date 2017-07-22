@@ -75,8 +75,8 @@ public class AppController {
 
     Gson g = null;
 
-	@Autowired
-	private ProfileProperties profileProperties;
+    @Autowired
+    private ProfileProperties profileProperties;
 
 
 	/*
@@ -84,194 +84,194 @@ public class AppController {
 	 *
 	 */
 
-	@RequestMapping("/")
-	public String root(Authentication authentication) {
-		try {
-			authentication.isAuthenticated();
-			return "redirect:/index";
-		} catch (Exception e) {
-			return "redirect:/login";
-		}
-	}
+    @RequestMapping("/")
+    public String root(Authentication authentication) {
+        try {
+            authentication.isAuthenticated();
+            return "redirect:/index";
+        } catch (Exception e) {
+            return "redirect:/login";
+        }
+    }
 
-	@RequestMapping(value="/account", method=RequestMethod.GET)
-	public String account(Authentication authentication, Model model) {
-		String username = authentication.getName();
-		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+    @RequestMapping(value = "/account", method = RequestMethod.GET)
+    public String account(Authentication authentication, Model model) {
+        String username = authentication.getName();
+        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
 
-		ProfileProperties.User user = null;
+        ProfileProperties.User user = null;
 
-		// look for an existing user profile
-		for (ProfileProperties.User userProperties : profileProperties.getUsers()) {
-			if (userProperties.getName().equals(username) && userProperties.getRole().equals(role)) {
-				user = userProperties;
-			}
-		}
+        // look for an existing user profile
+        for (ProfileProperties.User userProperties : profileProperties.getUsers()) {
+            if (userProperties.getName().equals(username) && userProperties.getRole().equals(role)) {
+                user = userProperties;
+            }
+        }
 
-		// if no settings for this user found,
-		// create a new profile and append it to the list
-		// of global user profiles
-		if (user == null) {
-			user = new ProfileProperties.User();
-			user.setName(username);
-			user.setRole(role);
+        // if no settings for this user found,
+        // create a new profile and append it to the list
+        // of global user profiles
+        if (user == null) {
+            user = new ProfileProperties.User();
+            user.setName(username);
+            user.setRole(role);
 
-			List<ProfileProperties.User> users = profileProperties.getUsers();
-			users.add(user);
-			profileProperties.setUsers(users);
-		}
+            List<ProfileProperties.User> users = profileProperties.getUsers();
+            users.add(user);
+            profileProperties.setUsers(users);
+        }
 
-		model.addAttribute("orgName", user.getOrganization());
-		model.addAttribute("role", role.toUpperCase());
-		return "account";
-	}
+        model.addAttribute("orgName", user.getOrganization());
+        model.addAttribute("role", role.toUpperCase());
+        return "account";
+    }
 
-	@RequestMapping(value="/account", method=RequestMethod.POST)
-	public String accountChange(Authentication authentication, Model model, @RequestParam("orgName") String orgName) {
-		String username = authentication.getName();
-		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+    @RequestMapping(value = "/account", method = RequestMethod.POST)
+    public String accountChange(Authentication authentication, Model model, @RequestParam("orgName") String orgName) {
+        String username = authentication.getName();
+        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
 
-		ProfileProperties.User user = null;
-		for (ProfileProperties.User userProps : profileProperties.getUsers()) {
-			if (userProps.getName().equals(username) && userProps.getRole().equals(role)) {
-				userProps.setOrganization(orgName);
-				user = userProps;
-			}
-		}
+        ProfileProperties.User user = null;
+        for (ProfileProperties.User userProps : profileProperties.getUsers()) {
+            if (userProps.getName().equals(username) && userProps.getRole().equals(role)) {
+                userProps.setOrganization(orgName);
+                user = userProps;
+            }
+        }
 
-		// we can guarantee that 'user' is not 'null', i.e. exists
-		// because we create the user in the 'GET' request already
-		model.addAttribute("orgName", user.getOrganization());
-		model.addAttribute("role", role.toUpperCase());
-		return "account";
-	}
+        // we can guarantee that 'user' is not 'null', i.e. exists
+        // because we create the user in the 'GET' request already
+        model.addAttribute("orgName", user.getOrganization());
+        model.addAttribute("role", role.toUpperCase());
+        return "account";
+    }
 
-	@RequestMapping("/index")
-	public String index(Authentication authentication, Model model) {
-		String username = authentication.getName();
-		String role = authentication.getAuthorities().toArray()[0].toString();
+    @RequestMapping("/index")
+    public String index(Authentication authentication, Model model) {
+        String username = authentication.getName();
+        String role = authentication.getAuthorities().toArray()[0].toString();
 
-		// Redirect to DOT and INSURANCE index page
-		if(role.equals("ROLE_dot")) {
-			try {
-				authentication.isAuthenticated();
-				return "redirect:/dot/registration";
-			} catch (Exception e) {
-				return "redirect:/login";
-			}
-		} else if (role.equals("ROLE_insurer")) {
-			try {
-				authentication.isAuthenticated();
-				return "redirect:/insurance/index";
-			} catch (Exception e) {
-				return "redirect:/login";
-			}
-		}
+        // Redirect to DOT and INSURANCE index page
+        if (role.equals("ROLE_dot")) {
+            try {
+                authentication.isAuthenticated();
+                return "redirect:/dot/registration";
+            } catch (Exception e) {
+                return "redirect:/login";
+            }
+        } else if (role.equals("ROLE_insurer")) {
+            try {
+                authentication.isAuthenticated();
+                return "redirect:/insurance/index";
+            } catch (Exception e) {
+                return "redirect:/login";
+            }
+        }
 
-		HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
+        HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
 
-		model.addAttribute("cars", carList.values());
-		model.addAttribute("role", role.substring(5).toUpperCase());
-		return "index";
-	}
+        model.addAttribute("cars", carList.values());
+        model.addAttribute("role", role.substring(5).toUpperCase());
+        return "index";
+    }
 
-	@RequestMapping(value="/import", method=RequestMethod.GET)
-	public String showImportForm(Model model, Authentication authentication, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
-		String username = authentication.getName();
-		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+    @RequestMapping(value = "/import", method = RequestMethod.GET)
+    public String showImportForm(Model model, Authentication authentication, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
+        String username = authentication.getName();
+        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
 
-		model.addAttribute("role", role.toUpperCase());
-		return "import";
-	}
+        model.addAttribute("role", role.toUpperCase());
+        return "import";
+    }
 
-	@RequestMapping(value="/import", method=RequestMethod.POST)
-	public String createCar(Model model, Authentication authentication, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
-		proposalData.setCar(carData.getVin());
+    @RequestMapping(value = "/import", method = RequestMethod.POST)
+    public String createCar(Model model, Authentication authentication, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
+        proposalData.setCar(carData.getVin());
 
-		out("Vin: " + carData.getVin() + " _Brand: " +carData.getCertificate().getBrand());
-		out("Doors:" + proposalData.getNumberOfDoors() + "_max speed: " + proposalData.getMaxSpeed());
+        out("Vin: " + carData.getVin() + " _Brand: " + carData.getCertificate().getBrand());
+        out("Doors:" + proposalData.getNumberOfDoors() + "_max speed: " + proposalData.getMaxSpeed());
 
-		String username;
-		String garageRole;
+        String username;
+        String garageRole;
 
-		try {
-			// Authenticated web app request
-			username = authentication.getName();
-			// Role should only be "garage", if security is configured correctly
-			// garageRole = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
-			garageRole = authentication.getAuthorities().toArray()[0].toString().substring(5);
-			out("read username and role from web request");
-		} catch (NullPointerException e) {
-			// Can only be the bootstrap script
-			username = SecurityConfig.BOOTSTRAP_GARAGE_USER;
-			garageRole = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
-			out("read username and role from bootstraped code values");
-		}
+        try {
+            // Authenticated web app request
+            username = authentication.getName();
+            // Role should only be "garage", if security is configured correctly
+            // garageRole = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
+            garageRole = authentication.getAuthorities().toArray()[0].toString().substring(5);
+            out("read username and role from web request");
+        } catch (NullPointerException e) {
+            // Can only be the bootstrap script
+            username = SecurityConfig.BOOTSTRAP_GARAGE_USER;
+            garageRole = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
+            out("read username and role from bootstraped code values");
+        }
 
-		out(username);
-		out(garageRole);
+        out(username);
+        out(garageRole);
 
-		ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
-				.setVersion(CHAIN_CODE_VERSION)
-				.setPath(CHAIN_CODE_PATH).build();
+        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
+                .setVersion(CHAIN_CODE_VERSION)
+                .setPath(CHAIN_CODE_PATH).build();
 
-		try {
-			Collection<ProposalResponse> successful = new LinkedList<>();
-			Collection<ProposalResponse> failed = new LinkedList<>();
+        try {
+            Collection<ProposalResponse> successful = new LinkedList<>();
+            Collection<ProposalResponse> failed = new LinkedList<>();
 
-			TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
-			transactionProposalRequest.setChaincodeID(chainCodeID);
-			transactionProposalRequest.setFcn("create");
+            TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
+            transactionProposalRequest.setChaincodeID(chainCodeID);
+            transactionProposalRequest.setFcn("create");
 
-			transactionProposalRequest.setArgs(new String[]{username, garageRole, g.toJson(carData), g.toJson(proposalData)});
-			out("sending transaction proposal to 'create' a car to all peers");
+            transactionProposalRequest.setArgs(new String[]{username, garageRole, g.toJson(carData), g.toJson(proposalData)});
+            out("sending transaction proposal to 'create' a car to all peers");
 
-			Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
-			for (ProposalResponse response : invokePropResp) {
-				if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
-					out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
-					successful.add(response);
-				} else {
-					failed.add(response);
-				}
-			}
-			out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
-					invokePropResp.size(), successful.size(), failed.size());
-			if (failed.size() > 0) {
-				throw new ProposalException("Not enough endorsers for invoke");
+            Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
+            for (ProposalResponse response : invokePropResp) {
+                if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
+                    out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
+                    successful.add(response);
+                } else {
+                    failed.add(response);
+                }
+            }
+            out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
+                    invokePropResp.size(), successful.size(), failed.size());
+            if (failed.size() > 0) {
+                throw new ProposalException("Not enough endorsers for invoke");
 
-			}
-			out("Successfully received transaction proposal responses.");
+            }
+            out("Successfully received transaction proposal responses.");
 
-			out("Sending chain code transaction to orderer");
-			chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
-		} catch (Exception e) {
-			out(e.toString());
-			e.printStackTrace();
-			ErrorInfo result = new ErrorInfo(500, "", "CompletionException " + e.getMessage());
-			//return result;
-			model.addAttribute("error", "Choose another VIN");
-		}
+            out("Sending chain code transaction to orderer");
+            chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+        } catch (Exception e) {
+            out(e.toString());
+            e.printStackTrace();
+            ErrorInfo result = new ErrorInfo(500, "", "CompletionException " + e.getMessage());
+            //return result;
+            model.addAttribute("error", "Choose another VIN");
+        }
 
-		try {
-			model.addAttribute("role", garageRole.toUpperCase());
-		} catch (NullPointerException e) {
-			// It's ok, we are in bootstrap mode..
-		}
+        try {
+            model.addAttribute("role", garageRole.toUpperCase());
+        } catch (NullPointerException e) {
+            // It's ok, we are in bootstrap mode..
+        }
 
-		return "import";
-	}
+        return "import";
+    }
 
-	@RequestMapping("/login")
-	public String login() {
-		return "login";
-	}
+    @RequestMapping("/login")
+    public String login() {
+        return "login";
+    }
 
-	@RequestMapping("/login-error")
-	public String loginError(Model model) {
-		model.addAttribute("loginError", true);
-		return "login";
-	}
+    @RequestMapping("/login-error")
+    public String loginError(Model model) {
+        model.addAttribute("loginError", true);
+        return "login";
+    }
 
     @RequestMapping("/dot/registration")
     public String dotRegistration(Model model, Authentication authentication) {
@@ -433,7 +433,7 @@ public class AppController {
 
         QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
         queryByChaincodeRequest.setArgs(new String[]{username, role});
-        queryByChaincodeRequest.setFcn("readRegistrationProposalsAsList");
+        queryByChaincodeRequest.setFcn("getCarsToConfirmAsList");
         queryByChaincodeRequest.setChaincodeID(chainCodeID);
 
         Collection<ProposalResponse> queryProposals;
@@ -444,8 +444,8 @@ public class AppController {
             throw new CompletionException(e);
         }
 
-        HashMap<String, ProposalAndCar> proposalAndCarMap = new HashMap<>();
-        ArrayList<ProposalData> proposalDataArraylist = new ArrayList<ProposalData>();
+        ArrayList<Car> carstoConfirmAsList = new ArrayList<Car>();
+        Boolean noResponseData = false;
 
         for (ProposalResponse proposalResponse : queryProposals) {
             if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
@@ -455,55 +455,22 @@ public class AppController {
                 out(result.errorMessage.toString());
             } else {
                 String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-                ProposalData[] arr = g.fromJson(payload, ProposalData[].class);
-                proposalDataArraylist = new ArrayList<ProposalData>(Arrays.asList(arr));
-                Iterator<ProposalData> iterator = proposalDataArraylist.iterator();
-                while (iterator.hasNext()) {
-                    ProposalData proposalData = iterator.next();
-                    ProposalAndCar proposalAndCar = new ProposalAndCar(proposalData, null);
-                    proposalAndCarMap.put(proposalData.getCar(), proposalAndCar);
+                Car[] arr = new Car[0];
+                arr = g.fromJson(payload, Car[].class);
+                try {
+                    carstoConfirmAsList = new ArrayList<Car>(Arrays.asList(arr));
+                } catch (Exception e) {
+                    out("Exception caught: " + e.toString());
+                    noResponseData = true;
+                    out("No data in response payload.");
                 }
                 out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
             }
         }
 
-        for (String vin : proposalAndCarMap.keySet()) {
-            QueryByChaincodeRequest carRequest = client.newQueryProposalRequest();
-            carRequest.setArgs(new String[]{username, role, vin});
-            carRequest.setFcn("readCar");
-            carRequest.setChaincodeID(chainCodeID);
-
-            Collection<ProposalResponse> carQueryProps;
-            try {
-                carQueryProps = chain.queryByChaincode(carRequest);
-            } catch (InvalidArgumentException | ProposalException e) {
-                throw new CompletionException(e);
-            }
-
-            for (ProposalResponse proposalResponse : carQueryProps) {
-                if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
-                    ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
-                            + ". Messages: " + proposalResponse.getMessage()
-                            + ". Was verified : " + proposalResponse.isVerified());
-                    out(result.errorMessage.toString());
-                } else {
-                    String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-                    Car car = new Car(null, null, null);
-                    car = g.fromJson(payload, Car.class);
-
-                    ProposalAndCar proposalAndCarObject = proposalAndCarMap.get(vin);
-                    out("VIN:" + car.getVin());
-                    out("maxSpeed: " + proposalAndCarObject.getProposalData().toString());
-                    proposalAndCarObject.setCar(car);
-
-                    proposalAndCarMap.replace(vin, proposalAndCarObject);
-                    out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
-                }
-            }
-        }
-
-        out("Size of proposalAndCarMap: " + proposalAndCarMap.values().size());
-        model.addAttribute("proposalAndCarData", proposalAndCarMap.values());
+        out("Size of carsToConfirmList: " + carstoConfirmAsList.size());
+        model.addAttribute("carsToConfirmList", carstoConfirmAsList);
+        model.addAttribute("noResponseData", noResponseData);
         model.addAttribute("role", role.toUpperCase());
 
         return "dot/confirmation";
@@ -521,197 +488,197 @@ public class AppController {
         return "index";
     }
 
-	@RequestMapping("/insurance/index")
-	public String insuranceIndex(Model model, Authentication authentication, @RequestParam(required = false) String success) {
-		String username = authentication.getName();
-		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+    @RequestMapping("/insurance/index")
+    public String insuranceIndex(Model model, Authentication authentication, @RequestParam(required = false) String success) {
+        String username = authentication.getName();
+        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
 
-		ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
-				.setVersion(AppController.CHAIN_CODE_VERSION)
-				.setPath(AppController.CHAIN_CODE_PATH).build();
+        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
+                .setVersion(AppController.CHAIN_CODE_VERSION)
+                .setPath(AppController.CHAIN_CODE_PATH).build();
 
-		QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
+        QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
 
-		String companyName = ProfileProperties.getOrganization(profileProperties, username, role);
-		queryByChaincodeRequest.setArgs(new String[]{username, role, companyName});
-		queryByChaincodeRequest.setFcn("getInsurer");
-		queryByChaincodeRequest.setChaincodeID(chainCodeID);
+        String companyName = ProfileProperties.getOrganization(profileProperties, username, role);
+        queryByChaincodeRequest.setArgs(new String[]{username, role, companyName});
+        queryByChaincodeRequest.setFcn("getInsurer");
+        queryByChaincodeRequest.setChaincodeID(chainCodeID);
 
-		Collection<ProposalResponse> queryProposals;
+        Collection<ProposalResponse> queryProposals;
 
-		try {
-			queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
-		} catch (InvalidArgumentException | ProposalException e) {
-			throw new CompletionException(e);
-		}
+        try {
+            queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
+        } catch (InvalidArgumentException | ProposalException e) {
+            throw new CompletionException(e);
+        }
 
-		Insurer insurer = null;
-		for (ProposalResponse proposalResponse : queryProposals) {
-			if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
-				ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
-						+ ". Messages: " + proposalResponse.getMessage()
-						+ ". Was verified : " + proposalResponse.isVerified());
-				System.out.println(result.errorMessage.toString());
-			} else {
-				String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-				insurer = g.fromJson(payload, Insurer.class);
-				out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
-			}
-		}
+        Insurer insurer = null;
+        for (ProposalResponse proposalResponse : queryProposals) {
+            if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
+                ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
+                        + ". Messages: " + proposalResponse.getMessage()
+                        + ". Was verified : " + proposalResponse.isVerified());
+                System.out.println(result.errorMessage.toString());
+            } else {
+                String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
+                insurer = g.fromJson(payload, Insurer.class);
+                out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
+            }
+        }
 
-		try {
+        try {
 
-			for (InsureProposal proposal : insurer.getProposals()) {
-				out("IsRegistered before checking: " + proposal.isRegistered());
-				Car car = carService.getCar(client, chain, proposal.getUser(), "user", proposal.getCar());
-				proposal.setRegistered(car.isRegistered());
-			}
+            for (InsureProposal proposal : insurer.getProposals()) {
+                out("IsRegistered before checking: " + proposal.isRegistered());
+                Car car = carService.getCar(client, chain, proposal.getUser(), "user", proposal.getCar());
+                proposal.setRegistered(car.isRegistered());
+            }
 
-			for (InsureProposal proposal : insurer.getProposals()) {
-				out("IsRegistered after checking: " + proposal.isRegistered());
-			}
+            for (InsureProposal proposal : insurer.getProposals()) {
+                out("IsRegistered after checking: " + proposal.isRegistered());
+            }
 
-		} catch (NullPointerException e) {
-			// Insurer not yet created, because no proposals on this insurer exist
-			insurer = new Insurer(ProfileProperties.getOrganization(profileProperties, username, role), null);
-		}
+        } catch (NullPointerException e) {
+            // Insurer not yet created, because no proposals on this insurer exist
+            insurer = new Insurer(ProfileProperties.getOrganization(profileProperties, username, role), null);
+        }
 
 
-		model.addAttribute("success", success);
-		model.addAttribute("role", role.toUpperCase());
-		model.addAttribute("insurer", insurer);
-		return "insurance/index";
-	}
+        model.addAttribute("success", success);
+        model.addAttribute("role", role.toUpperCase());
+        model.addAttribute("insurer", insurer);
+        return "insurance/index";
+    }
 
-	@RequestMapping("/insurance/acceptInsurance")
-	public String acceptInsurance(RedirectAttributes redirAttr, Authentication authentication, @RequestParam("vin") String vin, @RequestParam("userToInsure") String userToInsure) {
-		String username = authentication.getName();
-		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
-		String company = ProfileProperties.getOrganization(profileProperties, username, role);
+    @RequestMapping("/insurance/acceptInsurance")
+    public String acceptInsurance(RedirectAttributes redirAttr, Authentication authentication, @RequestParam("vin") String vin, @RequestParam("userToInsure") String userToInsure) {
+        String username = authentication.getName();
+        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+        String company = ProfileProperties.getOrganization(profileProperties, username, role);
 
-		try {
-			ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
-					.setVersion(AppController.CHAIN_CODE_VERSION)
-					.setPath(AppController.CHAIN_CODE_PATH).build();
+        try {
+            ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
+                    .setVersion(AppController.CHAIN_CODE_VERSION)
+                    .setPath(AppController.CHAIN_CODE_PATH).build();
 
-			Collection<ProposalResponse> successful = new LinkedList<>();
-			Collection<ProposalResponse> failed = new LinkedList<>();
+            Collection<ProposalResponse> successful = new LinkedList<>();
+            Collection<ProposalResponse> failed = new LinkedList<>();
 
-			TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
-			transactionProposalRequest.setChaincodeID(chainCodeID);
-			transactionProposalRequest.setFcn("insuranceAccept");
+            TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
+            transactionProposalRequest.setChaincodeID(chainCodeID);
+            transactionProposalRequest.setFcn("insuranceAccept");
 
-			transactionProposalRequest.setArgs(new String[]{username, role, userToInsure, vin, company});
-			out("sending transaction proposal for 'insuranceAccept' to all peers");
+            transactionProposalRequest.setArgs(new String[]{username, role, userToInsure, vin, company});
+            out("sending transaction proposal for 'insuranceAccept' to all peers");
 
-			Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
-			for (ProposalResponse response : invokePropResp) {
-				if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
-					out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
-					successful.add(response);
-				} else {
-					failed.add(response);
-				}
-			}
-			out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
-					invokePropResp.size(), successful.size(), failed.size());
-			if (failed.size() > 0) {
-				throw new ProposalException("Not enough endorsers for invoke");
+            Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
+            for (ProposalResponse response : invokePropResp) {
+                if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
+                    out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
+                    successful.add(response);
+                } else {
+                    failed.add(response);
+                }
+            }
+            out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
+                    invokePropResp.size(), successful.size(), failed.size());
+            if (failed.size() > 0) {
+                throw new ProposalException("Not enough endorsers for invoke");
 
-			}
-			out("Successfully received transaction proposal responses.");
-			out("Sending chain code transaction to orderer");
-			chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
-		} catch (Exception e) {
-			out(e.toString());
-			e.printStackTrace();
-		}
+            }
+            out("Successfully received transaction proposal responses.");
+            out("Sending chain code transaction to orderer");
+            chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+        } catch (Exception e) {
+            out(e.toString());
+            e.printStackTrace();
+        }
 
-		redirAttr.addAttribute("success", "Insurance proposal accepted. '"+company+"' now insures car '"+vin+"' of user '"+userToInsure+"'.");
-		return "redirect:/insurance/index";
-	}
+        redirAttr.addAttribute("success", "Insurance proposal accepted. '" + company + "' now insures car '" + vin + "' of user '" + userToInsure + "'.");
+        return "redirect:/insurance/index";
+    }
 
-	@RequestMapping(value="/insure", method=RequestMethod.GET)
-	public String showInsureForm(Model model, Authentication authentication, @RequestParam(required = false) String success, @RequestParam(required = false) String activeVin) {
-		String username = authentication.getName();
-		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
-		HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
+    @RequestMapping(value = "/insure", method = RequestMethod.GET)
+    public String showInsureForm(Model model, Authentication authentication, @RequestParam(required = false) String success, @RequestParam(required = false) String activeVin) {
+        String username = authentication.getName();
+        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+        HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
 
-		model.addAttribute("activeVin", activeVin);
-		model.addAttribute("success", success);
-		model.addAttribute("cars", carList.values());
-		model.addAttribute("role", role.toUpperCase());
-		return "insure";
-	}
+        model.addAttribute("activeVin", activeVin);
+        model.addAttribute("success", success);
+        model.addAttribute("cars", carList.values());
+        model.addAttribute("role", role.toUpperCase());
+        return "insure";
+    }
 
-	@RequestMapping(value="/insure", method=RequestMethod.POST)
-	public String insuranceProposal(RedirectAttributes redirAttr, Authentication authentication, @RequestParam("vin") String vin, @RequestParam("company") String company) {
-		out(vin);
-		out(company);
+    @RequestMapping(value = "/insure", method = RequestMethod.POST)
+    public String insuranceProposal(RedirectAttributes redirAttr, Authentication authentication, @RequestParam("vin") String vin, @RequestParam("company") String company) {
+        out(vin);
+        out(company);
 
-		String username = authentication.getName();
-		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+        String username = authentication.getName();
+        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
 
-		out(username);
-		out(role);
+        out(username);
+        out(role);
 
-		ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
-				.setVersion(CHAIN_CODE_VERSION)
-				.setPath(CHAIN_CODE_PATH).build();
+        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
+                .setVersion(CHAIN_CODE_VERSION)
+                .setPath(CHAIN_CODE_PATH).build();
 
-		try {
-			Collection<ProposalResponse> successful = new LinkedList<>();
-			Collection<ProposalResponse> failed = new LinkedList<>();
+        try {
+            Collection<ProposalResponse> successful = new LinkedList<>();
+            Collection<ProposalResponse> failed = new LinkedList<>();
 
-			TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
-			transactionProposalRequest.setChaincodeID(chainCodeID);
-			transactionProposalRequest.setFcn("insureProposal");
+            TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
+            transactionProposalRequest.setChaincodeID(chainCodeID);
+            transactionProposalRequest.setFcn("insureProposal");
 
-			transactionProposalRequest.setArgs(new String[]{username, role, vin, company});
-			out("sending transaction proposal for 'insureProposal' to all peers");
+            transactionProposalRequest.setArgs(new String[]{username, role, vin, company});
+            out("sending transaction proposal for 'insureProposal' to all peers");
 
-			Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
-			for (ProposalResponse response : invokePropResp) {
-				if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
-					out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
-					successful.add(response);
-				} else {
-					failed.add(response);
-				}
-			}
-			out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
-					invokePropResp.size(), successful.size(), failed.size());
-			if (failed.size() > 0) {
-				throw new ProposalException("Not enough endorsers for invoke");
+            Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
+            for (ProposalResponse response : invokePropResp) {
+                if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
+                    out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
+                    successful.add(response);
+                } else {
+                    failed.add(response);
+                }
+            }
+            out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
+                    invokePropResp.size(), successful.size(), failed.size());
+            if (failed.size() > 0) {
+                throw new ProposalException("Not enough endorsers for invoke");
 
-			}
-			out("Successfully received transaction proposal responses.");
+            }
+            out("Successfully received transaction proposal responses.");
 
-			out("Sending chain code transaction to orderer");
-			chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
-		} catch (Exception e) {
-			out(e.toString());
-			e.printStackTrace();
-			ErrorInfo result = new ErrorInfo(500, "", "CompletionException " + e.getMessage());
-			//return result;
-			//model.addAttribute("error", "");
-		}
+            out("Sending chain code transaction to orderer");
+            chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+        } catch (Exception e) {
+            out(e.toString());
+            e.printStackTrace();
+            ErrorInfo result = new ErrorInfo(500, "", "CompletionException " + e.getMessage());
+            //return result;
+            //model.addAttribute("error", "");
+        }
 
-		redirAttr.addAttribute("success", "Insurance proposal saved. '"+company+"' will get back to you for confirmation.");
-		return "redirect:/insure";
-	}
+        redirAttr.addAttribute("success", "Insurance proposal saved. '" + company + "' will get back to you for confirmation.");
+        return "redirect:/insure";
+    }
 
-	@RequestMapping(value="/history", method=RequestMethod.GET)
-	public String history(Model model, Authentication authentication, @RequestParam String vin) {
-		String username = authentication.getName();
-		String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
-		Car[] history = carService.getCarHistory(client, chain, username, role, vin);
+    @RequestMapping(value = "/history", method = RequestMethod.GET)
+    public String history(Model model, Authentication authentication, @RequestParam String vin) {
+        String username = authentication.getName();
+        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+        Car[] history = carService.getCarHistory(client, chain, username, role, vin);
 
-		model.addAttribute("vin", vin);
-		model.addAttribute("cars", history);
-		model.addAttribute("role", role.toUpperCase());
-		return "history";
-	}
+        model.addAttribute("vin", vin);
+        model.addAttribute("cars", history);
+        model.addAttribute("role", role.toUpperCase());
+        return "history";
+    }
 
 	/*
      *	INITIALIZE FUNCTIONS
