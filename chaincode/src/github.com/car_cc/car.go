@@ -109,7 +109,7 @@ func (t *CarChaincode) createCar(stub shim.ChaincodeStubInterface, username stri
 	// check for existing garage user with that name
 	user, err := t.getUser(stub, username)
 	if err != nil {
-		user = User{Name: username, Cars: []string{}, Balance: 100}
+		user = User{Name: username, Cars: []string{}, Balance: 0}
 	}
 
 	// check for an existing car with that vin in the car index
@@ -302,25 +302,19 @@ func (t *CarChaincode) readCarAsDot(stub shim.ChaincodeStubInterface, username s
  * returns the car.
  */
 func (t *CarChaincode) sell(stub shim.ChaincodeStubInterface, seller string, args []string) pb.Response {
-	price := args[0]
-	priceAsInt, _ := strconv.Atoi(args[0])
-	vin := args[1]
+	price, _ := strconv.Atoi(args[0])
 	buyer := args[2]
 
 	// price input sanitation
-	if price == "" || priceAsInt < 0 {
+	if args[0] == "" || price < 0 {
 		return shim.Error("'sell' expects a non-empty, positive price")
 	}
 
-	//////////////////////////////////////////////////////////
-	//                     BUYER                            //
-	//////////////////////////////////////////////////////////
-
 	// fetch buyer and balance
+	// create buyer user if does not exist
 	buyerAsUser, err := t.getUser(stub, buyer)
 	if err != nil {
 		// buyer does not exist yet
-		// create and give her some credits to buy cars
 		userResponse := t.createUser(stub, buyer)
 		buyerAsUser = User{}
 		err = json.Unmarshal(userResponse.Payload, &buyerAsUser)
@@ -329,103 +323,39 @@ func (t *CarChaincode) sell(stub shim.ChaincodeStubInterface, seller string, arg
 		}
 	}
 
-	// check buyer balance
-	if buyerAsUser.Balance < priceAsInt {
-		return shim.Error("Buyer has not enough credits")
-	}
-
 	// update buyer balance
-	buyerAsUser, err = t.setBalance(stub, buyer, buyerAsUser.Balance-priceAsInt)
+	buyerAsUser, err = t.setBalance(stub, buyer, buyerAsUser.Balance - price)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-
-	fmt.Printf("Balance of user %s (buyer) updated, is now: %n\n", buyer, buyerAsUser.Balance)
-
-	//////////////////////////////////////////////////////////
-	//                     SELLER                           //
-	//////////////////////////////////////////////////////////
 
 	// fetch seller and balance
 	sellerAsUser, err := t.getUser(stub, seller)
 	if err != nil {
-		// Temporary fix for tests (ToDo: Fix User creation in tests)
-		fmt.Printf("Error fetching old car owner. Creating new one.")
-		userAsBytes := t.createUser(stub, seller)
-		err := json.Unmarshal(userAsBytes.Payload, &sellerAsUser)
-		if err != nil {
-			return shim.Error("Error unmarshaling user payload.")
-		}
-		// return shim.Error("Error fetching seller")
+		return shim.Error("Error fetching seller")
 	}
 
 	// update sellers balance
-	sellerAsUser, err = t.setBalance(stub, seller, sellerAsUser.Balance+priceAsInt)
+	sellerAsUser, err = t.setBalance(stub, seller, sellerAsUser.Balance + price)
 	if err != nil {
-		// undo successful 'buyer' transaction
-		buyerAsUser, err = t.setBalance(stub, buyer, buyerAsUser.Balance+priceAsInt)
-		if err != nil {
-			return shim.Error("State corrupted")
-		}
-
 		return shim.Error(err.Error())
 	}
-
-	fmt.Printf("Balance of user %s (seller) updated, is now: %n\n", seller, sellerAsUser.Balance)
-
-	//////////////////////////////////////////////////////////
-	//           WRITING USER CHANGES TO LEDGER             //
-	//////////////////////////////////////////////////////////
 
 	// Writing updated buyer back to ledger
 	err = t.saveUser(stub, buyerAsUser)
 	if err != nil {
-		return shim.Error("Error saving updated buyer!")
+		return shim.Error("Error saving updated buyer.")
 	}
 
 	// writing updated seller back to ledger
 	err = t.saveUser(stub, sellerAsUser)
 	if err != nil {
-		return shim.Error("Error saving updated seller!")
+		return shim.Error("Error saving updated seller.")
 	}
 
-	//////////////////////////////////////////////////////////
-	//                       CAR                            //
-	//////////////////////////////////////////////////////////
-
-	// remove price from args
+	// remove price from args and transfer car
 	args = args[1:]
-
-	// transfer car
 	response := t.transfer(stub, seller, args)
-	car := Car{}
-	err = json.Unmarshal(response.Payload, &car)
-	if err != nil {
-		// undo SELLER and BUYER balance updates if unsucessfull
-		// is there a 'hfc transaction' for automation of this scenario?
-		buyerAsUser, err = t.setBalance(stub, buyer, buyerAsUser.Balance+priceAsInt)
-		if err != nil {
-			return shim.Error("State corrupted")
-		}
-
-		sellerAsUser, err = t.setBalance(stub, seller, sellerAsUser.Balance-priceAsInt)
-		if err != nil {
-			return shim.Error("State corrupted")
-		}
-
-		return shim.Error("Error transferring car, transaction not successfull")
-	}
-
-	//////////////////////////////////////////////////////////
-	//           WRITING CAR CHANGES TO LEDGER              //
-	//////////////////////////////////////////////////////////
-
-	// write updated car back to ledger
-	carAsBytes, _ := json.Marshal(car)
-	err = stub.PutState(vin, carAsBytes)
-	if err != nil {
-		return shim.Error("Error writing updated car to ledger")
-	}
 
 	return shim.Success(response.Payload)
 }
