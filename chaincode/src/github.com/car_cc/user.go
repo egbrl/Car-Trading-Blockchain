@@ -197,11 +197,6 @@ func (t *CarChaincode) updateBalance(stub shim.ChaincodeStubInterface, username 
 		return User{}, errors.New("Error fetching user, balance not updated")
 	}
 
-	// check if user balance does not go below zero
-	if user.Balance+updateAmount < 0 {
-		return user, errors.New("Updating balance not possible. User balance would go below zero")
-	}
-
 	// update user balance
 	user.Balance += updateAmount
 
