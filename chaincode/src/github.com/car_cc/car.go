@@ -109,7 +109,7 @@ func (t *CarChaincode) createCar(stub shim.ChaincodeStubInterface, username stri
 	// check for existing garage user with that name
 	user, err := t.getUser(stub, username)
 	if err != nil {
-		user = User{Name: username, Cars: []string{}, Balance: 100}
+		user = User{Name: username, Cars: []string{}, Balance: 0}
 	}
 
 	// check for an existing car with that vin in the car index
@@ -327,11 +327,6 @@ func (t *CarChaincode) sell(stub shim.ChaincodeStubInterface, seller string, arg
 		if err != nil {
 			return shim.Error("Error creating new buyer")
 		}
-	}
-
-	// check buyer balance
-	if buyerAsUser.Balance < priceAsInt {
-		return shim.Error("Buyer has not enough credits")
 	}
 
 	// update buyer balance

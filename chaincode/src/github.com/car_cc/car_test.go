@@ -194,9 +194,8 @@ func TestSellCar(t *testing.T) {
 		t.Error("Car should now be registered!")
 	}
 
-	// sell the car, but for less than 100 credits
-	// the new car owner (receiver 'bobby') will get created
-	// with a balance of 100
+	// sell the car, the new car owner (receiver 'bobby')
+	// will get created with a balance of 0 credits
 	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("sell", username, "garage", "99", vin, receiver))
 	err = json.Unmarshal(response.Payload, &car)
 	if err != nil {
@@ -260,12 +259,12 @@ func TestSellCar(t *testing.T) {
 	}
 
 	// check new balances of seller (old owner)
-	if oldOwnerAsUser.Balance != 199 {
+	if oldOwnerAsUser.Balance != 99 {
 		t.Error("Sellers balance not updated")
 	}
 
 	// check new balances of buyer
-	if receiverAsUser.Balance != 1 {
+	if receiverAsUser.Balance != -99 {
 		t.Error("Buyers balance not updated")
 	}
 }

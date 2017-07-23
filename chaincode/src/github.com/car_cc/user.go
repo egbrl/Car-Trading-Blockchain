@@ -13,9 +13,6 @@ import (
  * Creates a new user and appends it to the user index.
  * Returns an error if a user with the desired username already exists.
  *
- * Until we have an interface to stock up user credits,
- * every new user gets 100 credits for free to buy cars.
- *
  * On success,
  * returns the user.
  */
@@ -29,7 +26,7 @@ func (t *CarChaincode) createUser(stub shim.ChaincodeStubInterface, username str
 	// user does not exist yet,
 	// create user
 	fmt.Printf("User '%s' does not exist yet\nSaving new user with that username\n", username)
-	user := User{Name: username, Cars: []string{}, Balance: 100}
+	user := User{Name: username, Cars: []string{}, Balance: 0}
 
 	userIndex, err := t.getUserIndex(stub)
 	if err != nil {
