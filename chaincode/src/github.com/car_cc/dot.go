@@ -212,7 +212,7 @@ func (t *CarChaincode) getCarsToConfirm(stub shim.ChaincodeStubInterface) pb.Res
 		if err != nil {
 			return shim.Error("Error getting car")
 		}
-		if IsRegistered(&car) && IsInsured(&car) {
+		if IsRegistered(&car) && IsInsured(&car) && (car.Certificate.Numberplate == "") {
 			toConfirmcarList = append(toConfirmcarList, car)
 		}
 	}
@@ -253,9 +253,18 @@ func (t *CarChaincode) confirmCar(stub shim.ChaincodeStubInterface, username str
 		return shim.Error("Car numberplate is empty. Please provide a numberplate to confirm your car")
 	}
 
+	// checking if numberplate is yet available
+	numberplateIndex, err := t.getNumberplateIndex(stub)
+	if err != nil {
+		return shim.Error("Failed to fetch numberplate index")
+	}
+	vinNumberplateExisting, numberplateExisting := numberplateIndex[numberplate]
+	if numberplateExisting {
+		return shim.Error("Numberplate already taken from car with vin '" + vinNumberplateExisting + "'")
+	}
+
 	// fetch the car from the ledger
-	// this already checks for ownership
-	car, err := t.getCar(stub, username, vin)
+	car, err := t.getCarAsDot(stub, vin)
 	if err != nil {
 		return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
 	}
@@ -265,19 +274,14 @@ func (t *CarChaincode) confirmCar(stub shim.ChaincodeStubInterface, username str
 		return shim.Error("Car is not insured. Please insure car first before trying to confirm it")
 	}
 
-	// check if numberplate is already in use
-	carIndex, err := t.getCarIndex(stub)
-	carToCheck := Car{}
-	for carVin, user := range carIndex {
-		// get the full car object with certificate
-		carToCheck, err = t.getCar(stub, user, carVin)
-		if err != nil {
-			return shim.Error("Failed to fetch car with vin '" + carVin + "' from ledger")
-		}
+	// updating numberplate index
+	numberplateIndex[numberplate] = vin
 
-		if carToCheck.Certificate.Numberplate == numberplate {
-			return shim.Error("Car numberplate already in use. Please use another one!")
-		}
+	// write updated numberplate index to ledger
+	numberplateIndexAsBytes, _ := json.Marshal(numberplateIndex)
+	err = stub.PutState(vin, numberplateIndexAsBytes)
+	if err != nil {
+		return shim.Error("Error writing numberplate index to ledger")
 	}
 
 	// assign the numberplate to the car
@@ -458,4 +462,18 @@ func (t *CarChaincode) deleteCar(stub shim.ChaincodeStubInterface, vin string) p
 
 	fmt.Printf("Successfully deleted car with VIN: '%s'\n", vin)
 	return shim.Success(nil)
+}
+
+/*
+ * Returns the numberplate index
+ */
+func (t *CarChaincode) getNumberplateIndex(stub shim.ChaincodeStubInterface) (map[string]string, error) {
+	response := t.read(stub, numberplateIndex)
+	numberplateIndex := make(map[string]string)
+	err := json.Unmarshal(response.Payload, &numberplateIndex)
+	if err != nil {
+		return nil, errors.New("Error parsing car index")
+	}
+
+	return numberplateIndex, nil
 }

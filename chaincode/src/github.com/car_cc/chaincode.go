@@ -23,6 +23,9 @@ const insurerIndexStr string = "_insurers"
 const registrationProposalIndexStr string = "_registrationProposals"
 const revocationProposalIndexStr string = "_revocationProposals"
 
+// numberplate -> vin
+const numberplateIndex string = "_numberplates"
+
 func (t *CarChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	fmt.Println("Car demo Init")
 
@@ -73,6 +76,12 @@ func (t *CarChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 
 	// clear the registration proposal index
 	err = clearRegistrationProposalIndex(registrationProposalIndexStr, stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	//clear the numberplate index
+	err = clearStringIndex(numberplateIndex, stub)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
