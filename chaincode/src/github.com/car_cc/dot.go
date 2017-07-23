@@ -193,6 +193,39 @@ func (t *CarChaincode) registerCar(stub shim.ChaincodeStubInterface, username st
 }
 
 /*
+ * Returns a list of cars to be confirmed
+ *
+ * On success,
+ * returns a list with cars to confirm.
+ */
+func (t *CarChaincode) getCarsToConfirm(stub shim.ChaincodeStubInterface) pb.Response {
+	carIndex, err := t.getCarIndex(stub)
+
+	if err != nil {
+		return shim.Error("Error getting car index")
+	}
+
+	var toConfirmcarList []Car
+
+	for k := range carIndex {
+		car, err := t.getCarAsDot(stub, k)
+		if err != nil {
+			return shim.Error("Error getting car")
+		}
+		if IsRegistered(&car) && IsInsured(&car) {
+			toConfirmcarList = append(toConfirmcarList, car)
+		}
+	}
+
+	// marshal list
+	toConfirmcarListAsBytes, _ := json.Marshal(toConfirmcarList)
+
+	// car confirmation successfull,
+	// return the car with numberplate
+	return shim.Success(toConfirmcarListAsBytes)
+}
+
+/*
  * Confirms a car and assigns a numberplate.
  *
  * Only the owner of a car can request confirmation of a car.
