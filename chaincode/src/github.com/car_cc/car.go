@@ -290,8 +290,8 @@ func (t *CarChaincode) readCarAsDot(stub shim.ChaincodeStubInterface, username s
 /*
  * Sell a car to a new owner (receiver).
  *
- * The car can only be sold if the buyer/receiver
- * has enough credits (balance sufficiently high)
+ * No balance checks are performed before selling a car,
+ * cars are bought on credit.
  *
  * Arguments required:
  * [0] Price                       (int)
