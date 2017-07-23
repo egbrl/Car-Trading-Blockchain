@@ -165,30 +165,6 @@ func (t *CarChaincode) saveUser(stub shim.ChaincodeStubInterface, user User) err
 }
 
 /*
- * Sets User balance
- */
-func (t *CarChaincode) setBalance(stub shim.ChaincodeStubInterface, username string, balance int) (User, error) {
-	// fetch user
-	user, err := t.getUser(stub, username)
-	if err != nil {
-		return User{}, errors.New("Error fetching user, balance not set")
-	}
-
-	// set new user balance
-	user.Balance = balance
-
-	// save updated user
-	err = t.saveUser(stub, user)
-	if err != nil {
-		return User{}, errors.New("Error writing user, balance not set")
-	}
-
-	fmt.Printf("Balance of user '" + user.Name + "' successfully set")
-
-	return user, nil
-}
-
-/*
  * Updates User balance
  *
  * The update amount (can be positive or negative)

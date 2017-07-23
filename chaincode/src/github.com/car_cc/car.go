@@ -310,48 +310,15 @@ func (t *CarChaincode) sell(stub shim.ChaincodeStubInterface, seller string, arg
 		return shim.Error("'sell' expects a non-empty, positive price")
 	}
 
-	// fetch buyer and balance
 	// create buyer user if does not exist
-	buyerAsUser, err := t.getUser(stub, buyer)
+	_, err := t.getUser(stub, buyer)
 	if err != nil {
-		// buyer does not exist yet
-		userResponse := t.createUser(stub, buyer)
-		buyerAsUser = User{}
-		err = json.Unmarshal(userResponse.Payload, &buyerAsUser)
-		if err != nil {
-			return shim.Error("Error creating new buyer")
-		}
+		t.createUser(stub, buyer)
 	}
 
-	// update buyer balance
-	buyerAsUser, err = t.setBalance(stub, buyer, buyerAsUser.Balance - price)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-
-	// fetch seller and balance
-	sellerAsUser, err := t.getUser(stub, seller)
-	if err != nil {
-		return shim.Error("Error fetching seller")
-	}
-
-	// update sellers balance
-	sellerAsUser, err = t.setBalance(stub, seller, sellerAsUser.Balance + price)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-
-	// Writing updated buyer back to ledger
-	err = t.saveUser(stub, buyerAsUser)
-	if err != nil {
-		return shim.Error("Error saving updated buyer.")
-	}
-
-	// writing updated seller back to ledger
-	err = t.saveUser(stub, sellerAsUser)
-	if err != nil {
-		return shim.Error("Error saving updated seller.")
-	}
+	// update buyer and seller balance
+	t.updateBalance(stub, buyer, strconv.Itoa(-1 * price))
+	t.updateBalance(stub, seller, args[0])
 
 	// remove price from args and transfer car
 	args = args[1:]
