@@ -423,7 +423,7 @@ public class AppController {
     }
 
     @RequestMapping("/dot/confirmation")
-    public String dotConfirmation(Model model, Authentication authentication) {
+    public String dotConfirmation(Model model, Authentication authentication, @RequestParam(required = false) String confirmSuccess, @RequestParam(required = false) String confirmFail) {
         String username = authentication.getName();
         String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
 
@@ -469,11 +469,66 @@ public class AppController {
         }
 
         out("Size of carsToConfirmList: " + carstoConfirmAsList.size());
+        model.addAttribute("confirmSuccess", confirmSuccess);
+        model.addAttribute("confirmFail", confirmFail);
         model.addAttribute("carsToConfirmList", carstoConfirmAsList);
         model.addAttribute("noResponseData", noResponseData);
         model.addAttribute("role", role.toUpperCase());
 
         return "dot/confirmation";
+    }
+
+    @RequestMapping("/dot/confirmation/confirmcar")
+    public String confirmCar(RedirectAttributes redirAttr, Authentication authentication, @RequestParam("vin") String vin, @RequestParam("numberplate") String numberplate) {
+        String username = authentication.getName();
+        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+
+        Collection<ProposalResponse> successful = new LinkedList<>();
+        Collection<ProposalResponse> failed = new LinkedList<>();
+
+        try {
+            ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
+                    .setVersion(AppController.CHAIN_CODE_VERSION)
+                    .setPath(AppController.CHAIN_CODE_PATH).build();
+
+
+
+            TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
+            transactionProposalRequest.setChaincodeID(chainCodeID);
+            transactionProposalRequest.setFcn("confirm");
+
+            transactionProposalRequest.setArgs(new String[]{username, role, vin, numberplate});
+            out("sending transaction proposal for 'confirm' to all peers");
+
+            Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
+            for (ProposalResponse response : invokePropResp) {
+                if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
+                    out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
+                    successful.add(response);
+                } else {
+                    failed.add(response);
+                }
+            }
+            out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
+                    invokePropResp.size(), successful.size(), failed.size());
+            if (failed.size() > 0) {
+                throw new ProposalException("Not enough endorsers for invoke");
+
+            }
+            out("Successfully received transaction proposal responses.");
+            out("Sending chain code transaction to orderer");
+            chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+        } catch (Exception e) {
+            out(e.toString());
+            e.printStackTrace();
+        }
+
+        if (failed.size() > 0) {
+            redirAttr.addAttribute("confirmFail", "Numberplate already taken. Confirmation for car '" + vin + "' with numberplate '" + numberplate + "' failed.");
+        } else {
+            redirAttr.addAttribute("confirmSuccess", "Confirmation for car '" + vin + "' with numberplate '" + numberplate + "' successful.");
+        }
+        return "redirect:/dot/confirmation";
     }
 
     @RequestMapping("/dot/all-cars")

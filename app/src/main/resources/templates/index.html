@@ -65,10 +65,16 @@
                     <div th:case="false">
                         <div th:switch="${car.isInsured()}">
                             <div th:case="true">
-                                <td><button type="button" class="btn btn-success">confirm</button></td>
+                                <td>
+                                    - (contact dot)
+                                    <!-- <button type="button" class="btn btn-success">confirm</button> -->
+                                </td>
                             </div>
                             <div th:case="false">
-                                <td><button type="button" class="btn disabled">confirm</button></td>
+                                <td>
+                                    -
+                                    <!-- <button type="button" class="btn disabled">confirm</button> -->
+                                </td>
                             </div>
                         </div>
                     </div>

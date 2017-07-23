@@ -33,6 +33,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/import").hasRole(BOOTSTRAP_GARAGE_ROLE)
                 .antMatchers("/insure").hasAnyRole(BOOTSTRAP_GARAGE_ROLE, BOOTSTRAP_PRIVATE_USER_ROLE)
                 .antMatchers("/insurance/**").hasRole(BOOTSTRAP_INSURANCE_ROLE)
+                .antMatchers("/dot/**").hasRole(BOOTSTRAP_DOT_ROLE)
                 .anyRequest().authenticated()
                 .and()
                 .formLogin().loginPage("/login").failureUrl("/login-error");

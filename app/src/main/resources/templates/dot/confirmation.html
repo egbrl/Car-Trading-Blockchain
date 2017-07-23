@@ -35,6 +35,8 @@
     </div>
 
     <div>
+        <p th:if="${confirmSuccess}" style="color: green"><span class="glyphicon glyphicon-ok" aria-hidden="true" /> <span th:utext="${confirmSuccess}" /></p>
+        <p th:if="${confirmFail}" style="color: red"><span class="glyphicon glyphicon-remove" aria-hidden="true" /> <span th:utext="${confirmFail}" /></p>
         <table class="table table-hover">
             <thead>
             <tr>
@@ -67,8 +69,19 @@
                         </div>
                     </div>
                 </td>
-                <td><input type="text" class="form-control" id="type" placeholder="Select numberplate (eg. ZH 12345)"/></td>
-                <td><button type="button" class="btn btn-success">confirm</button></td>
+                <td>
+                    <form th:id="'confirmCar' + ${iterStat.count}" th:action="@{/dot/confirmation/confirmcar}"
+                          method="post">
+                        <input type="hidden" name="vin" th:value="${car.vin}"/>
+                        <input type="text" name="numberplate" class="form-control" id="type" placeholder="Select numberplate (eg. ZH 12345)"/>
+                    </form>
+                    </td>
+                <td>
+                    <button type="button" class="btn btn-success"
+                            th:onclick="'document.getElementById(\'confirmCar' + ${iterStat.count} + '\').submit()'">
+                        confirm
+                    </button>
+                </td>
             </tr>
             </tbody>
         </table>
