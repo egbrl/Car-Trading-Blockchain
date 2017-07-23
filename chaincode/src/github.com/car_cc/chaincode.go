@@ -134,8 +134,8 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return t.readUser(stub, username)
 
 	case "createUser":
-		if len(args) != 0 {
-			return shim.Error("'creatUser' expects a username to create a new user")
+		if len(args) != 1 {
+			return shim.Error("'createUser' expects a username to create a new user")
 		}
 		return t.createUser(stub, args[0])
 
@@ -185,20 +185,12 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	case "updateBalance":
 		if len(args) != 1 {
-			return shim.Error("'updateBalance' expects only one argument")
+			return shim.Error("'updateBalance' expects update amount")
 		} else if role != "user" {
 			// only a user is allowed to update balance
 			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to update the balance of a user.", role))
 		} else {
-			/* TODO
-			newBalance64, err := strconv.ParseInt(args[0], 10, 64)
-			var newBalance int
-			newBalance = int(newBalance64)
-			if err != nil {
-				return shim.Error("Error converting string to int.")
-			}
-			return t.updateBalance(shim, username, newBalance)
-			*/
+			return t.updateBalance(stub, username, args[0])
 		}
 
 	// GARAGE FUNCTIONS

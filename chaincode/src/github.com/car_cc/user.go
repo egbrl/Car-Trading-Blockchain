@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"strconv"
 	"fmt"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
@@ -189,24 +190,39 @@ func (t *CarChaincode) setBalance(stub shim.ChaincodeStubInterface, username str
 
 /*
  * Updates User balance
+ *
+ * The update amount (can be positive or negative)
+ * is added to the user balance.
+ *
+ * Expects 'args':
+ *  username              string
+ *  updateAmount          string
+ *
+ * On success,
+ * returns updated user balance
  */
-func (t *CarChaincode) updateBalance(stub shim.ChaincodeStubInterface, username string, updateAmount int) (User, error) {
+func (t *CarChaincode) updateBalance(stub shim.ChaincodeStubInterface, username string, updateAmount string) pb.Response {
+	amount, _ := strconv.Atoi(updateAmount)
+
 	// fetch user
 	user, err := t.getUser(stub, username)
 	if err != nil {
-		return User{}, errors.New("Error fetching user, balance not updated")
+			fmt.Println(err.Error())
+
+		return shim.Error("Error fetching user, balance not updated")
 	}
 
 	// update user balance
-	user.Balance += updateAmount
+	user.Balance = user.Balance + amount
 
 	// save updated user
 	err = t.saveUser(stub, user)
 	if err != nil {
-		return User{}, errors.New("Error writing user, balance not updated")
+		return shim.Error("Error writing user, balance not updated")
 	}
 
-	fmt.Printf("Balance of user '" + user.Name + "' successfully updated")
+	fmt.Printf("Balance of user '" + user.Name + "' successfully updated\n")
 
-	return user, nil
+	balanceAsBytes := []byte(strconv.Itoa(user.Balance))
+	return shim.Success(balanceAsBytes)
 }
