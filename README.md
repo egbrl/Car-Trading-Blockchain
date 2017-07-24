@@ -4,7 +4,7 @@
 
 ## Env Setup
 
-You may need to clean your docker env first (radical, hard-core way):
+You may need to clean your docker env first:
 ```
 sudo systemctl stop docker
 sudo rm -rf /var/lib/docker/
