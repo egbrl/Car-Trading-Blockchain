@@ -3,7 +3,6 @@
 [![Build Status](https://travis-ci.org/EGabb/Car-Trading-Blockchain.svg?branch=master)](https://travis-ci.org/EGabb/Car-Trading-Blockchain)
 
 ## Env Setup
-
 You may need to clean your docker env first:
 ```
 sudo systemctl stop docker
@@ -17,10 +16,11 @@ cd fixtures
 bash fabric.sh restart
 ```
 
-This will assemble and install the docker image for the car app. It will then download the required fabric images and spin up the fabric network. The web app can be accessed on [http://localhost:8080](http://localhost:8080).
+This will assemble and install the docker image for the car app. It will then download the required fabric images and spin up the fabric network. The web app can be accessed on [http://localhost:8080](http://localhost:8080). Log in with the credentials from [SecurityConfig](https://github.com/EGabb/Car-Trading-Blockchain/blob/master/app/src/main/java/ch/uzh/fabric/config/SecurityConfig.java).
+
 
 ## Fetch Cars Directly on Peer(s)
-To check out the bootstrapped car, log into the docker containers of `peer0` in `org1` and query the car:
+To check out the bootstrapped car, log into the docker container of `peer0` in `org1` and query the car:
 ```
 local$           docker exec -it peer0.org1.example.com bash
 root@peer0.org1# peer chaincode invoke -n car_cc_go -C foo -c '{"Args":["readCar", "garage", "garage", "WVWZZZ6RZHY260780"]}'
@@ -29,11 +29,11 @@ root@peer0.org1# peer chaincode invoke -n car_cc_go -C foo -c '{"Args":["readCar
 If you encounter problems, try a `docker rm $(docker ps -aq)` to remove all containers from time to time.
 
 ## CC Development
-To test if cc builds locally with most recent fabric-preview.:
+To test if cc builds locally with most recent fabric.:
 ```
 go get github.com/hyperledger/fabric
 cd $GOPATH/src/github.com/hyperledger/fabric
-git checkout -b v1.0.0-preview origin/v1.0.0-preview
+git checkout v1.0.0 -b v1.0.0
 ```
 
 To see if the cc actually builds, clone this repo and execute from that folder:
