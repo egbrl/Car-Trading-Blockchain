@@ -7,9 +7,9 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <link rel="stylesheet" href="../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
     <link rel="stylesheet" href="../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
     <style>
         .form tr th {
-            vertical-align: middle !important;
             text-align: right !important;
         }
     </style>
@@ -19,12 +19,7 @@
 
 <div class="container">
     <div class="page-header" style="border-bottom: none">
-        <div class="row">
-            <div>
-                <p class="pull-right">Role: <span th:text="${role}">ROLE</span></p>
-                <h1>Account Settings</h1>
-            </div>
-        </div>
+        <h1>Account Settings</h1>
     </div>
 
     <div>
@@ -34,6 +29,10 @@
                 </thead>
                 <tbody>
                 <tr>
+                    <th>Role: </th>
+                    <td th:text="${role}">Role</td>
+                </tr>
+                <tr>
                     <th>Organization Name:</th>
                     <td>
                         <input type="text" class="form-control" th:value="${orgName}" name="orgName" />
@@ -42,7 +41,7 @@
                 </tbody>
                 <tfoot>
                     <td></td>
-                    <td><button type="submit" class="btn btn-default"><span style="color: #e6e6e6">Submit</span></button></td>
+                    <td><button type="submit" class="btn btn-default"><span style="color: #e6e6e6">Save</span></button></td>
                 </tfoot>
 
             </table>

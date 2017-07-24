@@ -7,59 +7,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <link rel="stylesheet" href="../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
     <link rel="stylesheet" href="../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
 </head>
 <body>
-<div class="navbar navbar-default navbar-fixed-top">
-    <div class="container">
-        <div class="navbar-header">
-            <a href="/" class="navbar-brand">BLANK WebApp</a>
-            <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-        </div>
-        <div class="navbar-collapse collapse" id="navbar-main">
-            <div th:switch="${role}">
-                <div th:case="'GARAGE'">
-                    <ul th:replace="menu/mainmenu-garage"></ul>
-                </div>
-                <div th:case="'INSURANCE'">
-                    <ul th:replace="menu/mainmenu-insurance"></ul>
-                </div>
-                <div th:case="'USER'">
-                    <ul th:replace="menu/mainmenu-user"></ul>
-                </div>
-                <div th:case="'DOT'">
-                    <ul th:replace="menu/mainmenu-dot"></ul>
-                </div>
-            </div>
-            <div th:replace="menu/usermenu"></div>
-        </div>
-    </div>
-</div>
+<div th:replace="navigation" />
 
 <div class="container">
     <div class="page-header" style="border-bottom: none">
-        <div class="row">
-            <div>
-                <p class="pull-right">Role: <span th:text="${role}">ROLE</span></p>
-                <div th:switch="${role}">
-                    <div th:case="'GARAGE'">
-                        <h1>My Cars</h1>
-                    </div>
-                    <div th:case="'INSURANCE'">
-                        <h1>My Insurance Inquiries</h1>
-                    </div>
-                    <div th:case="'USER'">
-                        <h1>My Cars</h1>
-                    </div>
-                    <div th:case="'DOT'">
-                        <h1>My Registration/Confirmation Inquiries</h1>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <h1>All Cars</h1>
     </div>
 
     <div>

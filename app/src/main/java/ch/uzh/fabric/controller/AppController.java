@@ -108,45 +108,34 @@ public class AppController {
     }
 
     @RequestMapping("/index")
-    public String index(Authentication authentication, Model model) {
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString();
+    public String index(Authentication auth, Model model) {
+        String username = auth.getName();
+        String role = userService.getRole(auth);
 
-        // Redirect to DOT and INSURANCE index page
-        if (role.equals("ROLE_dot")) {
-            try {
-                authentication.isAuthenticated();
-                return "redirect:/dot/registration";
-            } catch (Exception e) {
-                return "redirect:/login";
-            }
-        } else if (role.equals("ROLE_insurer")) {
-            try {
-                authentication.isAuthenticated();
-                return "redirect:/insurance/index";
-            } catch (Exception e) {
-                return "redirect:/login";
-            }
+        if (role.equals("dot")) {
+            return "redirect:/dot/registration";
+        } else if (role.equals("insurer")) {
+            return "redirect:/insurance/index";
         }
 
         HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
 
         model.addAttribute("cars", carList.values());
-        model.addAttribute("role", role.substring(5).toUpperCase());
+        model.addAttribute("role", role.toUpperCase());
         return "index";
     }
 
     @RequestMapping(value = "/import", method = RequestMethod.GET)
-    public String showImportForm(Model model, Authentication authentication, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+    public String showImportForm(Model model, Authentication auth, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
+        String username = auth.getName();
+        String role = userService.getRole(auth);
 
         model.addAttribute("role", role.toUpperCase());
         return "import";
     }
 
     @RequestMapping(value = "/import", method = RequestMethod.POST)
-    public String createCar(Model model, Authentication authentication, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
+    public String createCar(Model model, Authentication auth, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
         proposalData.setCar(carData.getVin());
 
         out("Vin: " + carData.getVin() + " _Brand: " + carData.getCertificate().getBrand());
@@ -157,10 +146,10 @@ public class AppController {
 
         try {
             // Authenticated web app request
-            username = authentication.getName();
+            username = auth.getName();
             // Role should only be "garage", if security is configured correctly
             // garageRole = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
-            garageRole = authentication.getAuthorities().toArray()[0].toString().substring(5);
+            garageRole = userService.getRole(auth);
             out("read username and role from web request");
         } catch (NullPointerException e) {
             // Can only be the bootstrap script
@@ -235,9 +224,9 @@ public class AppController {
     }
 
     @RequestMapping("/dot/registration")
-    public String dotRegistration(Model model, Authentication authentication) {
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+    public String dotRegistration(Model model, Authentication auth) {
+        String username = auth.getName();
+        String role = userService.getRole(auth);
 
         ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
                 .setVersion(CHAIN_CODE_VERSION)
@@ -335,10 +324,10 @@ public class AppController {
     }
 
     @RequestMapping(value = "/dot/registration/accept", method = RequestMethod.POST)
-    public String acceptRegistration(RedirectAttributes redirAttr, Authentication authentication, @RequestParam("vin") String vin) {
+    public String acceptRegistration(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin) {
         out("vin" + vin);
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+        String username = auth.getName();
+        String role = userService.getRole(auth);
 
         try {
             ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
@@ -383,9 +372,9 @@ public class AppController {
     }
 
     @RequestMapping("/dot/confirmation")
-    public String dotConfirmation(Model model, Authentication authentication, @RequestParam(required = false) String confirmSuccess, @RequestParam(required = false) String confirmFail) {
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+    public String dotConfirmation(Model model, Authentication auth, @RequestParam(required = false) String confirmSuccess, @RequestParam(required = false) String confirmFail) {
+        String username = auth.getName();
+        String role = userService.getRole(auth);
 
         ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
                 .setVersion(CHAIN_CODE_VERSION)
@@ -439,9 +428,9 @@ public class AppController {
     }
 
     @RequestMapping("/dot/confirmation/confirmcar")
-    public String confirmCar(RedirectAttributes redirAttr, Authentication authentication, @RequestParam("vin") String vin, @RequestParam("numberplate") String numberplate) {
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+    public String confirmCar(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin, @RequestParam("numberplate") String numberplate) {
+        String username = auth.getName();
+        String role = userService.getRole(auth);
 
         Collection<ProposalResponse> successful = new LinkedList<>();
         Collection<ProposalResponse> failed = new LinkedList<>();
@@ -492,21 +481,21 @@ public class AppController {
     }
 
     @RequestMapping("/dot/all-cars")
-    public String allCars(Authentication authentication, Model model) {
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString();
+    public String allCars(Authentication auth, Model model) {
+        String username = auth.getName();
+        String role = userService.getRole(auth);
 
         HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
 
         model.addAttribute("cars", carList.values());
-        model.addAttribute("role", role.substring(5).toUpperCase());
-        return "index";
+        model.addAttribute("role", role.toUpperCase());
+        return "dot/all-cars";
     }
 
     @RequestMapping("/insurance/index")
-    public String insuranceIndex(Model model, Authentication authentication, @RequestParam(required = false) String success) {
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+    public String insuranceIndex(Model model, Authentication auth, @RequestParam(required = false) String success) {
+        String username = auth.getName();
+        String role = userService.getRole(auth);
 
         ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
                 .setVersion(AppController.CHAIN_CODE_VERSION)
@@ -567,9 +556,9 @@ public class AppController {
     }
 
     @RequestMapping("/insurance/acceptInsurance")
-    public String acceptInsurance(RedirectAttributes redirAttr, Authentication authentication, @RequestParam("vin") String vin, @RequestParam("userToInsure") String userToInsure) {
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+    public String acceptInsurance(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin, @RequestParam("userToInsure") String userToInsure) {
+        String username = auth.getName();
+        String role = userService.getRole(auth);
         ProfileProperties.User user = userService.findOrCreateUser(username, role);
         String company = user.getOrganization();
 
@@ -616,9 +605,9 @@ public class AppController {
     }
 
     @RequestMapping(value = "/insure", method = RequestMethod.GET)
-    public String showInsureForm(Model model, Authentication authentication, @RequestParam(required = false) String success, @RequestParam(required = false) String activeVin) {
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+    public String showInsureForm(Model model, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String activeVin) {
+        String username = auth.getName();
+        String role = userService.getRole(auth);
         HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
 
         model.addAttribute("activeVin", activeVin);
@@ -629,12 +618,12 @@ public class AppController {
     }
 
     @RequestMapping(value = "/insure", method = RequestMethod.POST)
-    public String insuranceProposal(RedirectAttributes redirAttr, Authentication authentication, @RequestParam("vin") String vin, @RequestParam("company") String company) {
+    public String insuranceProposal(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin, @RequestParam("company") String company) {
         out(vin);
         out(company);
 
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+        String username = auth.getName();
+        String role = userService.getRole(auth);
 
         out(username);
         out(role);
@@ -686,9 +675,9 @@ public class AppController {
     }
 
     @RequestMapping(value = "/history", method = RequestMethod.GET)
-    public String history(Model model, Authentication authentication, @RequestParam String vin) {
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+    public String history(Model model, Authentication auth, @RequestParam String vin) {
+        String username = auth.getName();
+        String role = userService.getRole(auth);
         Map<Integer, Car> history = carService.getCarHistory(client, chain, username, role, vin);
 
         model.addAttribute("vin", vin);

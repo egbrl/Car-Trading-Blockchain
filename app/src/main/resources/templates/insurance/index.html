@@ -7,15 +7,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <link rel="stylesheet" href="../../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
     <link rel="stylesheet" href="../../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
 </head>
 <body>
 <div th:replace="navigation" />
 
 <div class="container">
     <div class="page-header" style="border-bottom: none">
-        <div class="row">
-            <h1 th:text="${insurer.name} + ' Insurance Inquiries'">My Insurance Inquiries</h1>
-        </div>
+        <h1 th:text="${insurer.name} + ' Insurance Inquiries'">My Insurance Inquiries</h1>
     </div>
 
     <div>

@@ -7,31 +7,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <link rel="stylesheet" href="../../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
     <link rel="stylesheet" href="../../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
 </head>
 <body>
 <div th:replace="navigation" />
 
 <div class="container">
     <div class="page-header" style="border-bottom: none">
-        <div class="row">
-            <div>
-                <p class="pull-right">Role: <span th:text="${role}">ROLE</span></p>
-                <div th:switch="${role}">
-                    <div th:case="'GARAGE'">
-                        <h1>My Cars</h1>
-                    </div>
-                    <div th:case="'INSURANCE'">
-                        <h1>My Insurance Inquiries</h1>
-                    </div>
-                    <div th:case="'USER'">
-                        <h1>My Cars</h1>
-                    </div>
-                    <div th:case="'DOT'">
-                        <h1>My Inquiries</h1>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <h1>Registration Inquiries</h1>
     </div>
 
     <div>

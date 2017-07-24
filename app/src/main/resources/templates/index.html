@@ -15,25 +15,7 @@
 
 <div class="container">
     <div class="page-header" style="border-bottom: none">
-        <div class="row">
-            <div>
-                <p class="pull-right">Role: <span th:text="${role}">ROLE</span></p>
-                <div th:switch="${role}">
-                    <div th:case="'GARAGE'">
-                        <h1>My Cars</h1>
-                    </div>
-                    <div th:case="'INSURANCE'">
-                        <h1>My Insurance Inquiries</h1>
-                    </div>
-                    <div th:case="'USER'">
-                        <h1>My Cars</h1>
-                    </div>
-                    <div th:case="'DOT'">
-                        <h1>My Registration/Confirmation Inquiries</h1>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <h1>My Cars</h1>
     </div>
 
     <div>
