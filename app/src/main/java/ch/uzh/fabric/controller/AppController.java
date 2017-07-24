@@ -50,7 +50,10 @@ public class AppController {
     public static final String CHAIN_CODE_PATH = "github.com/car_cc";
     public static final String CHAIN_CODE_VERSION = "1";
 
-    private static final String TEST_VIN = "WVWZZZ6RZHY260780";
+    private static final String TEST_VIN  = "WVWZZZ6RZHY260780";
+    private static final String TEST_VIN2 = "XYZDZZ6RZHY820780";
+    private static final String TEST_VIN3 = "WVWQAW6RZHY140783";
+    private static final String TEST_VIN4 = "AVCQA8WJZHY140783";
 
     public static final SimpleDateFormat timeFormat = new SimpleDateFormat("dd.MM.yyyy, HH:mm");
 
@@ -786,8 +789,8 @@ public class AppController {
     @PostConstruct
     public void AppController() throws Exception {
         System.out.println("╔═╗┌─┐┌┐ ┬─┐┬┌─┐  ╔╗ ┌─┐┌─┐┌┬┐┌─┐┌┬┐┬─┐┌─┐┌─┐\n" +
-                "╠╣ ├─┤├┴┐├┬┘││    ╠╩╗│ ││ │ │ └─┐ │ ├┬┘├─┤├─┘\n" +
-                "╚  ┴ ┴└─┘┴└─┴└─┘  ╚═╝└─┘└─┘ ┴ └─┘ ┴ ┴└─┴ ┴┴  ");
+                           "╠╣ ├─┤├┴┐├┬┘││    ╠╩╗│ ││ │ │ └─┐ │ ├┬┘├─┤├─┘\n" +
+                           "╚  ┴ ┴└─┘┴└─┴└─┘  ╚═╝└─┘└─┘ ┴ └─┘ ┴ ┴└─┴ ┴┴  ");
 
         initSampleStore();
         setupclient();
@@ -800,7 +803,14 @@ public class AppController {
         installchaincode();
         instantiatechaincode();
 
-        // Create first garage user car
+        bootstrapCars();
+        System.out.println("Hyperledger network is ready to use");
+
+        AppController.timeFormat.setTimeZone(TimeZone.getTimeZone("Europe/Zurich"));
+    }
+
+    private void bootstrapCars() {
+        // confirmed car, ready to be revoked by the garage user
         createCar(null, null, new Car(
                         new Certificate(
                                 null,
@@ -811,7 +821,6 @@ public class AppController {
                                 "C350",
                                 "Mercedes"), 0, TEST_VIN),
                 new ProposalData(
-                        "ZH 1234",
                         "4+1",
                         4,
                         2,
@@ -823,10 +832,64 @@ public class AppController {
         acceptInsurance(null, null, TEST_VIN, SecurityConfig.BOOTSTRAP_GARAGE_USER);
         confirmCar(null, null, TEST_VIN, "ZH 1234");
 
+        // create an unregistered car
+        // with insurance proposal
+        createCar(null, null, new Car(
+                        new Certificate(
+                                null,
+                                null,
+                                null,
+                                null,
+                                "blue",
+                                "A8",
+                                "Audi"), 0, TEST_VIN2),
+                new ProposalData(
+                        "5",
+                        8,
+                        2,
+                        200)
+        );
+        insuranceProposal(null, null, TEST_VIN2, "AXA");
 
-        System.out.println("Hyperledger network is ready to use");
+        // create a registered car
+        // without insurance
+        createCar(null, null, new Car(
+                        new Certificate(
+                                null,
+                                null,
+                                null,
+                                null,
+                                "red",
+                                "TDI",
+                                "VW"), 0, TEST_VIN3),
+                new ProposalData(
+                        "5",
+                        4,
+                        2,
+                        150)
+        );
+        acceptRegistration(null, null, TEST_VIN2, SecurityConfig.BOOTSTRAP_GARAGE_USER);
 
-        AppController.timeFormat.setTimeZone(TimeZone.getTimeZone("Europe/Zurich"));
+        // create a registered and insured car
+        // ready to be confirmed
+        createCar(null, null, new Car(
+                        new Certificate(
+                                null,
+                                null,
+                                null,
+                                null,
+                                "grey",
+                                "AMG C 63 S",
+                                "Mercedes"), 0, TEST_VIN4),
+                new ProposalData(
+                        "5",
+                        8,
+                        2,
+                        250)
+        );
+        acceptRegistration(null, null, TEST_VIN4, SecurityConfig.BOOTSTRAP_GARAGE_USER);
+        insuranceProposal(null, null, TEST_VIN4, "AXA");
+        acceptInsurance(null, null, TEST_VIN4, SecurityConfig.BOOTSTRAP_GARAGE_USER);
     }
 
     private void initSampleStore() {
