@@ -2,9 +2,9 @@ package main
 
 type Car struct {
 	Certificate Certificate `json:"certificate"` // vehicle certificate issued by the DOT
-	CreatedTs   string      `json:"created_ts"`  // birth date
+	CreatedTs   int64       `json:"createdTs"`   // birth date
 	Vin         string      `json:"vin"`         // vehicle identification number ('WVW ZZZ 6RZ HY26 0780')
-	UsageData   UsageData   `json:"usage_data"`  // car usage profile, interesting for car rentals
+	UsageData   UsageData   `json:"usageData"`  // car usage profile, interesting for car rentals
 }
 
 type UsageData struct {

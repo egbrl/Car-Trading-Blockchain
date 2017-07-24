@@ -5,38 +5,20 @@ import ch.uzh.fabric.controller.AppController;
 import ch.uzh.fabric.model.Car;
 import ch.uzh.fabric.model.User;
 import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
+import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.*;
 import java.util.concurrent.CompletionException;
 
+@Service
 public class CarService {
 
-    private JsonSerializer<Date> ser = new JsonSerializer<Date>() {
-        @Override
-        public JsonElement serialize(Date src, Type typeOfSrc, JsonSerializationContext
-                context) {
-            return src == null ? null : new JsonPrimitive(src.getTime());
-        }
-    };
-
-    private JsonDeserializer<Date> deser = new JsonDeserializer<Date>() {
-        @Override
-        public Date deserialize(JsonElement json, Type typeOfT,
-                                JsonDeserializationContext context) throws JsonParseException {
-            return json == null ? null : new Date(json.getAsLong());
-        }
-    };
-
-    Gson g = new GsonBuilder()
-            .registerTypeAdapter(Date.class, ser)
-            .registerTypeAdapter(Date.class, deser).create();
+    private Gson g = new GsonBuilder().create();
 
     public HashMap<String, Car> getCars(HFClient client, Chain chain, String username, String role) {
         ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
@@ -68,7 +50,7 @@ public class CarService {
                 String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
                 user = g.fromJson(payload, User.class);
                 for (String vin : user.getCars()) {
-                    carList.put(vin, new Car(null, null, vin));
+                    carList.put(vin, new Car(null, 0, vin));
                 }
 
                 //System.out.println("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
@@ -141,7 +123,7 @@ public class CarService {
         return car;
     }
 
-    public Car[] getCarHistory(HFClient client, Chain chain, String username, String role, String vin) {
+    public Map<Integer, Car> getCarHistory(HFClient client, Chain chain, String username, String role, String vin) {
         ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
                 .setVersion(AppController.CHAIN_CODE_VERSION)
                 .setPath(AppController.CHAIN_CODE_PATH).build();
@@ -159,7 +141,7 @@ public class CarService {
             throw new CompletionException(e);
         }
 
-        Car[] history = null;
+        Map<Integer, Car> history = null;
         for (ProposalResponse proposalResponse : queryProposals) {
             if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
                 ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
@@ -168,7 +150,8 @@ public class CarService {
                 System.out.println(result.errorMessage.toString());
             } else {
                 String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-                history = g.fromJson(payload, Car[].class);
+                Type type = new TypeToken<Map<Integer, Car>>(){}.getType();
+                history = g.fromJson(payload, type);
             }
         }
 

@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
@@ -51,33 +52,19 @@ public class AppController {
 
     private static final String TEST_VIN = "WVWZZZ6RZHY260780";
 
+    public static final SimpleDateFormat timeFormat = new SimpleDateFormat("dd.MM.yyyy, HH:mm");
+
     private Collection<SampleOrg> testSampleOrgs;
     private SampleStore sampleStore;
     private HFClient client;
     private Chain chain;
 
-    private CarService carService = new CarService();
-
     @Autowired
     private UserService userService;
+    @Autowired
+    private CarService carService;
 
-    private JsonSerializer<Date> ser = new JsonSerializer<Date>() {
-        @Override
-        public JsonElement serialize(Date src, Type typeOfSrc, JsonSerializationContext
-                context) {
-            return src == null ? null : new JsonPrimitive(src.getTime());
-        }
-    };
-
-    private JsonDeserializer<Date> deser = new JsonDeserializer<Date>() {
-        @Override
-        public Date deserialize(JsonElement json, Type typeOfT,
-                                JsonDeserializationContext context) throws JsonParseException {
-            return json == null ? null : new Date(json.getAsLong());
-        }
-    };
-
-    Gson g = null;
+    private Gson g = new GsonBuilder().create();
 
 
 	/*
@@ -96,9 +83,9 @@ public class AppController {
     }
 
     @RequestMapping(value = "/account", method = RequestMethod.GET)
-    public String account(Authentication authentication, Model model) {
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+    public String account(Authentication auth, Model model) {
+        String username = auth.getName();
+        String role = userService.getRole(auth);
 
         ProfileProperties.User user = userService.findOrCreateUser(username, role);
 
@@ -108,9 +95,9 @@ public class AppController {
     }
 
     @RequestMapping(value = "/account", method = RequestMethod.POST)
-    public String accountChange(Authentication authentication, Model model, @RequestParam("orgName") String orgName) {
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
+    public String accountChange(Authentication auth, Model model, @RequestParam("orgName") String orgName) {
+        String username = auth.getName();
+        String role = userService.getRole(auth);
 
         ProfileProperties.User user = userService.findOrCreateUser(username, role);
         user.setOrganization(orgName);
@@ -327,8 +314,7 @@ public class AppController {
                         out(result.errorMessage.toString());
                     } else {
                         String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-                        Car car = new Car(null, null, null);
-                        car = g.fromJson(payload, Car.class);
+                        Car car = g.fromJson(payload, Car.class);
 
                         ProposalAndCar proposalAndCarObject = proposalAndCarMap.get(vin);
                         proposalAndCarObject.setCar(car);
@@ -703,10 +689,11 @@ public class AppController {
     public String history(Model model, Authentication authentication, @RequestParam String vin) {
         String username = authentication.getName();
         String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
-        Car[] history = carService.getCarHistory(client, chain, username, role, vin);
+        Map<Integer, Car> history = carService.getCarHistory(client, chain, username, role, vin);
 
         model.addAttribute("vin", vin);
-        model.addAttribute("cars", history);
+        model.addAttribute("history", history);
+        model.addAttribute("timeFmt", timeFormat);
         model.addAttribute("role", role.toUpperCase());
         return "history";
     }
@@ -733,10 +720,6 @@ public class AppController {
         installchaincode();
         instantiatechaincode();
 
-        g = new GsonBuilder()
-                .registerTypeAdapter(Date.class, ser)
-                .registerTypeAdapter(Date.class, deser).create();
-
         // Create first garage user car
         createCar(null, null, new Car(
                         new Certificate(
@@ -746,7 +729,7 @@ public class AppController {
                                 null,
                                 "white",
                                 "C350",
-                                "Mercedes"), null, TEST_VIN),
+                                "Mercedes"), 0, TEST_VIN),
                 new ProposalData(
                         "ZH 1234",
                         "4+1",
@@ -756,6 +739,8 @@ public class AppController {
         );
 
         System.out.println("Hyperledger network is ready to use");
+
+        AppController.timeFormat.setTimeZone(TimeZone.getTimeZone("Europe/Zurich"));
     }
 
     private void initSampleStore() {

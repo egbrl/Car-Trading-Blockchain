@@ -1,18 +1,19 @@
 package ch.uzh.fabric.model;
 
-import java.sql.Timestamp;
+import ch.uzh.fabric.controller.AppController;
+
 import java.util.Date;
 
 public class Car {
     private Certificate certificate;
-    private Date createdTs;
+    private int createdTs;
     private String vin;
 
     public Car() {
-
     }
 
-    public Car(Certificate certificate, Date createdTs, String vin) {
+    public Car(Certificate certificate, int createdTs, String vin) {
+        super();
         this.certificate = certificate;
         this.createdTs = createdTs;
         this.vin = vin;
@@ -22,8 +23,13 @@ public class Car {
         return certificate;
     }
 
-    public Date getCreated_ts() {
+    public int getCreatedTs() {
         return createdTs;
+    }
+
+    public String getCreatedTime() {
+        Date d = new Date(createdTs*1000L);
+        return AppController.timeFormat.format(d);
     }
 
     public String getVin() {
@@ -34,8 +40,8 @@ public class Car {
         this.certificate = certificate;
     }
 
-    public void setCreated_ts(Date created_ts) {
-        this.createdTs = created_ts;
+    public void setCreatedTs(int createdTs) {
+        this.createdTs = createdTs;
     }
 
     public void setVin(String vin) {

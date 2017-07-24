@@ -11,13 +11,20 @@ import (
 	pb "github.com/hyperledger/fabric/protos/peer"
 )
 
+/*
+* Queries the car history.
+*
+* On sucess,
+* Returns a map[in64]Car with modification timestamp as key
+* and Car object (from that point in time) as value
+*/
 func (t *CarChaincode) getHistory(stub shim.ChaincodeStubInterface, vin string) pb.Response {
 	hist, err := stub.GetHistoryForKey(vin)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
-	var carHistory []Car
+	carHistory := make(map[int64]Car)
 	for hist.HasNext() {
 		mod, _ := hist.Next()
 		var car Car
@@ -26,7 +33,7 @@ func (t *CarChaincode) getHistory(stub shim.ChaincodeStubInterface, vin string) 
 			return shim.Error(err.Error())
 		}
 
-		carHistory = append(carHistory, car)
+		carHistory[mod.GetTimestamp().GetSeconds()] = car
 	}
 
 	carHistoryAsBytes, _ := json.Marshal(carHistory)
@@ -104,7 +111,7 @@ func (t *CarChaincode) createCar(stub shim.ChaincodeStubInterface, username stri
 	}
 
 	// add car birth date
-	car.CreatedTs = strconv.FormatInt(time.Now().Unix(), 10)
+	car.CreatedTs = time.Now().Unix()
 
 	// check for existing garage user with that name
 	user, err := t.getUser(stub, username)

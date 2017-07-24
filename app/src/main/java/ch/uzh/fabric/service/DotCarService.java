@@ -17,25 +17,7 @@ import java.util.concurrent.CompletionException;
 
 public class DotCarService {
 
-    private JsonSerializer<Date> ser = new JsonSerializer<Date>() {
-        @Override
-        public JsonElement serialize(Date src, Type typeOfSrc, JsonSerializationContext
-                context) {
-            return src == null ? null : new JsonPrimitive(src.getTime());
-        }
-    };
-
-    private JsonDeserializer<Date> deser = new JsonDeserializer<Date>() {
-        @Override
-        public Date deserialize(JsonElement json, Type typeOfT,
-                                JsonDeserializationContext context) throws JsonParseException {
-            return json == null ? null : new Date(json.getAsLong());
-        }
-    };
-
-    Gson g = new GsonBuilder()
-            .registerTypeAdapter(Date.class, ser)
-            .registerTypeAdapter(Date.class, deser).create();
+    private Gson g = new GsonBuilder().create();
 
     public HashMap<String, Car> getCars(HFClient client, Chain chain, String username, String role) {
         ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
@@ -67,7 +49,7 @@ public class DotCarService {
                 String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
                 user = g.fromJson(payload, User.class);
                 for (String vin : user.getCars()) {
-                    carList.put(vin, new Car(null, null, vin));
+                    carList.put(vin, new Car(null, 0, vin));
                 }
 
                 //System.out.println("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);

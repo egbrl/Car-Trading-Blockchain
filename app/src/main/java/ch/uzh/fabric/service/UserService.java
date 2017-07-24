@@ -2,9 +2,9 @@ package ch.uzh.fabric.service;
 
 import ch.uzh.fabric.config.ProfileProperties;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.util.List;
 
 @Service
@@ -36,5 +36,10 @@ public class UserService {
         }
 
         return user;
+    }
+
+    public String getRole(Authentication auth) {
+        // removes the "ROLE_" prefix
+        return auth.getAuthorities().toArray()[0].toString().substring(5);
     }
 }
