@@ -38,7 +38,7 @@
             <tbody>
             <tr th:each="car,iterStat : ${carsToConfirmList}">
                 <th th:text="${iterStat.count}" scope="row"></th>
-                <td th:text="${car.certificate.owner}">M3</td>
+                <td th:text="${car.certificate.username}">Owner</td>
                 <td th:text="${car.certificate.type}">M3</td>
                 <td th:text="${car.certificate.brand}">BMW</td>
                 <td th:text="${car.certificate.color}">black</td>
