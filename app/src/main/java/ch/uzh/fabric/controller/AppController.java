@@ -3,6 +3,7 @@ package ch.uzh.fabric.controller;
 import ch.uzh.fabric.config.*;
 import ch.uzh.fabric.model.*;
 import ch.uzh.fabric.service.CarService;
+import ch.uzh.fabric.service.UserService;
 import com.google.gson.*;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.*;
@@ -57,6 +58,9 @@ public class AppController {
 
     private CarService carService = new CarService();
 
+    @Autowired
+    private UserService userService;
+
     private JsonSerializer<Date> ser = new JsonSerializer<Date>() {
         @Override
         public JsonElement serialize(Date src, Type typeOfSrc, JsonSerializationContext
@@ -74,9 +78,6 @@ public class AppController {
     };
 
     Gson g = null;
-
-    @Autowired
-    private ProfileProperties profileProperties;
 
 
 	/*
@@ -99,27 +100,7 @@ public class AppController {
         String username = authentication.getName();
         String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
 
-        ProfileProperties.User user = null;
-
-        // look for an existing user profile
-        for (ProfileProperties.User userProperties : profileProperties.getUsers()) {
-            if (userProperties.getName().equals(username) && userProperties.getRole().equals(role)) {
-                user = userProperties;
-            }
-        }
-
-        // if no settings for this user found,
-        // create a new profile and append it to the list
-        // of global user profiles
-        if (user == null) {
-            user = new ProfileProperties.User();
-            user.setName(username);
-            user.setRole(role);
-
-            List<ProfileProperties.User> users = profileProperties.getUsers();
-            users.add(user);
-            profileProperties.setUsers(users);
-        }
+        ProfileProperties.User user = userService.findOrCreateUser(username, role);
 
         model.addAttribute("orgName", user.getOrganization());
         model.addAttribute("role", role.toUpperCase());
@@ -131,16 +112,9 @@ public class AppController {
         String username = authentication.getName();
         String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
 
-        ProfileProperties.User user = null;
-        for (ProfileProperties.User userProps : profileProperties.getUsers()) {
-            if (userProps.getName().equals(username) && userProps.getRole().equals(role)) {
-                userProps.setOrganization(orgName);
-                user = userProps;
-            }
-        }
+        ProfileProperties.User user = userService.findOrCreateUser(username, role);
+        user.setOrganization(orgName);
 
-        // we can guarantee that 'user' is not 'null', i.e. exists
-        // because we create the user in the 'GET' request already
         model.addAttribute("orgName", user.getOrganization());
         model.addAttribute("role", role.toUpperCase());
         return "account";
@@ -554,7 +528,8 @@ public class AppController {
 
         QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
 
-        String companyName = ProfileProperties.getOrganization(profileProperties, username, role);
+        ProfileProperties.User user = userService.findOrCreateUser(username, role);
+        String companyName = user.getOrganization();
         queryByChaincodeRequest.setArgs(new String[]{username, role, companyName});
         queryByChaincodeRequest.setFcn("getInsurer");
         queryByChaincodeRequest.setChaincodeID(chainCodeID);
@@ -595,7 +570,7 @@ public class AppController {
 
         } catch (NullPointerException e) {
             // Insurer not yet created, because no proposals on this insurer exist
-            insurer = new Insurer(ProfileProperties.getOrganization(profileProperties, username, role), null);
+            insurer = new Insurer(companyName, null);
         }
 
 
@@ -609,7 +584,8 @@ public class AppController {
     public String acceptInsurance(RedirectAttributes redirAttr, Authentication authentication, @RequestParam("vin") String vin, @RequestParam("userToInsure") String userToInsure) {
         String username = authentication.getName();
         String role = authentication.getAuthorities().toArray()[0].toString().substring(5);
-        String company = ProfileProperties.getOrganization(profileProperties, username, role);
+        ProfileProperties.User user = userService.findOrCreateUser(username, role);
+        String company = user.getOrganization();
 
         try {
             ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)

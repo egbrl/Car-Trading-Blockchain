@@ -48,16 +48,4 @@ public class ProfileProperties {
     public void setUsers(List<User> users) {
         this.users = users;
     }
-
-    public static String getOrganization(ProfileProperties pp, String username, String role) {
-        List<ProfileProperties.User> users = pp.getUsers();
-        String companyName = "UNKNOWN";
-        for (ProfileProperties.User u : users) {
-            if (u.getName().equals(username) && u.getRole().equals(role)) {
-                companyName = u.getOrganization();
-            }
-        }
-
-        return companyName;
-    }
 }
