@@ -2,6 +2,7 @@ package ch.uzh.fabric.model;
 
 public class ProposalData {
     private String car;
+    private String username;
     private String numberOfDoors;
     private Integer numberOfCylinders;
     private Integer numberOfAxis;
@@ -28,6 +29,14 @@ public class ProposalData {
 
     public void setCar(String car) {
         this.car = car;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getNumberOfDoors() {

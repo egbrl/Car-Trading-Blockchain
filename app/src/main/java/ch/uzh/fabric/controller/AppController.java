@@ -6,7 +6,6 @@ import ch.uzh.fabric.service.HfcService;
 import ch.uzh.fabric.service.UserService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.grpc.StatusRuntimeException;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.*;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
@@ -15,7 +14,6 @@ import org.hyperledger.fabric_ca.sdk.RegistrationRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.annotation.PostConstruct;
-import javax.validation.constraints.Null;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -333,15 +330,12 @@ public class AppController {
     }
 
     @RequestMapping(value = "/dot/registration/accept", method = RequestMethod.POST)
-    public String acceptRegistration(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin) {
-        String username;
+    public String acceptRegistration(RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin, @RequestParam String owner) {
         String role;
 
         try {
-            username = auth.getName();
             role = userService.getRole(auth);
         } catch (NullPointerException e) {
-            username = SecurityConfig.BOOTSTRAP_DOT_USER;
             role = SecurityConfig.BOOTSTRAP_DOT_ROLE;
         }
 
@@ -357,7 +351,7 @@ public class AppController {
             transactionProposalRequest.setChaincodeID(chainCodeID);
             transactionProposalRequest.setFcn("register");
 
-            transactionProposalRequest.setArgs(new String[]{username, role, vin});
+            transactionProposalRequest.setArgs(new String[]{owner, role, vin});
             out("sending transaction proposal for 'register' to all peers");
 
             Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
@@ -457,10 +451,45 @@ public class AppController {
         return "redirect:/index";
     }
 
+    @RequestMapping(value="/dot/revoke", method = RequestMethod.GET)
+    public String getRevocationProposals(Model model, Authentication auth, @RequestParam(required = false) String error, @RequestParam(required = false) String success) {
+        String username = auth.getName();
+        String role = userService.getRole(auth);
+
+        Map<String, String> revocationProposals;
+        revocationProposals = hfcService.getRevocationProposals(client, chain, username, role);
+
+        Collection<Car> carList = new ArrayList<>();
+        for (Map.Entry<String, String> e : revocationProposals.entrySet()) {
+            Car car = hfcService.getCar(client, chain, e.getValue(), role, e.getKey());
+            carList.add(car);
+        }
+
+        model.addAttribute("cars", carList);
+        model.addAttribute("error", error);
+        model.addAttribute("success", success);
+        model.addAttribute("role", role.toUpperCase());
+        return "dot/revocation";
+    }
+
+    @RequestMapping(value="/dot/revoke", method = RequestMethod.POST)
+    public String revoke(RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin, @RequestParam String owner) {
+        String role = userService.getRole(auth);
+
+        try {
+            hfcService.revoke(client, chain, owner, role, vin);
+        } catch (Exception e) {
+            redirAttr.addAttribute("error", e.getMessage());
+            return "redirect:/dot/revoke";
+        }
+        redirAttr.addAttribute("success", "Successfully revoked car with VIN '" + vin + "' of user '" + owner + "'");
+        return "redirect:/dot/revoke";
+    }
+
     @RequestMapping("/dot/confirmation/confirmcar")
-    public String confirmCar(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin, @RequestParam("numberplate") String numberplate) {
-        String username;
+    public String confirmCar(RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin, @RequestParam String numberplate) {
         String role;
+        String username;
 
         try {
             username = auth.getName();
@@ -790,7 +819,7 @@ public class AppController {
         );
 
         insuranceProposal(null, null, TEST_VIN, "AXA");
-        acceptRegistration(null, null, TEST_VIN);
+        acceptRegistration(null, null, TEST_VIN, SecurityConfig.BOOTSTRAP_GARAGE_USER);
         acceptInsurance(null, null, TEST_VIN, SecurityConfig.BOOTSTRAP_GARAGE_USER);
         confirmCar(null, null, TEST_VIN, "ZH 1234");
 

@@ -9,6 +9,11 @@
             <span class="glyphicon glyphicon-plus-sign" aria-hidden="true"></span>&nbsp;Confirmation
         </a>
     </li>
+    <li th:class="${currentPage} eq 'dot/revoke' ? 'active'">
+        <a href="all-cars.html" th:href="@{/dot/revoke}">
+            <span class="glyphicon glyphicon-erase" aria-hidden="true"></span>&nbsp;Revocation
+        </a>
+    </li>
     <li th:class="${currentPage} eq 'dot/all-cars' ? 'active'">
         <a href="all-cars.html" th:href="@{/dot/all-cars}">
             <span class="glyphicon glyphicon-th-list" aria-hidden="true"></span>&nbsp;All Cars

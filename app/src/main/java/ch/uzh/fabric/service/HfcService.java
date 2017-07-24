@@ -183,7 +183,6 @@ public class HfcService {
                 successful.add(response);
             } else {
                 failed.add(response);
-
             }
         }
 
@@ -196,4 +195,62 @@ public class HfcService {
         chain.sendTransaction(successful).get(AppController.TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
     }
 
+    public Map<String, String> getRevocationProposals(HFClient client, Chain chain, String username, String role) {
+        QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
+        queryByChaincodeRequest.setArgs(new String[]{username, role});
+        queryByChaincodeRequest.setFcn("getRevocationProposals");
+        queryByChaincodeRequest.setChaincodeID(chainCodeID);
+
+        Collection<ProposalResponse> queryProposals;
+
+        try {
+            queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
+        } catch (InvalidArgumentException | ProposalException e) {
+            throw new CompletionException(e);
+        }
+
+        Map<String, String> revocationProposals = null;
+        for (ProposalResponse proposalResponse : queryProposals) {
+            if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
+                ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
+                        + ". Messages: " + proposalResponse.getMessage()
+                        + ". Was verified : " + proposalResponse.isVerified());
+                System.out.println(result.errorMessage.toString());
+            } else {
+                String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
+                Type type = new TypeToken<Map<String, String>>(){}.getType();
+                revocationProposals = g.fromJson(payload, type);
+            }
+        }
+
+        return revocationProposals;
+    }
+
+    public void revoke(HFClient client, Chain chain, String owner, String role, String vin) throws Exception {
+        Collection<ProposalResponse> successful = new LinkedList<>();
+        Collection<ProposalResponse> failed = new LinkedList<>();
+
+        TransactionProposalRequest request = client.newTransactionProposalRequest();
+        request.setChaincodeID(chainCodeID);
+        request.setFcn("revoke");
+        request.setArgs(new String[]{owner, role, vin});
+
+        Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(request, chain.getPeers());
+
+        for (ProposalResponse response : invokePropResp) {
+            if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
+                successful.add(response);
+            } else {
+                failed.add(response);
+            }
+        }
+
+        if (failed.size() > 0) {
+            String error = failed.iterator().next().getMessage();
+            String msg = error.substring(error.indexOf("message: ") + 9, error.indexOf("), cause"));
+            throw new ProposalException(msg);
+        }
+
+        chain.sendTransaction(successful).get(AppController.TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+    }
 }

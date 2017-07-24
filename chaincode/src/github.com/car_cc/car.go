@@ -164,9 +164,11 @@ func (t *CarChaincode) createCar(stub shim.ChaincodeStubInterface, username stri
 		return shim.Error("Error loading registration proposal index")
 	}
 
-	// update the car vin in the registration proposal
+	// update the car vin and the username
+	// in the registration proposal
 	// and save the proposal for the DOT
 	regProposal.Car = car.Vin
+	regProposal.Username = username
 	proposalIndex[car.Vin] = regProposal
 
 	// write udpated proposal index back to ledger

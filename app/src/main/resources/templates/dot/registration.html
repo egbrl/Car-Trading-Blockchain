@@ -56,6 +56,7 @@
                 <form th:id="'registrationAccept' + ${iterStat.count}" th:action="@{/dot/registration/accept}"
                       method="post">
                     <input type="hidden" name="vin" th:value="${pAndC.car.vin}"/>
+                    <input type="hidden" name="owner" th:value="${pAndC.proposalData.username}"/>
                 </form>
             </tr>
             </tbody>

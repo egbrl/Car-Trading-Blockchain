@@ -56,6 +56,7 @@ type Certificate struct {
  * (Form. 13.20 A)
  */
 type RegistrationProposal struct {
+	Username          string `json:"username"`
 	Car               string `json:"car"`
 	NumberOfDoors     string `json:"numberOfDoors"`     // '4+1' for a passenger car
 	NumberOfCylinders int    `json:"numberOfCylinders"` // 3, 4, 6, 8 ?

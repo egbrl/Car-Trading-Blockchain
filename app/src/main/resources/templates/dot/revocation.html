@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" th:with="currentPage='dot/confirmation'">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" th:with="currentPage='dot/revoke'">
 <head>
     <meta charset="utf-8"/>
     <title>Confirmation</title>
@@ -14,12 +14,12 @@
 
 <div class="container">
     <div class="page-header" style="border-bottom: none">
-        <h1>Unconfirmed Cars</h1>
+        <h1>Revocation Proposals</h1>
     </div>
 
     <div>
-        <p th:if="${confirmSuccess}" style="color: green"><span class="glyphicon glyphicon-ok" aria-hidden="true" /> <span th:utext="${confirmSuccess}" /></p>
-        <p th:if="${confirmFail}" style="color: red"><span class="glyphicon glyphicon-remove" aria-hidden="true" /> <span th:utext="${confirmFail}" /></p>
+        <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
+        <p th:if="${success}" style="color: green"><span class="glyphicon glyphicon-saved" aria-hidden="true" /> <span th:utext="${success}" /></p>
         <table class="table table-hover">
             <thead>
             <tr>
@@ -36,9 +36,9 @@
             </tr>
             </thead>
             <tbody>
-            <tr th:each="car,iterStat : ${carsToConfirmList}">
+            <tr th:each="car,iterStat : ${cars}">
                 <th th:text="${iterStat.count}" scope="row"></th>
-                <td th:text="${car.certificate.owner}">M3</td>
+                <td th:text="${car.certificate.username}">Owner</td>
                 <td th:text="${car.certificate.type}">M3</td>
                 <td th:text="${car.certificate.brand}">BMW</td>
                 <td th:text="${car.certificate.color}">black</td>
@@ -55,22 +55,22 @@
                     </div>
                 </td>
                 <td>
-                    <form th:id="'confirmCar' + ${iterStat.count}" th:action="@{/dot/confirmation/confirmcar}"
+                    <form th:id="'revokeCar' + ${iterStat.count}" th:action="@{/dot/revoke}"
                           method="post">
                         <input type="hidden" name="vin" th:value="${car.vin}"/>
-                        <input type="text" name="numberplate" class="form-control" id="type" placeholder="Select numberplate (eg. ZH 12345)"/>
+                        <input type="hidden" name="owner" th:value="${car.certificate.username}"/>
                     </form>
                     </td>
                 <td>
-                    <button type="button" class="btn btn-success"
-                            th:onclick="'document.getElementById(\'confirmCar' + ${iterStat.count} + '\').submit()'">
-                        confirm
+                    <button type="button" class="btn btn-danger"
+                            th:onclick="'document.getElementById(\'revokeCar' + ${iterStat.count} + '\').submit()'">
+                        revoke
                     </button>
                 </td>
             </tr>
             </tbody>
         </table>
-        <div style="text-align: center;"><p th:if="${noResponseData}" style="color: lightsalmon">No pending requests.</p></div>
+        <div style="text-align: center;"><p th:if="${cars.isEmpty()}" style="color: lightsalmon">No pending requests.</p></div>
     </div>
 
     <div th:replace="footer" />
