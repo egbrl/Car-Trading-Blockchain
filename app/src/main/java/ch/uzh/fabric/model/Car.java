@@ -13,7 +13,7 @@ public class Car {
     }
 
     public Car(Certificate certificate, int createdTs, String vin) {
-        super();
+        this();
         this.certificate = certificate;
         this.createdTs = createdTs;
         this.vin = vin;

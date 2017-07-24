@@ -11,12 +11,18 @@ public class ProposalData {
     public ProposalData() {
     }
 
-    public ProposalData(String carVin, String numberOfDoors, Integer numberOfCylinders, Integer numberOfAxis, Integer maxSpeed) {
+    public ProposalData(String car, String numberOfDoors, Integer numberOfCylinders, Integer numberOfAxis, Integer maxSpeed) {
         this(numberOfDoors, numberOfCylinders, numberOfAxis, maxSpeed);
-        this.car = carVin;
+        this.car = car;
+    }
+
+    public ProposalData(String car, String username, String numberOfDoors, Integer numberOfCylinders, Integer numberOfAxis, Integer maxSpeed) {
+        this(car, numberOfDoors, numberOfCylinders, numberOfAxis, maxSpeed);
+        this.username = username;
     }
 
     public ProposalData(String numberOfDoors, Integer numberOfCylinders, Integer numberOfAxis, Integer maxSpeed) {
+        this();
         this.numberOfDoors = numberOfDoors;
         this.numberOfCylinders = numberOfCylinders;
         this.numberOfAxis = numberOfAxis;
