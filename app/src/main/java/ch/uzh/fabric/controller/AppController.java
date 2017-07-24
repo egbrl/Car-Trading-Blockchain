@@ -2,9 +2,11 @@ package ch.uzh.fabric.controller;
 
 import ch.uzh.fabric.config.*;
 import ch.uzh.fabric.model.*;
-import ch.uzh.fabric.service.CarService;
+import ch.uzh.fabric.service.HfcService;
 import ch.uzh.fabric.service.UserService;
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import io.grpc.StatusRuntimeException;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.*;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
@@ -13,6 +15,7 @@ import org.hyperledger.fabric_ca.sdk.RegistrationRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,9 +26,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.annotation.PostConstruct;
+import javax.validation.constraints.Null;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -41,7 +44,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @Controller
 public class AppController {
     private static final Logger LOGGER = LoggerFactory.getLogger(AppController.class);
-    private static final TestConfig TESTCONFIG = TestConfig.getConfig();
+    public static final TestConfig TESTCONFIG = TestConfig.getConfig();
     private static final String TEST_ADMIN_NAME = "admin";
     private static final String TESTUSER_1_NAME = "user1";
     private static final String FOO_CHAIN_NAME = "foo";
@@ -62,7 +65,7 @@ public class AppController {
     @Autowired
     private UserService userService;
     @Autowired
-    private CarService carService;
+    private HfcService hfcService;
 
     private Gson g = new GsonBuilder().create();
 
@@ -108,7 +111,7 @@ public class AppController {
     }
 
     @RequestMapping("/index")
-    public String index(Authentication auth, Model model) {
+    public String index(Authentication auth, Model model, @RequestParam(required = false) String error, @RequestParam(required = false) String success) {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
@@ -118,10 +121,16 @@ public class AppController {
             return "redirect:/insurance/index";
         }
 
-        HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
+        HashMap<String, Car> carList = hfcService.getCars(client, chain, username, role);
+
+        if (success != null) {
+            out(success);
+        }
 
         model.addAttribute("cars", carList.values());
         model.addAttribute("role", role.toUpperCase());
+        model.addAttribute("success", success);
+        model.addAttribute("error", error);
         return "index";
     }
 
@@ -325,9 +334,16 @@ public class AppController {
 
     @RequestMapping(value = "/dot/registration/accept", method = RequestMethod.POST)
     public String acceptRegistration(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin) {
-        out("vin" + vin);
-        String username = auth.getName();
-        String role = userService.getRole(auth);
+        String username;
+        String role;
+
+        try {
+            username = auth.getName();
+            role = userService.getRole(auth);
+        } catch (NullPointerException e) {
+            username = SecurityConfig.BOOTSTRAP_DOT_USER;
+            role = SecurityConfig.BOOTSTRAP_DOT_ROLE;
+        }
 
         try {
             ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
@@ -427,10 +443,32 @@ public class AppController {
         return "dot/confirmation";
     }
 
-    @RequestMapping("/dot/confirmation/confirmcar")
-    public String confirmCar(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin, @RequestParam("numberplate") String numberplate) {
+    @RequestMapping("/revocationProposal")
+    public String revocationProposal(RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin) {
         String username = auth.getName();
         String role = userService.getRole(auth);
+        try {
+            hfcService.revocationProposal(client, chain, username, role, vin);
+        } catch (Exception e) {
+            redirAttr.addAttribute("error", e.getMessage());
+            return "redirect:/index";
+        }
+        redirAttr.addAttribute("success", "Request for revocation registered, DOT is notified.");
+        return "redirect:/index";
+    }
+
+    @RequestMapping("/dot/confirmation/confirmcar")
+    public String confirmCar(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin, @RequestParam("numberplate") String numberplate) {
+        String username;
+        String role;
+
+        try {
+            username = auth.getName();
+            role = userService.getRole(auth);
+        } catch (NullPointerException e) {
+            username = SecurityConfig.BOOTSTRAP_DOT_USER;
+            role = SecurityConfig.BOOTSTRAP_DOT_ROLE;
+        }
 
         Collection<ProposalResponse> successful = new LinkedList<>();
         Collection<ProposalResponse> failed = new LinkedList<>();
@@ -472,11 +510,16 @@ public class AppController {
             e.printStackTrace();
         }
 
-        if (failed.size() > 0) {
-            redirAttr.addAttribute("confirmFail", "Numberplate already taken. Confirmation for car '" + vin + "' with numberplate '" + numberplate + "' failed.");
-        } else {
-            redirAttr.addAttribute("confirmSuccess", "Confirmation for car '" + vin + "' with numberplate '" + numberplate + "' successful.");
+        try {
+            if (failed.size() > 0) {
+                redirAttr.addAttribute("confirmFail", "Numberplate already taken. Confirmation for car '" + vin + "' with numberplate '" + numberplate + "' failed.");
+            } else {
+                redirAttr.addAttribute("confirmSuccess", "Confirmation for car '" + vin + "' with numberplate '" + numberplate + "' successful.");
+            }
+        } catch (NullPointerException e) {
+
         }
+
         return "redirect:/dot/confirmation";
     }
 
@@ -485,7 +528,7 @@ public class AppController {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
-        HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
+        HashMap<String, Car> carList = hfcService.getCars(client, chain, username, role);
 
         model.addAttribute("cars", carList.values());
         model.addAttribute("role", role.toUpperCase());
@@ -535,7 +578,7 @@ public class AppController {
 
             for (InsureProposal proposal : insurer.getProposals()) {
                 out("IsRegistered before checking: " + proposal.isRegistered());
-                Car car = carService.getCar(client, chain, proposal.getUser(), "user", proposal.getCar());
+                Car car = hfcService.getCar(client, chain, proposal.getUser(), "user", proposal.getCar());
                 proposal.setRegistered(car.isRegistered());
             }
 
@@ -557,8 +600,17 @@ public class AppController {
 
     @RequestMapping("/insurance/acceptInsurance")
     public String acceptInsurance(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin, @RequestParam("userToInsure") String userToInsure) {
-        String username = auth.getName();
-        String role = userService.getRole(auth);
+        String username;
+        String role;
+
+        try {
+            username = auth.getName();
+            role = userService.getRole(auth);
+        } catch (NullPointerException e) {
+            username = SecurityConfig.BOOTSTRAP_INSURANCE_USER;
+            role = SecurityConfig.BOOTSTRAP_INSURANCE_USER;
+        }
+
         ProfileProperties.User user = userService.findOrCreateUser(username, role);
         String company = user.getOrganization();
 
@@ -600,7 +652,11 @@ public class AppController {
             e.printStackTrace();
         }
 
-        redirAttr.addAttribute("success", "Insurance proposal accepted. '" + company + "' now insures car '" + vin + "' of user '" + userToInsure + "'.");
+        try {
+            redirAttr.addAttribute("success", "Insurance proposal accepted. '" + company + "' now insures car '" + vin + "' of user '" + userToInsure + "'.");
+        } catch (NullPointerException e) {
+
+        }
         return "redirect:/insurance/index";
     }
 
@@ -608,7 +664,7 @@ public class AppController {
     public String showInsureForm(Model model, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String activeVin) {
         String username = auth.getName();
         String role = userService.getRole(auth);
-        HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
+        HashMap<String, Car> carList = hfcService.getCars(client, chain, username, role);
 
         model.addAttribute("activeVin", activeVin);
         model.addAttribute("success", success);
@@ -619,14 +675,16 @@ public class AppController {
 
     @RequestMapping(value = "/insure", method = RequestMethod.POST)
     public String insuranceProposal(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin, @RequestParam("company") String company) {
-        out(vin);
-        out(company);
+        String username;
+        String role;
 
-        String username = auth.getName();
-        String role = userService.getRole(auth);
-
-        out(username);
-        out(role);
+        try {
+            username = auth.getName();
+            role = userService.getRole(auth);
+        } catch (NullPointerException e) {
+            username = SecurityConfig.BOOTSTRAP_GARAGE_USER;
+            role = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
+        }
 
         ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
                 .setVersion(CHAIN_CODE_VERSION)
@@ -670,7 +728,11 @@ public class AppController {
             //model.addAttribute("error", "");
         }
 
-        redirAttr.addAttribute("success", "Insurance proposal saved. '" + company + "' will get back to you for confirmation.");
+        try {
+            redirAttr.addAttribute("success", "Insurance proposal saved. '" + company + "' will get back to you for confirmation.");
+        } catch (NullPointerException e) {
+
+        }
         return "redirect:/insure";
     }
 
@@ -678,7 +740,7 @@ public class AppController {
     public String history(Model model, Authentication auth, @RequestParam String vin) {
         String username = auth.getName();
         String role = userService.getRole(auth);
-        Map<Integer, Car> history = carService.getCarHistory(client, chain, username, role, vin);
+        Map<Integer, Car> history = hfcService.getCarHistory(client, chain, username, role, vin);
 
         model.addAttribute("vin", vin);
         model.addAttribute("history", history);
@@ -726,6 +788,12 @@ public class AppController {
                         2,
                         200)
         );
+
+        insuranceProposal(null, null, TEST_VIN, "AXA");
+        acceptRegistration(null, null, TEST_VIN);
+        acceptInsurance(null, null, TEST_VIN, SecurityConfig.BOOTSTRAP_GARAGE_USER);
+        confirmCar(null, null, TEST_VIN, "ZH 1234");
+
 
         System.out.println("Hyperledger network is ready to use");
 
