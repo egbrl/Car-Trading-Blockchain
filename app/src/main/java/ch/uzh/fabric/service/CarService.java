@@ -3,6 +3,7 @@ package ch.uzh.fabric.service;
 import ch.uzh.fabric.config.ErrorInfo;
 import ch.uzh.fabric.controller.AppController;
 import ch.uzh.fabric.model.Car;
+import ch.uzh.fabric.model.ProposalData;
 import ch.uzh.fabric.model.User;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
@@ -20,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 @Service
-public class HfcService {
+public class CarService extends HFCService {
 
     private Gson g = new GsonBuilder().create();
 
@@ -253,4 +254,12 @@ public class HfcService {
 
         chain.sendTransaction(successful).get(AppController.TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
     }
+
+    public void importCar(HFClient client, Chain chain, String username, String role, Car car, ProposalData proposalData) throws Exception {
+        TransactionProposalRequest request = client.newTransactionProposalRequest();
+        request.setFcn("create");
+        request.setArgs(new String[]{username, role, g.toJson(car), g.toJson(proposalData)});
+        executeTrx(request, chain);
+    }
+
 }

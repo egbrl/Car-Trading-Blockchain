@@ -2,7 +2,7 @@ package ch.uzh.fabric.controller;
 
 import ch.uzh.fabric.config.*;
 import ch.uzh.fabric.model.*;
-import ch.uzh.fabric.service.HfcService;
+import ch.uzh.fabric.service.CarService;
 import ch.uzh.fabric.service.UserService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -65,7 +65,7 @@ public class AppController {
     @Autowired
     private UserService userService;
     @Autowired
-    private HfcService hfcService;
+    private CarService carService;
 
     private Gson g = new GsonBuilder().create();
 
@@ -121,7 +121,7 @@ public class AppController {
             return "redirect:/insurance/index";
         }
 
-        HashMap<String, Car> carList = hfcService.getCars(client, chain, username, role);
+        HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
 
         if (success != null) {
             out(success);
@@ -135,90 +135,39 @@ public class AppController {
     }
 
     @RequestMapping(value = "/import", method = RequestMethod.GET)
-    public String showImportForm(Model model, Authentication auth, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
-        String username = auth.getName();
+    public String importCar(Model model, Authentication auth, @ModelAttribute Car car, @ModelAttribute ProposalData proposalData) {
         String role = userService.getRole(auth);
-
         model.addAttribute("role", role.toUpperCase());
         return "import";
     }
 
     @RequestMapping(value = "/import", method = RequestMethod.POST)
-    public String createCar(Model model, Authentication auth, @ModelAttribute("car") Car carData, @ModelAttribute("proposalData") ProposalData proposalData) {
-        proposalData.setCar(carData.getVin());
-
-        out("Vin: " + carData.getVin() + " _Brand: " + carData.getCertificate().getBrand());
-        out("Doors:" + proposalData.getNumberOfDoors() + "_max speed: " + proposalData.getMaxSpeed());
-
+    public String importCar(Model model, RedirectAttributes redirAttr, Authentication auth, @ModelAttribute Car car, @ModelAttribute ProposalData proposalData) {
         String username;
-        String garageRole;
+        String role;
 
-        try {
-            // Authenticated web app request
+        if (model != null) {
             username = auth.getName();
-            // Role should only be "garage", if security is configured correctly
-            // garageRole = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
-            garageRole = userService.getRole(auth);
-            out("read username and role from web request");
-        } catch (NullPointerException e) {
-            // Can only be the bootstrap script
+            role = userService.getRole(auth);
+        } else {
             username = SecurityConfig.BOOTSTRAP_GARAGE_USER;
-            garageRole = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
-            out("read username and role from bootstraped code values");
+            role = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
         }
 
-        out(username);
-        out(garageRole);
-
-        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
-                .setVersion(CHAIN_CODE_VERSION)
-                .setPath(CHAIN_CODE_PATH).build();
-
+        proposalData.setCar(car.getVin());
         try {
-            Collection<ProposalResponse> successful = new LinkedList<>();
-            Collection<ProposalResponse> failed = new LinkedList<>();
-
-            TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
-            transactionProposalRequest.setChaincodeID(chainCodeID);
-            transactionProposalRequest.setFcn("create");
-
-            transactionProposalRequest.setArgs(new String[]{username, garageRole, g.toJson(carData), g.toJson(proposalData)});
-            out("sending transaction proposal to 'create' a car to all peers");
-
-            Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
-            for (ProposalResponse response : invokePropResp) {
-                if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
-                    out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
-                    successful.add(response);
-                } else {
-                    failed.add(response);
-                }
-            }
-            out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
-                    invokePropResp.size(), successful.size(), failed.size());
-            if (failed.size() > 0) {
-                throw new ProposalException("Not enough endorsers for invoke");
-
-            }
-            out("Successfully received transaction proposal responses.");
-
-            out("Sending chain code transaction to orderer");
-            chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+            carService.importCar(client, chain, username, role, car, proposalData);
         } catch (Exception e) {
-            out(e.toString());
-            e.printStackTrace();
-            ErrorInfo result = new ErrorInfo(500, "", "CompletionException " + e.getMessage());
-            //return result;
-            model.addAttribute("error", "Choose another VIN");
+            redirAttr.addAttribute("error", e.getMessage());
+            return "redirect:/index";
         }
 
-        try {
-            model.addAttribute("role", garageRole.toUpperCase());
-        } catch (NullPointerException e) {
-            // It's ok, we are in bootstrap mode..
+        if (model != null && redirAttr != null) {
+            model.addAttribute("role", role.toUpperCase());
+            redirAttr.addAttribute("success", "Successfully imported car with VIN '" + car.getVin() + "'");
         }
 
-        return "import";
+        return "redirect:/index";
     }
 
     @RequestMapping("/login")
@@ -445,7 +394,7 @@ public class AppController {
         String username = auth.getName();
         String role = userService.getRole(auth);
         try {
-            hfcService.revocationProposal(client, chain, username, role, vin);
+            carService.revocationProposal(client, chain, username, role, vin);
         } catch (Exception e) {
             redirAttr.addAttribute("error", e.getMessage());
             return "redirect:/index";
@@ -460,11 +409,11 @@ public class AppController {
         String role = userService.getRole(auth);
 
         Map<String, String> revocationProposals;
-        revocationProposals = hfcService.getRevocationProposals(client, chain, username, role);
+        revocationProposals = carService.getRevocationProposals(client, chain, username, role);
 
         Collection<Car> carList = new ArrayList<>();
         for (Map.Entry<String, String> e : revocationProposals.entrySet()) {
-            Car car = hfcService.getCar(client, chain, e.getValue(), role, e.getKey());
+            Car car = carService.getCar(client, chain, e.getValue(), role, e.getKey());
             carList.add(car);
         }
 
@@ -480,7 +429,7 @@ public class AppController {
         String role = userService.getRole(auth);
 
         try {
-            hfcService.revoke(client, chain, owner, role, vin);
+            carService.revoke(client, chain, owner, role, vin);
         } catch (Exception e) {
             redirAttr.addAttribute("error", e.getMessage());
             return "redirect:/dot/revoke";
@@ -560,7 +509,7 @@ public class AppController {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
-        HashMap<String, Car> carList = hfcService.getCars(client, chain, username, role);
+        HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
 
         model.addAttribute("cars", carList.values());
         model.addAttribute("role", role.toUpperCase());
@@ -610,7 +559,7 @@ public class AppController {
 
             for (InsureProposal proposal : insurer.getProposals()) {
                 out("IsRegistered before checking: " + proposal.isRegistered());
-                Car car = hfcService.getCar(client, chain, proposal.getUser(), "user", proposal.getCar());
+                Car car = carService.getCar(client, chain, proposal.getUser(), "user", proposal.getCar());
                 proposal.setRegistered(car.isRegistered());
             }
 
@@ -696,7 +645,7 @@ public class AppController {
     public String showInsureForm(Model model, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String activeVin) {
         String username = auth.getName();
         String role = userService.getRole(auth);
-        HashMap<String, Car> carList = hfcService.getCars(client, chain, username, role);
+        HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
 
         model.addAttribute("activeVin", activeVin);
         model.addAttribute("success", success);
@@ -772,7 +721,7 @@ public class AppController {
     public String history(Model model, Authentication auth, @RequestParam String vin) {
         String username = auth.getName();
         String role = userService.getRole(auth);
-        Map<Integer, Car> history = hfcService.getCarHistory(client, chain, username, role, vin);
+        Map<Integer, Car> history = carService.getCarHistory(client, chain, username, role, vin);
 
         model.addAttribute("vin", vin);
         model.addAttribute("history", history);
@@ -811,7 +760,7 @@ public class AppController {
 
     private void bootstrapCars() {
         // confirmed car, ready to be revoked by the garage user
-        createCar(null, null, new Car(
+        importCar(null, null, null, new Car(
                         new Certificate(
                                 null,
                                 null,
@@ -832,64 +781,64 @@ public class AppController {
         acceptInsurance(null, null, TEST_VIN, SecurityConfig.BOOTSTRAP_GARAGE_USER);
         confirmCar(null, null, TEST_VIN, "ZH 1234");
 
-        // create an unregistered car
-        // with insurance proposal
-        createCar(null, null, new Car(
-                        new Certificate(
-                                null,
-                                null,
-                                null,
-                                null,
-                                "blue",
-                                "A8",
-                                "Audi"), 0, TEST_VIN2),
-                new ProposalData(
-                        "5",
-                        8,
-                        2,
-                        200)
-        );
-        insuranceProposal(null, null, TEST_VIN2, "AXA");
-
-        // create a registered car
-        // without insurance
-        createCar(null, null, new Car(
-                        new Certificate(
-                                null,
-                                null,
-                                null,
-                                null,
-                                "red",
-                                "TDI",
-                                "VW"), 0, TEST_VIN3),
-                new ProposalData(
-                        "5",
-                        4,
-                        2,
-                        150)
-        );
-        acceptRegistration(null, null, TEST_VIN2, SecurityConfig.BOOTSTRAP_GARAGE_USER);
-
-        // create a registered and insured car
-        // ready to be confirmed
-        createCar(null, null, new Car(
-                        new Certificate(
-                                null,
-                                null,
-                                null,
-                                null,
-                                "grey",
-                                "AMG C 63 S",
-                                "Mercedes"), 0, TEST_VIN4),
-                new ProposalData(
-                        "5",
-                        8,
-                        2,
-                        250)
-        );
-        acceptRegistration(null, null, TEST_VIN4, SecurityConfig.BOOTSTRAP_GARAGE_USER);
-        insuranceProposal(null, null, TEST_VIN4, "AXA");
-        acceptInsurance(null, null, TEST_VIN4, SecurityConfig.BOOTSTRAP_GARAGE_USER);
+//        // create an unregistered car
+//        // with insurance proposal
+//        importCar(null, null,null, new Car(
+//                        new Certificate(
+//                                null,
+//                                null,
+//                                null,
+//                                null,
+//                                "blue",
+//                                "A8",
+//                                "Audi"), 0, TEST_VIN2),
+//                new ProposalData(
+//                        "5",
+//                        8,
+//                        2,
+//                        200)
+//        );
+//        insuranceProposal(null, null, TEST_VIN2, "AXA");
+//
+//        // create a registered car
+//        // without insurance
+//        importCar(null, null,null, new Car(
+//                        new Certificate(
+//                                null,
+//                                null,
+//                                null,
+//                                null,
+//                                "red",
+//                                "TDI",
+//                                "VW"), 0, TEST_VIN3),
+//                new ProposalData(
+//                        "5",
+//                        4,
+//                        2,
+//                        150)
+//        );
+//        acceptRegistration(null, null, TEST_VIN2, SecurityConfig.BOOTSTRAP_GARAGE_USER);
+//
+//        // create a registered and insured car
+//        // ready to be confirmed
+//        importCar(null, null,null, new Car(
+//                        new Certificate(
+//                                null,
+//                                null,
+//                                null,
+//                                null,
+//                                "grey",
+//                                "AMG C 63 S",
+//                                "Mercedes"), 0, TEST_VIN4),
+//                new ProposalData(
+//                        "5",
+//                        8,
+//                        2,
+//                        250)
+//        );
+//        acceptRegistration(null, null, TEST_VIN4, SecurityConfig.BOOTSTRAP_GARAGE_USER);
+//        insuranceProposal(null, null, TEST_VIN4, "AXA");
+//        acceptInsurance(null, null, TEST_VIN4, SecurityConfig.BOOTSTRAP_GARAGE_USER);
     }
 
     private void initSampleStore() {
