@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" th:with="currentPage='dot/revoke'">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" th:with="currentPage='dot/revocation'">
 <head>
     <meta charset="utf-8"/>
     <title>Confirmation</title>
@@ -55,7 +55,7 @@
                     </div>
                 </td>
                 <td>
-                    <form th:id="'revokeCar' + ${iterStat.count}" th:action="@{/dot/revoke}"
+                    <form th:id="'revokeCar' + ${iterStat.count}" th:action="@{/dot/revocation}"
                           method="post">
                         <input type="hidden" name="vin" th:value="${car.vin}"/>
                         <input type="hidden" name="owner" th:value="${car.certificate.username}"/>

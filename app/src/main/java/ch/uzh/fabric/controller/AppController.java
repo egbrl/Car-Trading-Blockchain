@@ -143,16 +143,8 @@ public class AppController {
 
     @RequestMapping(value = "/import", method = RequestMethod.POST)
     public String importCar(Model model, RedirectAttributes redirAttr, Authentication auth, @ModelAttribute Car car, @ModelAttribute ProposalData proposalData) {
-        String username;
-        String role;
-
-        if (model != null) {
-            username = auth.getName();
-            role = userService.getRole(auth);
-        } else {
-            username = SecurityConfig.BOOTSTRAP_GARAGE_USER;
-            role = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
-        }
+        String username = (model != null) ? auth.getName() : SecurityConfig.BOOTSTRAP_GARAGE_USER;
+        String role = (model != null) ? userService.getRole(auth) : SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
 
         proposalData.setCar(car.getVin());
         try {
@@ -403,13 +395,19 @@ public class AppController {
         return "redirect:/index";
     }
 
-    @RequestMapping(value="/dot/revoke", method = RequestMethod.GET)
-    public String getRevocationProposals(Model model, Authentication auth, @RequestParam(required = false) String error, @RequestParam(required = false) String success) {
+    @RequestMapping(value="/dot/revocation", method = RequestMethod.GET)
+    public String revoke(Model model, RedirectAttributes redirAttr, Authentication auth, @RequestParam(required = false) String error, @RequestParam(required = false) String success) {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
-        Map<String, String> revocationProposals;
-        revocationProposals = carService.getRevocationProposals(client, chain, username, role);
+        Map<String, String> revocationProposals = null;
+
+        try {
+            revocationProposals = carService.getRevocationProposals(client, chain, username, role);
+        } catch (Exception e) {
+            redirAttr.addAttribute("error", e.getMessage());
+            return "redirect:/dot/revocation";
+        }
 
         Collection<Car> carList = new ArrayList<>();
         for (Map.Entry<String, String> e : revocationProposals.entrySet()) {
@@ -424,7 +422,7 @@ public class AppController {
         return "dot/revocation";
     }
 
-    @RequestMapping(value="/dot/revoke", method = RequestMethod.POST)
+    @RequestMapping(value="/dot/revocation", method = RequestMethod.POST)
     public String revoke(RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin, @RequestParam String owner) {
         String role = userService.getRole(auth);
 
@@ -432,10 +430,11 @@ public class AppController {
             carService.revoke(client, chain, owner, role, vin);
         } catch (Exception e) {
             redirAttr.addAttribute("error", e.getMessage());
-            return "redirect:/dot/revoke";
+            return "redirect:/dot/revocation";
         }
+
         redirAttr.addAttribute("success", "Successfully revoked car with VIN '" + vin + "' of user '" + owner + "'");
-        return "redirect:/dot/revoke";
+        return "redirect:/dot/revocation";
     }
 
     @RequestMapping("/dot/confirmation/confirmcar")

@@ -196,35 +196,12 @@ public class CarService extends HFCService {
         chain.sendTransaction(successful).get(AppController.TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
     }
 
-    public Map<String, String> getRevocationProposals(HFClient client, Chain chain, String username, String role) {
-        QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
-        queryByChaincodeRequest.setArgs(new String[]{username, role});
-        queryByChaincodeRequest.setFcn("getRevocationProposals");
-        queryByChaincodeRequest.setChaincodeID(chainCodeID);
+    public Map<String, String> getRevocationProposals(HFClient client, Chain chain, String username, String role) throws Exception {
+        QueryByChaincodeRequest request = client.newQueryProposalRequest();
+        request.setFcn("getRevocationProposals");
+        request.setArgs(new String[]{username, role});
 
-        Collection<ProposalResponse> queryProposals;
-
-        try {
-            queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
-        } catch (InvalidArgumentException | ProposalException e) {
-            throw new CompletionException(e);
-        }
-
-        Map<String, String> revocationProposals = null;
-        for (ProposalResponse proposalResponse : queryProposals) {
-            if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
-                ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
-                        + ". Messages: " + proposalResponse.getMessage()
-                        + ". Was verified : " + proposalResponse.isVerified());
-                System.out.println(result.errorMessage.toString());
-            } else {
-                String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-                Type type = new TypeToken<Map<String, String>>(){}.getType();
-                revocationProposals = g.fromJson(payload, type);
-            }
-        }
-
-        return revocationProposals;
+        return query(request, chain);
     }
 
     public void revoke(HFClient client, Chain chain, String owner, String role, String vin) throws Exception {
