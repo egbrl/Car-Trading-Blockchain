@@ -638,7 +638,7 @@ public class AppController {
     public String showSellForm(Model model, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String activeVin) {
         String username = auth.getName();
         String role = userService.getRole(auth);
-        HashMap<String, Car> carList = hfcService.getCars(client, chain, username, role);
+        HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
 
         model.addAttribute("activeVin", activeVin);
         model.addAttribute("success", success);
@@ -711,15 +711,24 @@ public class AppController {
     }
 
     @RequestMapping(value = "/history", method = RequestMethod.GET)
-    public String history(Model model, Authentication auth, @RequestParam String vin) {
+    public String history(Model model, RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin, @RequestParam(required = false) String error) {
         String username = auth.getName();
         String role = userService.getRole(auth);
-        Map<Integer, Car> history = carService.getCarHistory(client, chain, username, role, vin);
 
+        Map<Integer, Car> history = null;
+        try {
+            history = carService.getCarHistory(client, chain, username, role, vin);
+        } catch (Exception e) {
+            redirAttr.addAttribute("error", e.getMessage());
+            return "redirect:/history";
+        }
+
+        model.addAttribute("error", error);
         model.addAttribute("vin", vin);
         model.addAttribute("history", history);
         model.addAttribute("timeFmt", timeFormat);
         model.addAttribute("role", role.toUpperCase());
+        
         return "history";
     }
 

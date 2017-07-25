@@ -133,39 +133,12 @@ public class CarService extends HFCService {
         return car;
     }
 
-    public Map<Integer, Car> getCarHistory(HFClient client, Chain chain, String username, String role, String vin) {
-        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
-                .setVersion(AppController.CHAIN_CODE_VERSION)
-                .setPath(AppController.CHAIN_CODE_PATH).build();
+    public Map<Integer, Car> getCarHistory(HFClient client, Chain chain, String username, String role, String vin) throws Exception {
+        QueryByChaincodeRequest request = client.newQueryProposalRequest();
+        request.setArgs(new String[]{username, role, vin});
+        request.setFcn("getHistory");
 
-        QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
-        queryByChaincodeRequest.setArgs(new String[]{username, role, vin});
-        queryByChaincodeRequest.setFcn("getHistory");
-        queryByChaincodeRequest.setChaincodeID(chainCodeID);
-
-        Collection<ProposalResponse> queryProposals;
-
-        try {
-            queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
-        } catch (InvalidArgumentException | ProposalException e) {
-            throw new CompletionException(e);
-        }
-
-        Map<Integer, Car> history = null;
-        for (ProposalResponse proposalResponse : queryProposals) {
-            if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
-                ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
-                        + ". Messages: " + proposalResponse.getMessage()
-                        + ". Was verified : " + proposalResponse.isVerified());
-                System.out.println(result.errorMessage.toString());
-            } else {
-                String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-                Type type = new TypeToken<Map<Integer, Car>>(){}.getType();
-                history = g.fromJson(payload, type);
-            }
-        }
-
-        return history;
+        return query(request, chain, new TypeToken<Map<Integer, Car>>(){}.getType());
     }
 
     public Collection<Car> getCarsToConfirm(HFClient client, Chain chain, String username, String role) throws Exception {
