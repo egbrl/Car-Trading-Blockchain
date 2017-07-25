@@ -169,31 +169,10 @@ public class CarService extends HFCService {
     }
 
     public void revocationProposal(HFClient client, Chain chain, String username, String role, String vin) throws Exception {
-        Collection<ProposalResponse> successful = new LinkedList<>();
-        Collection<ProposalResponse> failed = new LinkedList<>();
-
         TransactionProposalRequest request = client.newTransactionProposalRequest();
-        request.setChaincodeID(chainCodeID);
         request.setFcn("revocationProposal");
         request.setArgs(new String[]{username, role, vin});
-
-        Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(request, chain.getPeers());
-
-        for (ProposalResponse response : invokePropResp) {
-            if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
-                successful.add(response);
-            } else {
-                failed.add(response);
-            }
-        }
-
-        if (failed.size() > 0) {
-            String error = failed.iterator().next().getMessage();
-            String msg = error.substring(error.indexOf("message: ") + 9, error.indexOf("), cause"));
-            throw new ProposalException(msg);
-        }
-
-        chain.sendTransaction(successful).get(AppController.TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+        executeTrx(request, chain);
     }
 
     public Map<String, String> getRevocationProposals(HFClient client, Chain chain, String username, String role) throws Exception {

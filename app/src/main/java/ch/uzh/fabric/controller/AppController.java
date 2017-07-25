@@ -385,12 +385,14 @@ public class AppController {
     public String revocationProposal(RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin) {
         String username = auth.getName();
         String role = userService.getRole(auth);
+
         try {
             carService.revocationProposal(client, chain, username, role, vin);
         } catch (Exception e) {
             redirAttr.addAttribute("error", e.getMessage());
             return "redirect:/index";
         }
+
         redirAttr.addAttribute("success", "Request for revocation registered, DOT is notified.");
         return "redirect:/index";
     }
