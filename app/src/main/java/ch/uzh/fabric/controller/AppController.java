@@ -325,60 +325,42 @@ public class AppController {
         return "redirect:/dot/registration";
     }
 
-    @RequestMapping("/dot/confirmation")
-    public String dotConfirmation(Model model, Authentication auth, @RequestParam(required = false) String confirmSuccess, @RequestParam(required = false) String confirmFail) {
+    @RequestMapping(value = "/dot/confirmation", method = RequestMethod.GET)
+    public String confirm(Model model, RedirectAttributes redirAttr, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String error) {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
-        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
-                .setVersion(CHAIN_CODE_VERSION)
-                .setPath(CHAIN_CODE_PATH).build();
-
-        QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
-        queryByChaincodeRequest.setArgs(new String[]{username, role});
-        queryByChaincodeRequest.setFcn("getCarsToConfirmAsList");
-        queryByChaincodeRequest.setChaincodeID(chainCodeID);
-
-        Collection<ProposalResponse> queryProposals;
+        Collection<Car> carsToConfirm = null;
 
         try {
-            queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
-        } catch (InvalidArgumentException | ProposalException e) {
-            throw new CompletionException(e);
+            carsToConfirm = carService.getCarsToConfirm(client, chain, username, role);
+        } catch (Exception e) {
+            redirAttr.addAttribute("error", e.getMessage());
+            return "redirect:/dot/revocation";
         }
 
-        ArrayList<Car> carstoConfirmAsList = new ArrayList<Car>();
-        Boolean noResponseData = false;
-
-        for (ProposalResponse proposalResponse : queryProposals) {
-            if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
-                ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
-                        + ". Messages: " + proposalResponse.getMessage()
-                        + ". Was verified : " + proposalResponse.isVerified());
-                out(result.errorMessage.toString());
-            } else {
-                String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-                Car[] arr = new Car[0];
-                arr = g.fromJson(payload, Car[].class);
-                try {
-                    carstoConfirmAsList = new ArrayList<Car>(Arrays.asList(arr));
-                } catch (Exception e) {
-                    out("Exception caught: " + e.toString());
-                    noResponseData = true;
-                    out("No data in response payload.");
-                }
-                out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
-            }
-        }
-
-        out("Size of carsToConfirmList: " + carstoConfirmAsList.size());
-        model.addAttribute("confirmSuccess", confirmSuccess);
-        model.addAttribute("confirmFail", confirmFail);
-        model.addAttribute("carsToConfirmList", carstoConfirmAsList);
-        model.addAttribute("noResponseData", noResponseData);
+        model.addAttribute("success", success);
+        model.addAttribute("error", error);
+        model.addAttribute("cars", carsToConfirm);
         model.addAttribute("role", role.toUpperCase());
 
         return "dot/confirmation";
+    }
+
+    @RequestMapping(value = "/dot/confirmation", method = RequestMethod.POST)
+    public String confirm(RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin, @RequestParam String numberplate) {
+        String username = (redirAttr != null) ? auth.getName() : SecurityConfig.BOOTSTRAP_DOT_USER;
+        String role = (redirAttr != null) ? userService.getRole(auth) : SecurityConfig.BOOTSTRAP_DOT_ROLE;
+
+        try {
+            carService.confirm(client, chain, username, role, vin, numberplate);
+        } catch (Exception e) {
+            redirAttr.addAttribute("error", e.getMessage());
+            return "redirect:/dot/confirmation";
+        }
+
+        redirAttr.addAttribute("success", "Confirmation for car '" + vin + "' with numberplate '" + numberplate + "' successful.");
+        return "redirect:/dot/confirmation";
     }
 
     @RequestMapping("/revocationProposal")
@@ -397,7 +379,7 @@ public class AppController {
         return "redirect:/index";
     }
 
-    @RequestMapping(value="/dot/revocation", method = RequestMethod.GET)
+    @RequestMapping(value = "/dot/revocation", method = RequestMethod.GET)
     public String revoke(Model model, RedirectAttributes redirAttr, Authentication auth, @RequestParam(required = false) String error, @RequestParam(required = false) String success) {
         String username = auth.getName();
         String role = userService.getRole(auth);
@@ -424,7 +406,7 @@ public class AppController {
         return "dot/revocation";
     }
 
-    @RequestMapping(value="/dot/revocation", method = RequestMethod.POST)
+    @RequestMapping(value = "/dot/revocation", method = RequestMethod.POST)
     public String revoke(RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin, @RequestParam String owner) {
         String role = userService.getRole(auth);
 
@@ -437,72 +419,6 @@ public class AppController {
 
         redirAttr.addAttribute("success", "Successfully revoked car with VIN '" + vin + "' of user '" + owner + "'");
         return "redirect:/dot/revocation";
-    }
-
-    @RequestMapping("/dot/confirmation/confirmcar")
-    public String confirmCar(RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin, @RequestParam String numberplate) {
-        String role;
-        String username;
-
-        try {
-            username = auth.getName();
-            role = userService.getRole(auth);
-        } catch (NullPointerException e) {
-            username = SecurityConfig.BOOTSTRAP_DOT_USER;
-            role = SecurityConfig.BOOTSTRAP_DOT_ROLE;
-        }
-
-        Collection<ProposalResponse> successful = new LinkedList<>();
-        Collection<ProposalResponse> failed = new LinkedList<>();
-
-        try {
-            ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
-                    .setVersion(AppController.CHAIN_CODE_VERSION)
-                    .setPath(AppController.CHAIN_CODE_PATH).build();
-
-
-
-            TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
-            transactionProposalRequest.setChaincodeID(chainCodeID);
-            transactionProposalRequest.setFcn("confirm");
-
-            transactionProposalRequest.setArgs(new String[]{username, role, vin, numberplate});
-            out("sending transaction proposal for 'confirm' to all peers");
-
-            Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
-            for (ProposalResponse response : invokePropResp) {
-                if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
-                    out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
-                    successful.add(response);
-                } else {
-                    failed.add(response);
-                }
-            }
-            out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
-                    invokePropResp.size(), successful.size(), failed.size());
-            if (failed.size() > 0) {
-                throw new ProposalException("Not enough endorsers for invoke");
-
-            }
-            out("Successfully received transaction proposal responses.");
-            out("Sending chain code transaction to orderer");
-            chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
-        } catch (Exception e) {
-            out(e.toString());
-            e.printStackTrace();
-        }
-
-        try {
-            if (failed.size() > 0) {
-                redirAttr.addAttribute("confirmFail", "Numberplate already taken. Confirmation for car '" + vin + "' with numberplate '" + numberplate + "' failed.");
-            } else {
-                redirAttr.addAttribute("confirmSuccess", "Confirmation for car '" + vin + "' with numberplate '" + numberplate + "' successful.");
-            }
-        } catch (NullPointerException e) {
-
-        }
-
-        return "redirect:/dot/confirmation";
     }
 
     @RequestMapping("/dot/all-cars")
@@ -780,7 +696,7 @@ public class AppController {
         insuranceProposal(null, null, TEST_VIN, "AXA");
         acceptRegistration(null, null, TEST_VIN, SecurityConfig.BOOTSTRAP_GARAGE_USER);
         acceptInsurance(null, null, TEST_VIN, SecurityConfig.BOOTSTRAP_GARAGE_USER);
-        confirmCar(null, null, TEST_VIN, "ZH 1234");
+        //confirmCar(null, null, TEST_VIN, "ZH 1234");
 
 //        // create an unregistered car
 //        // with insurance proposal

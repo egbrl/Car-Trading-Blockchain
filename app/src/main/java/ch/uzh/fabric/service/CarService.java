@@ -168,6 +168,26 @@ public class CarService extends HFCService {
         return history;
     }
 
+    public Collection<Car> getCarsToConfirm(HFClient client, Chain chain, String username, String role) throws Exception {
+        QueryByChaincodeRequest request = client.newQueryProposalRequest();
+        request.setFcn("getCarsToConfirmAsList");
+        request.setArgs(new String[]{username, role});
+
+        Collection<Car> result = query(request, chain, new TypeToken<Collection<Car>>(){}.getType());
+        if (result == null) {
+            result = new ArrayList<Car>();
+        }
+
+        return result;
+    }
+
+    public void confirm(HFClient client, Chain chain, String username, String role, String vin, String numberplate) throws Exception {
+        TransactionProposalRequest request = client.newTransactionProposalRequest();
+        request.setFcn("confirm");
+        request.setArgs(new String[]{username, role, vin, numberplate});
+        executeTrx(request, chain);
+    }
+
     public void revocationProposal(HFClient client, Chain chain, String username, String role, String vin) throws Exception {
         TransactionProposalRequest request = client.newTransactionProposalRequest();
         request.setFcn("revocationProposal");
@@ -180,7 +200,7 @@ public class CarService extends HFCService {
         request.setFcn("getRevocationProposals");
         request.setArgs(new String[]{username, role});
 
-        return query(request, chain);
+        return query(request, chain, new TypeToken<Map<String, String>>(){}.getType());
     }
 
     public void revoke(HFClient client, Chain chain, String owner, String role, String vin) throws Exception {

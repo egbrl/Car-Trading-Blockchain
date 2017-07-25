@@ -260,7 +260,7 @@ func (t *CarChaincode) confirmCar(stub shim.ChaincodeStubInterface, username str
 	}
 	vinNumberplateExisting, numberplateExisting := numberplateIndex[numberplate]
 	if numberplateExisting {
-		return shim.Error("Numberplate already taken from car with vin '" + vinNumberplateExisting + "'")
+		return shim.Error("Numberplate already taken. Confirmation for car " + vin + "' with numberplate '" + vinNumberplateExisting + "' failed.")
 	}
 
 	// fetch the car from the ledger
