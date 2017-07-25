@@ -19,12 +19,11 @@
     <div class="page-header" style="border-bottom: none">
         <h1>Import Car</h1>
     </div>
-    <p th:if="${error}" style="color: red" th:utext="${error}">Car Error</p>
     <div>
         <form class="form-horizontal" th:action="@{/import}" method="post">
             <div class="form-group">
                 <div class="col-sm-6">
-                    <label for="vin">Vehicle identification number</label>
+                    <label for="vin">Vehicle identification number *</label>
                     <input type="text" class="form-control" id="vin" th:field="*{car.vin}" placeholder="eg. XWERG11241251ASW" />
                 </div>
             </div>
@@ -64,6 +63,7 @@
             </div>
             <div class="form-group">
                 <div class="col-sm-6">
+                    * required
                     <button type="submit" class="btn btn-default"><span style="color: #e6e6e6">Submit</span></button>
                 </div>
             </div>
