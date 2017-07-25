@@ -133,6 +133,13 @@ public class CarService extends HFCService {
         return car;
     }
 
+    public void insureProposal(HFClient client, Chain chain, String username, String role, String vin, String company) throws Exception {
+        TransactionProposalRequest request = client.newTransactionProposalRequest();
+        request.setFcn("insureProposal");
+        request.setArgs(new String[]{username, role, vin, company});
+        executeTrx(request, chain);
+    }
+
     public Map<Integer, Car> getCarHistory(HFClient client, Chain chain, String username, String role, String vin) throws Exception {
         QueryByChaincodeRequest request = client.newQueryProposalRequest();
         request.setArgs(new String[]{username, role, vin});

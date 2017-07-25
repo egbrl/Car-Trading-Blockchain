@@ -559,7 +559,7 @@ public class AppController {
     }
 
     @RequestMapping(value = "/insure", method = RequestMethod.GET)
-    public String showInsureForm(Model model, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String activeVin) {
+    public String insure(Model model, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String activeVin) {
         String username = auth.getName();
         String role = userService.getRole(auth);
         HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
@@ -572,65 +572,22 @@ public class AppController {
     }
 
     @RequestMapping(value = "/insure", method = RequestMethod.POST)
-    public String insuranceProposal(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin, @RequestParam("company") String company) {
-        String username;
-        String role;
-
+    public String insure(RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin, @RequestParam String company) {
+        String username = (redirAttr != null) ? auth.getName() : SecurityConfig.BOOTSTRAP_GARAGE_USER;
+        String role = (redirAttr != null) ? userService.getRole(auth) : SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
+        
+        Map<Integer, Car> history = null;
         try {
-            username = auth.getName();
-            role = userService.getRole(auth);
-        } catch (NullPointerException e) {
-            username = SecurityConfig.BOOTSTRAP_GARAGE_USER;
-            role = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
-        }
-
-        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
-                .setVersion(CHAIN_CODE_VERSION)
-                .setPath(CHAIN_CODE_PATH).build();
-
-        try {
-            Collection<ProposalResponse> successful = new LinkedList<>();
-            Collection<ProposalResponse> failed = new LinkedList<>();
-
-            TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
-            transactionProposalRequest.setChaincodeID(chainCodeID);
-            transactionProposalRequest.setFcn("insureProposal");
-
-            transactionProposalRequest.setArgs(new String[]{username, role, vin, company});
-            out("sending transaction proposal for 'insureProposal' to all peers");
-
-            Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
-            for (ProposalResponse response : invokePropResp) {
-                if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
-                    out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
-                    successful.add(response);
-                } else {
-                    failed.add(response);
-                }
-            }
-            out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
-                    invokePropResp.size(), successful.size(), failed.size());
-            if (failed.size() > 0) {
-                throw new ProposalException("Not enough endorsers for invoke");
-
-            }
-            out("Successfully received transaction proposal responses.");
-
-            out("Sending chain code transaction to orderer");
-            chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+            carService.insureProposal(client, chain, username, role, vin, company);
         } catch (Exception e) {
-            out(e.toString());
-            e.printStackTrace();
-            ErrorInfo result = new ErrorInfo(500, "", "CompletionException " + e.getMessage());
-            //return result;
-            //model.addAttribute("error", "");
+            redirAttr.addAttribute("error", e.getMessage());
+            return "redirect:/insure";
         }
 
-        try {
+        if (redirAttr != null) {
             redirAttr.addAttribute("success", "Insurance proposal saved. '" + company + "' will get back to you for confirmation.");
-        } catch (NullPointerException e) {
-
         }
+
         return "redirect:/insure";
     }
 
@@ -728,7 +685,7 @@ public class AppController {
         model.addAttribute("history", history);
         model.addAttribute("timeFmt", timeFormat);
         model.addAttribute("role", role.toUpperCase());
-        
+
         return "history";
     }
 
@@ -778,7 +735,7 @@ public class AppController {
                         200)
         );
 
-        insuranceProposal(null, null, TEST_VIN, "AXA");
+        insure(null, null, TEST_VIN, "AXA");
         acceptRegistration(null, null, TEST_VIN, SecurityConfig.BOOTSTRAP_GARAGE_USER);
         acceptInsurance(null, null, TEST_VIN, SecurityConfig.BOOTSTRAP_GARAGE_USER);
         //confirmCar(null, null, TEST_VIN, "ZH 1234");
@@ -800,7 +757,7 @@ public class AppController {
 //                        2,
 //                        200)
 //        );
-//        insuranceProposal(null, null, TEST_VIN2, "AXA");
+//        insure(null, null, TEST_VIN2, "AXA");
 //
 //        // create a registered car
 //        // without insurance
@@ -839,7 +796,7 @@ public class AppController {
 //                        250)
 //        );
 //        acceptRegistration(null, null, TEST_VIN4, SecurityConfig.BOOTSTRAP_GARAGE_USER);
-//        insuranceProposal(null, null, TEST_VIN4, "AXA");
+//        insure(null, null, TEST_VIN4, "AXA");
 //        acceptInsurance(null, null, TEST_VIN4, SecurityConfig.BOOTSTRAP_GARAGE_USER);
     }
 
