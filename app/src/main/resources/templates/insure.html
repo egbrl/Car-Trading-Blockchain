@@ -30,7 +30,12 @@
                 <div class="col-sm-6">
                     <label for="vin">Car</label>
                     <select name="vin" id="vin" class="form-control">
-                        <option th:each="car : ${cars}" th:value="${car.vin}" th:text="${car.vin}" th:selected="${car.vin}==${activeVin}"></option>
+                        <option th:each="car : ${cars}" th:value="${car.vin}" th:selected="${car.vin}==${activeVin}">
+                            <span th:text="${car.vin}"></span>,&#09;
+                            <span th:text="${car.certificate.brand}"></span>,&#09;
+                            <span th:text="${car.certificate.type}"></span>,&#09;
+                            <span th:text="${car.certificate.color}"></span>
+                        </option>
                     </select>
                 </div>
             </div>
@@ -48,8 +53,8 @@
 </div>
 
 
-<script src="../../static/js/jquery-1.10.2.min.js" th:src="@{/js/jquery-1.10.2.min.js}"></script>
-<script src="../../static/js/bootstrap.min.js" th:src="@{/js/bootstrap.min.js}"></script>
-<script src="../../static/js/custom.js" th:src="@{/js/custom.js}"></script>
+<script src="../static/js/jquery-1.10.2.min.js" th:src="@{/js/jquery-1.10.2.min.js}"></script>
+<script src="../static/js/bootstrap.min.js" th:src="@{/js/bootstrap.min.js}"></script>
+<script src="../static/js/custom.js" th:src="@{/js/custom.js}"></script>
 </body>
 </html>

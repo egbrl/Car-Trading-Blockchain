@@ -17,7 +17,9 @@
 <div class="container">
 
     <div class="page-header" style="border-bottom: none">
-        <h1 th:text="${vin} +' History'"></h1>
+        <h1>Car History</h1>
+        <p><span th:text="${vin}"></span></p>
+        <p><span class="glyphicon glyphicon-info-sign"></span>&nbsp;<span th:text="${history.entrySet()[0].getValue().certificate.brand + ', ' + history.entrySet()[0].getValue().certificate.type + ', ' + history.entrySet()[0].getValue().certificate.color}"></span></p>
     </div>
     <div>
         <table class="table table-hover">
@@ -25,9 +27,7 @@
             <tr>
                 <th><abbr title="Revision Number">Rev#</abbr></th>
                 <th><abbr title="Modification Time">Mod. Time</abbr></th>
-                <th>Type</th>
-                <th>Brand</th>
-                <th>Color</th>
+                <th>Owner</th>
                 <th>VIN</th>
                 <th>Numberplate</th>
                 <th>Insurer</th>
@@ -38,9 +38,7 @@
             <tr th:each="e, iterStat : ${history.entrySet()}">
                 <th th:text="${iterStat.count}" scope="row"></th>
                 <td th:text="${timeFmt.format(e.getKey()*1000L)}">Created At</td>
-                <td th:text="${e.getValue().certificate.type}">M3</td>
-                <td th:text="${e.getValue().certificate.brand}">BMW</td>
-                <td th:text="${e.getValue().certificate.color}">black</td>
+                <td th:text="${e.getValue().certificate.username}">bob</td>
                 <td th:text="${e.getValue().vin}">WVWZZZ6RZHY260780</td>
                 <td th:text="${e.getValue().certificate.numberplate}">ZH 1234</td>
                 <td th:text="${e.getValue().certificate.insurer}">AXA Winterthur</td>
@@ -58,9 +56,7 @@
             </tbody>
         </table>
     </div>
-
     <div th:replace="footer" />
-
 </div>
 
 

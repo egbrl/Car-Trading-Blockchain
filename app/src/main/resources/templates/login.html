@@ -51,21 +51,21 @@
 
         <div class="cover-container">
 
-            <div class="masthead clearfix">
+            <!-- <div class="masthead clearfix">
                 <div class="inner">
                     <h3 class="masthead-brand"></h3>
                     <nav>
                         <ul class="nav masthead-nav">
                             <li class="active"><a href="#">Login</a></li>
-                            <!--<li><a href="#">Features</a></li>
-                            <li><a href="#">Contact</a></li>-->
+                            <li><a href="#">Features</a></li>
+                            <li><a href="#">Contact</a></li>
                         </ul>
                     </nav>
                 </div>
-            </div>
+            </div> -->
 
             <div class="inner cover">
-                <h1 class="logo">User Login</h1>
+                <div class="logo">User Login</div>
                 <p th:if="${loginError}" style="color: red">Wrong user or password</p>
 
                 <form class="form-horizontal" th:action="@{/login}" method="post">
