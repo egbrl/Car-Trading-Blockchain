@@ -768,6 +768,82 @@ public class AppController {
         return "redirect:/insure";
     }
 
+    @RequestMapping(value = "/sell", method = RequestMethod.GET)
+    public String showSellForm(Model model, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String activeVin) {
+        String username = auth.getName();
+        String role = userService.getRole(auth);
+        HashMap<String, Car> carList = hfcService.getCars(client, chain, username, role);
+
+        model.addAttribute("activeVin", activeVin);
+        model.addAttribute("success", success);
+        model.addAttribute("cars", carList.values());
+        model.addAttribute("role", role.toUpperCase());
+        return "sell";
+    }
+
+    @RequestMapping(value = "/sell", method = RequestMethod.POST)
+    public String submitCarSelling(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin, @RequestParam("buyer") String buyer, @RequestParam("price") Integer price) {
+        String username;
+        String role;
+
+        try {
+            username = auth.getName();
+            role = userService.getRole(auth);
+        } catch (NullPointerException e) {
+            username = SecurityConfig.BOOTSTRAP_GARAGE_USER;
+            role = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
+        }
+
+        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
+                .setVersion(CHAIN_CODE_VERSION)
+                .setPath(CHAIN_CODE_PATH).build();
+
+        try {
+            Collection<ProposalResponse> successful = new LinkedList<>();
+            Collection<ProposalResponse> failed = new LinkedList<>();
+
+            TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
+            transactionProposalRequest.setChaincodeID(chainCodeID);
+            transactionProposalRequest.setFcn("insureProposal");
+
+            transactionProposalRequest.setArgs(new String[]{username, role, vin, buyer});
+            out("sending transaction proposal for 'insureProposal' to all peers");
+
+            Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
+            for (ProposalResponse response : invokePropResp) {
+                if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
+                    out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
+                    successful.add(response);
+                } else {
+                    failed.add(response);
+                }
+            }
+            out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
+                    invokePropResp.size(), successful.size(), failed.size());
+            if (failed.size() > 0) {
+                throw new ProposalException("Not enough endorsers for invoke");
+
+            }
+            out("Successfully received transaction proposal responses.");
+
+            out("Sending chain code transaction to orderer");
+            chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+        } catch (Exception e) {
+            out(e.toString());
+            e.printStackTrace();
+            ErrorInfo result = new ErrorInfo(500, "", "CompletionException " + e.getMessage());
+            //return result;
+            //model.addAttribute("error", "");
+        }
+
+        try {
+            redirAttr.addAttribute("success", "Insurance proposal saved. '" + buyer + "' will get back to you for confirmation.");
+        } catch (NullPointerException e) {
+
+        }
+        return "redirect:/sell";
+    }
+
     @RequestMapping(value = "/history", method = RequestMethod.GET)
     public String history(Model model, Authentication auth, @RequestParam String vin) {
         String username = auth.getName();

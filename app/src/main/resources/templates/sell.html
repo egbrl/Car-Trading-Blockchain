@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" th:with="currentPage='sell'">
+<head>
+    <meta charset="utf-8"/>
+    <title>Sell Car</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link rel="stylesheet" href="../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
+    <link rel="stylesheet" href="../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+</head>
+<body>
+<div th:replace="navigation" />
+
+<div class="container">
+
+    <div class="page-header" style="border-bottom: none">
+        <h1>Sell Car</h1>
+    </div>
+    <p th:if="${success}" style="color: green"><span class="glyphicon glyphicon-saved" aria-hidden="true" /> <span th:utext="${success}" /></p>
+    <div>
+        <form class="form-horizontal" th:action="@{/sell}" method="post">
+            <div class="form-group">
+                <div class="col-sm-6">
+                    <label for="vin">Car</label>
+                    <select name="vin" id="vin" class="form-control">
+                        <option th:each="car : ${cars}" th:value="${car.vin}" th:selected="${car.vin}==${activeVin}">
+                            <span th:text="${car.vin}"></span>,&#09;
+                            <span th:text="${car.certificate.brand}"></span>,&#09;
+                            <span th:text="${car.certificate.type}"></span>,&#09;
+                            <span th:text="${car.certificate.color}"></span>
+                        </option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-6">
+                    <label for="buyer">Buyer</label>
+                    <input type="text" class="form-control" id="buyer" name="buyer" placeholder="Username (eg. bob)"/>
+                </div>
+                <div class="col-sm-6">
+                    <label for="buyer">Price</label>
+                    <div class="input-group">
+                        <span class="input-group-addon glyphicon glyphicon-bitcoin"></span>
+                        <input type="text" class="form-control" id="price" name="price" placeholder="Enter price (eg. 5)"/>
+                        <span class="input-group-addon">.00</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-6">
+                    <button type="submit" class="btn btn-default" style="margin-top: 15px"><span style="color: #e6e6e6">Submit</span></button>
+                </div>
+            </div>
+        </form>
+
+
+    </div>
+
+    <div th:replace="footer" />
+
+</div>
+
+
+<script src="../../static/js/jquery-1.10.2.min.js" th:src="@{/js/jquery-1.10.2.min.js}"></script>
+<script src="../../static/js/bootstrap.min.js" th:src="@{/js/bootstrap.min.js}"></script>
+<script src="../../static/js/custom.js" th:src="@{/js/custom.js}"></script>
+</body>
+</html>

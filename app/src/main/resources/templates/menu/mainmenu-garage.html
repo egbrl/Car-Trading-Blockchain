@@ -14,4 +14,9 @@
             <span class="glyphicon glyphicon-fire" aria-hidden="true"></span>&nbsp;Insure Car
         </a>
     </li>
+    <li th:class="${currentPage} eq 'sell' ? 'active'">
+        <a href="#" th:href="@{/sell}">
+            <span class="glyphicon glyphicon glyphicon-bitcoin" aria-hidden="true"></span>&nbsp;Sell Car
+        </a>
+    </li>
 </ul>
