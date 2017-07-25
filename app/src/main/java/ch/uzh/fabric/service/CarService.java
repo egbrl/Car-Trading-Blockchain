@@ -3,6 +3,7 @@ package ch.uzh.fabric.service;
 import ch.uzh.fabric.config.ErrorInfo;
 import ch.uzh.fabric.controller.AppController;
 import ch.uzh.fabric.model.Car;
+import ch.uzh.fabric.model.Insurer;
 import ch.uzh.fabric.model.ProposalData;
 import ch.uzh.fabric.model.User;
 import com.google.gson.*;
@@ -131,6 +132,21 @@ public class CarService extends HFCService {
         }
 
         return car;
+    }
+
+    public void acceptInsurance(HFClient client, Chain chain, String username, String role, String userToInsure, String vin, String company) throws Exception {
+        TransactionProposalRequest request = client.newTransactionProposalRequest();
+        request.setFcn("insuranceAccept");
+        request.setArgs(new String[]{username, role, userToInsure, vin, company});
+        executeTrx(request, chain);
+    }
+
+    public Insurer getInsurer(HFClient client, Chain chain, String username, String role, String company) throws Exception {
+        QueryByChaincodeRequest request = client.newQueryProposalRequest();
+        request.setArgs(new String[]{username, role, company});
+        request.setFcn("getInsurer");
+
+        return query(request, chain, new TypeToken<Insurer>(){}.getType());
     }
 
     public void insureProposal(HFClient client, Chain chain, String username, String role, String vin, String company) throws Exception {
