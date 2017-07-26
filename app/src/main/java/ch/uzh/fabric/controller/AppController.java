@@ -590,16 +590,15 @@ public class AppController {
             }
         }
 
-        model.addAttribute("activeVin", activeVin);
         model.addAttribute("success", success);
         model.addAttribute("error", error);
         model.addAttribute("offers", user.getOffers());
         model.addAttribute("role", role.toUpperCase());
-        return "sell";
+        return "offers";
     }
 
 
-    @RequestMapping(value = "/offer/accept", method = RequestMethod.POST)
+    @RequestMapping(value = "/offers/accept", method = RequestMethod.POST)
     public String acceptOffer(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin, @RequestParam("buyer") String buyer, @RequestParam("price") Integer price) {
         String username;
         String role;

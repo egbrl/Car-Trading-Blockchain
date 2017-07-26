@@ -5,8 +5,8 @@
     <title>Insure Cars</title>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <link rel="stylesheet" href="../../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
-    <link rel="stylesheet" href="../../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
+    <link rel="stylesheet" href="../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" media="screen"/>
+    <link rel="stylesheet" href="../static/css/custom.min.css" th:href="@{/css/custom.min.css}"/>
     <link rel="stylesheet" th:href="@{/css/main.css}"/>
 </head>
 <body>
@@ -14,7 +14,7 @@
 
 <div class="container">
     <div class="page-header" style="border-bottom: none">
-        <h1 th:text="${insurer.name} + ' Insurance Inquiries'">My Car Offers</h1>
+        <h1>Offers</h1>
     </div>
 
     <div>
@@ -27,39 +27,30 @@
                 <th>Seller</th>
                 <th>VIN</th>
                 <th>Price</th>
+                <th></th>
             </tr>
             </thead>
             <tbody>
-            <tr th:each="proposal,iterStat : ${insurer.proposals}">
-                <form th:id="'insuranceAccept' + ${iterStat.count}" th:action="@{/insurance/acceptInsurance}" method="post">
-                    <th th:text="${iterStat.count}" scope="row"></th>
+            <tr th:each="offer,iterStat : ${offers}">
+                <form th:id="'offerAccept' + ${iterStat.count}" th:action="@{/offers/accept}" method="post">
+                    <td th:text="${iterStat.count}" scope="row"></td>
                     <td>
-                        <span th:text="${proposal.user}">Username</span>
-                        <input type="hidden" name="userToInsure" th:value="${proposal.user}"/>
+                        <span th:text="${offer.vin}">VIN</span>
+                        <input type="hidden" name="vin" th:value="${offer.vin}"/>
                     </td>
                     <td>
-                        <span th:text="${proposal.car}">VIN</span>
-                        <input type="hidden" name="vin" th:value="${proposal.car}"/>
+                        <span th:text="${offer.seller}">seller</span>
+                        <input type="hidden" name="seller" th:value="${offer.seller}"/>
                     </td>
                     <td>
-                        <div th:switch="${proposal.registered}">
-                            <div th:case="true">
-                                <span class="glyphicon glyphicon-ok-circle" aria-hidden="true"></span>
-                            </div>
-                            <div th:case="false">
-                                <span class="glyphicon glyphicon-ban-circle " aria-hidden="true"></span>
-                            </div>
-                        </div>
+                        <span th:text="${offer.price}">price</span>
+                        <input type="hidden" name="vin" th:value="${offer.price}"/>
                     </td>
                     <td>
-                        <div th:switch="${proposal.registered}">
-                            <div th:case="true">
-                                <button type="button" th:onclick="'document.getElementById(\'insuranceAccept' + ${iterStat.count} + '\').submit()'" class="btn btn-success">insure</button>
-                            </div>
-                            <div th:case="false">
-                                <button type="button" class="btn disabled">insure</button>
-                            </div>
-                        </div>
+                        <button type="button" class="btn btn-success"
+                                th:onclick="'document.getElementById(\'offerAccept' + ${iterStat.count} + '\').submit()'">
+                            accept
+                        </button>
                     </td>
                 </form>
             </tr>
@@ -74,8 +65,8 @@
 </div>
 
 
-<script src="../../static/js/jquery-1.10.2.min.js" th:src="@{/js/jquery-1.10.2.min.js}"></script>
-<script src="../../static/js/bootstrap.min.js" th:src="@{/js/bootstrap.min.js}"></script>
-<script src="../../static/js/custom.js" th:src="@{/js/custom.js}"></script>
+<script src="../static/js/jquery-1.10.2.min.js" th:src="@{/js/jquery-1.10.2.min.js}"></script>
+<script src="../static/js/bootstrap.min.js" th:src="@{/js/bootstrap.min.js}"></script>
+<script src="../static/js/custom.js" th:src="@{/js/custom.js}"></script>
 </body>
 </html>
