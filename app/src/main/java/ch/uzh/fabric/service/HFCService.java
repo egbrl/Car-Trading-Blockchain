@@ -9,8 +9,10 @@ import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
 
 import java.lang.reflect.Type;
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 
@@ -27,7 +29,7 @@ public abstract class HFCService {
         return error.substring(error.indexOf("message: ") + 9, error.indexOf("), cause"));
     }
 
-    protected <T> T query(QueryByChaincodeRequest request, Chain chain) throws Exception {
+    protected <T> T query(QueryByChaincodeRequest request, Chain chain, Type type) throws Exception {
         request.setChaincodeID(chainCodeID);
 
         Collection<ProposalResponse> queryProposals;
@@ -44,7 +46,6 @@ public abstract class HFCService {
                 throw new Exception(proposalResponse.getMessage());
             } else {
                 String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-                Type type = new TypeToken<T>(){}.getType();
                 result = g.fromJson(payload, type);
             }
         }

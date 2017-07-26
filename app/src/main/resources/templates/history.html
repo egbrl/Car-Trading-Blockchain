@@ -21,6 +21,7 @@
         <p><span th:text="${vin}"></span></p>
         <p><span class="glyphicon glyphicon-info-sign"></span>&nbsp;<span th:text="${history.entrySet()[0].getValue().certificate.brand + ', ' + history.entrySet()[0].getValue().certificate.type + ', ' + history.entrySet()[0].getValue().certificate.color}"></span></p>
     </div>
+    <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
     <div>
         <table class="table table-hover">
             <thead>

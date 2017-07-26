@@ -12,7 +12,9 @@ sudo systemctl start docker
 
 Then type the following command from the project root:
 ```
-cd fixtures
+cd app
+mvn clean install
+cd ../fixtures
 bash fabric.sh restart
 ```
 

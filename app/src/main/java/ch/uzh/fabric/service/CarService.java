@@ -3,6 +3,7 @@ package ch.uzh.fabric.service;
 import ch.uzh.fabric.config.ErrorInfo;
 import ch.uzh.fabric.controller.AppController;
 import ch.uzh.fabric.model.Car;
+import ch.uzh.fabric.model.Insurer;
 import ch.uzh.fabric.model.ProposalData;
 import ch.uzh.fabric.model.User;
 import com.google.gson.*;
@@ -133,39 +134,54 @@ public class CarService extends HFCService {
         return car;
     }
 
-    public Map<Integer, Car> getCarHistory(HFClient client, Chain chain, String username, String role, String vin) {
-        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
-                .setVersion(AppController.CHAIN_CODE_VERSION)
-                .setPath(AppController.CHAIN_CODE_PATH).build();
+    public void acceptInsurance(HFClient client, Chain chain, String username, String role, String userToInsure, String vin, String company) throws Exception {
+        TransactionProposalRequest request = client.newTransactionProposalRequest();
+        request.setFcn("insuranceAccept");
+        request.setArgs(new String[]{username, role, userToInsure, vin, company});
+        executeTrx(request, chain);
+    }
 
-        QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
-        queryByChaincodeRequest.setArgs(new String[]{username, role, vin});
-        queryByChaincodeRequest.setFcn("getHistory");
-        queryByChaincodeRequest.setChaincodeID(chainCodeID);
+    public Insurer getInsurer(HFClient client, Chain chain, String username, String role, String company) throws Exception {
+        QueryByChaincodeRequest request = client.newQueryProposalRequest();
+        request.setArgs(new String[]{username, role, company});
+        request.setFcn("getInsurer");
 
-        Collection<ProposalResponse> queryProposals;
+        return query(request, chain, new TypeToken<Insurer>(){}.getType());
+    }
 
-        try {
-            queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
-        } catch (InvalidArgumentException | ProposalException e) {
-            throw new CompletionException(e);
+    public void insureProposal(HFClient client, Chain chain, String username, String role, String vin, String company) throws Exception {
+        TransactionProposalRequest request = client.newTransactionProposalRequest();
+        request.setFcn("insureProposal");
+        request.setArgs(new String[]{username, role, vin, company});
+        executeTrx(request, chain);
+    }
+
+    public Map<Integer, Car> getCarHistory(HFClient client, Chain chain, String username, String role, String vin) throws Exception {
+        QueryByChaincodeRequest request = client.newQueryProposalRequest();
+        request.setArgs(new String[]{username, role, vin});
+        request.setFcn("getHistory");
+
+        return query(request, chain, new TypeToken<Map<Integer, Car>>(){}.getType());
+    }
+
+    public Collection<Car> getCarsToConfirm(HFClient client, Chain chain, String username, String role) throws Exception {
+        QueryByChaincodeRequest request = client.newQueryProposalRequest();
+        request.setFcn("getCarsToConfirmAsList");
+        request.setArgs(new String[]{username, role});
+
+        Collection<Car> result = query(request, chain, new TypeToken<Collection<Car>>(){}.getType());
+        if (result == null) {
+            result = new ArrayList<Car>();
         }
 
-        Map<Integer, Car> history = null;
-        for (ProposalResponse proposalResponse : queryProposals) {
-            if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
-                ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
-                        + ". Messages: " + proposalResponse.getMessage()
-                        + ". Was verified : " + proposalResponse.isVerified());
-                System.out.println(result.errorMessage.toString());
-            } else {
-                String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-                Type type = new TypeToken<Map<Integer, Car>>(){}.getType();
-                history = g.fromJson(payload, type);
-            }
-        }
+        return result;
+    }
 
-        return history;
+    public void confirm(HFClient client, Chain chain, String username, String role, String vin, String numberplate) throws Exception {
+        TransactionProposalRequest request = client.newTransactionProposalRequest();
+        request.setFcn("confirm");
+        request.setArgs(new String[]{username, role, vin, numberplate});
+        executeTrx(request, chain);
     }
 
     public void revocationProposal(HFClient client, Chain chain, String username, String role, String vin) throws Exception {
@@ -180,7 +196,7 @@ public class CarService extends HFCService {
         request.setFcn("getRevocationProposals");
         request.setArgs(new String[]{username, role});
 
-        return query(request, chain);
+        return query(request, chain, new TypeToken<Map<String, String>>(){}.getType());
     }
 
     public void revoke(HFClient client, Chain chain, String owner, String role, String vin) throws Exception {

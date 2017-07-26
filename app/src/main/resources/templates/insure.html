@@ -19,6 +19,7 @@
     <div class="page-header" style="border-bottom: none">
         <h1>Insure Car</h1>
     </div>
+    <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
     <p th:if="${success}" style="color: green"><span class="glyphicon glyphicon-saved" aria-hidden="true" /> <span th:utext="${success}" /></p>
     <div>
         <form class="form-horizontal" th:action="@{/insure}" method="post">

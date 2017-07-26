@@ -18,8 +18,8 @@
     </div>
 
     <div>
-        <p th:if="${confirmSuccess}" style="color: green"><span class="glyphicon glyphicon-ok" aria-hidden="true" /> <span th:utext="${confirmSuccess}" /></p>
-        <p th:if="${confirmFail}" style="color: red"><span class="glyphicon glyphicon-remove" aria-hidden="true" /> <span th:utext="${confirmFail}" /></p>
+        <p th:if="${success}" style="color: green"><span class="glyphicon glyphicon-ok" aria-hidden="true" /> <span th:utext="${success}" /></p>
+        <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
         <table class="table table-hover">
             <thead>
             <tr>
@@ -36,7 +36,7 @@
             </tr>
             </thead>
             <tbody>
-            <tr th:each="car,iterStat : ${carsToConfirmList}">
+            <tr th:each="car, iterStat : ${cars}">
                 <th th:text="${iterStat.count}" scope="row"></th>
                 <td th:text="${car.certificate.username}">Owner</td>
                 <td th:text="${car.certificate.type}">M3</td>
@@ -55,7 +55,7 @@
                     </div>
                 </td>
                 <td>
-                    <form th:id="'confirmCar' + ${iterStat.count}" th:action="@{/dot/confirmation/confirmcar}"
+                    <form th:id="'confirmCar' + ${iterStat.count}" th:action="@{/dot/confirmation}"
                           method="post">
                         <input type="hidden" name="vin" th:value="${car.vin}"/>
                         <input type="text" name="numberplate" class="form-control" id="type" placeholder="Select numberplate (eg. ZH 12345)"/>
@@ -70,7 +70,7 @@
             </tr>
             </tbody>
         </table>
-        <div style="text-align: center;"><p th:if="${noResponseData}" style="color: lightsalmon">No pending requests.</p></div>
+        <div style="text-align: center;"><p th:if="${cars.isEmpty()}" style="color: lightsalmon">No pending requests.</p></div>
     </div>
 
     <div th:replace="footer" />
