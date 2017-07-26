@@ -644,6 +644,47 @@ public class AppController {
         return "history";
     }
 
+    public void createUser(String name) {
+        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
+                .setVersion(AppController.CHAIN_CODE_VERSION)
+                .setPath(AppController.CHAIN_CODE_PATH).build();
+
+        QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
+
+        queryByChaincodeRequest.setArgs(new String[]{name, name, name});
+        queryByChaincodeRequest.setFcn("createUser");
+        queryByChaincodeRequest.setChaincodeID(chainCodeID);
+
+        Collection<ProposalResponse> queryProposals;
+
+        try {
+            queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
+        } catch (InvalidArgumentException | ProposalException e) {
+            throw new CompletionException(e);
+        }
+
+        User user = null;
+        for (ProposalResponse proposalResponse : queryProposals) {
+            if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
+                ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
+                        + ". Messages: " + proposalResponse.getMessage()
+                        + ". Was verified : " + proposalResponse.isVerified());
+                System.out.println(result.errorMessage.toString());
+            } else {
+                String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
+                user = g.fromJson(payload, User.class);
+                out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
+            }
+        }
+        out("!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        out("---------------------------");
+        out("END of User creaton");
+        out("---------------------------");
+        out("!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+    }
+
+
+
 	/*
      *	INITIALIZE FUNCTIONS
 	 *
@@ -666,10 +707,17 @@ public class AppController {
         installchaincode();
         instantiatechaincode();
 
+        createUser("garage");
+        createUser("user");
+
         bootstrapCars();
         System.out.println("Hyperledger network is ready to use");
 
         AppController.timeFormat.setTimeZone(TimeZone.getTimeZone("Europe/Zurich"));
+    }
+
+    private void createUsersChain() {
+
     }
 
     private void bootstrapCars() {

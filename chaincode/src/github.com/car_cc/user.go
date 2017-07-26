@@ -27,7 +27,7 @@ func (t *CarChaincode) createUser(stub shim.ChaincodeStubInterface, username str
 	// user does not exist yet,
 	// create user
 	fmt.Printf("User '%s' does not exist yet\nSaving new user with that username\n", username)
-	user := User{Name: username, Cars: []string{}, Balance: 0}
+	user := User{Name: username, Cars: []string{}, Balance: 0, Offers: []Offer{}}
 
 	userIndex, err := t.getUserIndex(stub)
 	if err != nil {
@@ -143,7 +143,7 @@ func (t *CarChaincode) readUser(stub shim.ChaincodeStubInterface, username strin
 	user, err := t.getUser(stub, username)
 
 	if err != nil {
-		return shim.Error("Error reading user")
+		return shim.Error("Error reading user (function: readUser, file: user.go)")
 	}
 
 	userAsBytes, _ := json.Marshal(user)
