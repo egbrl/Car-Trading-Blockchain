@@ -30,7 +30,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
 
                 .antMatchers("/css/**", "/fonts/**", "/img/**", "/favicon*", "/js/**", "/login", "/login-error", "/test/**").permitAll()
-                .antMatchers("/import").hasRole(BOOTSTRAP_GARAGE_ROLE)
+                .antMatchers("/import").hasAnyRole(BOOTSTRAP_GARAGE_ROLE, BOOTSTRAP_PRIVATE_USER_ROLE)
                 .antMatchers("/insure").hasAnyRole(BOOTSTRAP_GARAGE_ROLE, BOOTSTRAP_PRIVATE_USER_ROLE)
                 .antMatchers("/insurance/**").hasRole(BOOTSTRAP_INSURANCE_ROLE)
                 .antMatchers("/dot/**").hasRole(BOOTSTRAP_DOT_ROLE)

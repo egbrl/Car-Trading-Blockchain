@@ -4,7 +4,7 @@ type Car struct {
 	Certificate Certificate `json:"certificate"` // vehicle certificate issued by the DOT
 	CreatedTs   int64       `json:"createdTs"`   // birth date
 	Vin         string      `json:"vin"`         // vehicle identification number ('WVW ZZZ 6RZ HY26 0780')
-	UsageData   UsageData   `json:"usageData"`  // car usage profile, interesting for car rentals
+	UsageData   UsageData   `json:"usageData"`   // car usage profile, interesting for car rentals
 }
 
 type UsageData struct {
@@ -24,6 +24,7 @@ type User struct {
 	Name    string   `json:"name"`
 	Cars    []string `json:"cars"`
 	Balance int      `json:"balance"`
+	Offers  []Offer  `json:"offers"`
 }
 
 type Insurer struct {
@@ -34,6 +35,13 @@ type Insurer struct {
 type InsureProposal struct {
 	User string `json:"user"`
 	Car  string `json:"car"`
+}
+
+type Offer struct {
+	Seller string `json:"seller"`
+	Buyer  string `json:"buyer"`
+	Vin    string `json:"vin"`
+	Price  int    `json:"price"`
 }
 
 /*

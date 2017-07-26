@@ -170,7 +170,7 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		} else if role == "user" || role == "garage" {
 			return t.revocationProposal(stub, username, args[0])
 		} else {
-			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create a revocation proposal.", role))	
+			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create a revocation proposal.", role))
 		}
 
 	case "insureProposal":
@@ -180,6 +180,16 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return t.insureProposal(stub, username, args[0], args[1])
 		} else {
 			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create an insurance proposal.", role))
+		}
+
+	case "createSellingOffer":
+		if len(args) != 3 {
+			return shim.Error("'sell' expects a price, car vin and buyer name to transfer a car")
+		} else if role == "user" || role == "garage" {
+			// only allow users and garage users to create an offer
+			return t.createSellingOffer(stub, username, args)
+		} else {
+			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create selling offers.", role))
 		}
 
 	case "sell":
@@ -204,8 +214,8 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	// GARAGE FUNCTIONS
 	case "create":
-		if role != "garage" {
-			return shim.Error("'create' expects you to be a garage user")
+		if role != "garage" && role != "user" {
+			return shim.Error("'create' expects you to be a garage or common user")
 		}
 		return t.createCar(stub, username, args)
 

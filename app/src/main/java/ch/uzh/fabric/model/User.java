@@ -6,11 +6,13 @@ public class User {
     private String name;
     private ArrayList<String> cars;
     private Integer balance;
+    private ArrayList<Offer> offers;
 
-    public User(String name, ArrayList<String> cars, Integer balance) {
+    public User(String name, ArrayList<String> cars, Integer balance, ArrayList<Offer> offers) {
         this.name = name;
         this.cars = cars;
         this.balance = balance;
+        this.offers = offers;
     }
 
     public String getName() {
@@ -36,4 +38,13 @@ public class User {
     public void setBalance(Integer balance) {
         this.balance = balance;
     }
+
+    public ArrayList<Offer> getOffers() {
+        return offers;
+    }
+
+    public void setOffers(ArrayList<Offer> offers) {
+        this.offers = offers;
+    }
+
 }

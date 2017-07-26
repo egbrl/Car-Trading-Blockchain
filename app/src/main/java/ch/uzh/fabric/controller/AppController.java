@@ -2,6 +2,7 @@ package ch.uzh.fabric.controller;
 
 import ch.uzh.fabric.config.*;
 import ch.uzh.fabric.model.*;
+import ch.uzh.fabric.model.User;
 import ch.uzh.fabric.service.CarService;
 import ch.uzh.fabric.service.UserService;
 import com.google.gson.Gson;
@@ -719,20 +720,21 @@ public class AppController {
     }
 
     @RequestMapping(value = "/sell", method = RequestMethod.GET)
-    public String showSellForm(Model model, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String activeVin) {
+    public String showSellForm(Model model, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String error, @RequestParam(required = false) String activeVin) {
         String username = auth.getName();
         String role = userService.getRole(auth);
-        HashMap<String, Car> carList = hfcService.getCars(client, chain, username, role);
+        HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
 
         model.addAttribute("activeVin", activeVin);
         model.addAttribute("success", success);
+        model.addAttribute("error", error);
         model.addAttribute("cars", carList.values());
         model.addAttribute("role", role.toUpperCase());
         return "sell";
     }
 
-    @RequestMapping(value = "/sell", method = RequestMethod.POST)
-    public String submitCarSelling(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin, @RequestParam("buyer") String buyer, @RequestParam("price") Integer price) {
+    @RequestMapping(value = "/sell/createOffer", method = RequestMethod.POST)
+    public String createSellingOffer(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin, @RequestParam("buyer") String buyer, @RequestParam("price") Integer price) {
         String username;
         String role;
 
@@ -744,54 +746,85 @@ public class AppController {
             role = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
         }
 
-        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
-                .setVersion(CHAIN_CODE_VERSION)
-                .setPath(CHAIN_CODE_PATH).build();
-
         try {
-            Collection<ProposalResponse> successful = new LinkedList<>();
-            Collection<ProposalResponse> failed = new LinkedList<>();
-
-            TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
-            transactionProposalRequest.setChaincodeID(chainCodeID);
-            transactionProposalRequest.setFcn("insureProposal");
-
-            transactionProposalRequest.setArgs(new String[]{username, role, vin, buyer});
-            out("sending transaction proposal for 'insureProposal' to all peers");
-
-            Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
-            for (ProposalResponse response : invokePropResp) {
-                if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
-                    out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
-                    successful.add(response);
-                } else {
-                    failed.add(response);
-                }
-            }
-            out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
-                    invokePropResp.size(), successful.size(), failed.size());
-            if (failed.size() > 0) {
-                throw new ProposalException("Not enough endorsers for invoke");
-
-            }
-            out("Successfully received transaction proposal responses.");
-
-            out("Sending chain code transaction to orderer");
-            chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+            carService.createOffer(client, chain, username, role, price.toString(), vin, buyer);
         } catch (Exception e) {
-            out(e.toString());
-            e.printStackTrace();
-            ErrorInfo result = new ErrorInfo(500, "", "CompletionException " + e.getMessage());
-            //return result;
-            //model.addAttribute("error", "");
+            redirAttr.addAttribute("error", e.getMessage());
+            return "redirect:/sell";
+        }
+
+        redirAttr.addAttribute("success", "Successfully sent selling offer for car '" + vin + "' to user '" + buyer + "'");
+        return "redirect:/sell";
+    }
+
+    @RequestMapping(value = "/offers", method = RequestMethod.GET)
+    public String showSellingOffers(Model model, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String error, @RequestParam(required = false) String activeVin) {
+        String username = auth.getName();
+        String role = userService.getRole(auth);
+
+        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
+                .setVersion(AppController.CHAIN_CODE_VERSION)
+                .setPath(AppController.CHAIN_CODE_PATH).build();
+
+        QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
+
+        queryByChaincodeRequest.setArgs(new String[]{username, role});
+        queryByChaincodeRequest.setFcn("readUser");
+        queryByChaincodeRequest.setChaincodeID(chainCodeID);
+
+        Collection<ProposalResponse> queryProposals;
+
+        try {
+            queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
+        } catch (InvalidArgumentException | ProposalException e) {
+            throw new CompletionException(e);
+        }
+
+        User user = null;
+        for (ProposalResponse proposalResponse : queryProposals) {
+            if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
+                ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
+                        + ". Messages: " + proposalResponse.getMessage()
+                        + ". Was verified : " + proposalResponse.isVerified());
+                System.out.println(result.errorMessage.toString());
+            } else {
+                String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
+                user = g.fromJson(payload, User.class);
+                out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
+            }
+        }
+
+        model.addAttribute("activeVin", activeVin);
+        model.addAttribute("success", success);
+        model.addAttribute("error", error);
+        model.addAttribute("offers", user.getOffers());
+        model.addAttribute("role", role.toUpperCase());
+        return "sell";
+    }
+
+
+    @RequestMapping(value = "/offer/accept", method = RequestMethod.POST)
+    public String acceptOffer(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin, @RequestParam("buyer") String buyer, @RequestParam("price") Integer price) {
+        String username;
+        String role;
+
+        try {
+            username = auth.getName();
+            role = userService.getRole(auth);
+        } catch (NullPointerException e) {
+            username = SecurityConfig.BOOTSTRAP_GARAGE_USER;
+            role = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
         }
 
         try {
-            redirAttr.addAttribute("success", "Insurance proposal saved. '" + buyer + "' will get back to you for confirmation.");
-        } catch (NullPointerException e) {
-
+            carService.createOffer(client, chain, username, role, price.toString(), vin, buyer);
+        } catch (Exception e) {
+            redirAttr.addAttribute("error", e.getMessage());
+            return "redirect:/offers";
         }
-        return "redirect:/sell";
+
+        redirAttr.addAttribute("success", "Successfully bought car '" + vin + "' from user '" + buyer + "' for '" + price + "'.");
+        return "redirect:/index";
     }
 
     @RequestMapping(value = "/history", method = RequestMethod.GET)

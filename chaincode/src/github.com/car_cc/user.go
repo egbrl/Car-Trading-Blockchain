@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"strconv"
 	"fmt"
+	"strconv"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
@@ -158,7 +158,7 @@ func (t *CarChaincode) saveUser(stub shim.ChaincodeStubInterface, user User) err
 	userAsBytes, _ := json.Marshal(user)
 	err := stub.PutState("usr_"+user.Name, userAsBytes)
 	if err != nil {
-		return errors.New("Error writing userIndex back to ledger")
+		return errors.New("Error writing user back to ledger")
 	}
 
 	return nil
@@ -183,7 +183,7 @@ func (t *CarChaincode) updateBalance(stub shim.ChaincodeStubInterface, username 
 	// fetch user
 	user, err := t.getUser(stub, username)
 	if err != nil {
-			fmt.Println(err.Error())
+		fmt.Println(err.Error())
 
 		return shim.Error("Error fetching user, balance not updated")
 	}

@@ -20,8 +20,9 @@
         <h1>Sell Car</h1>
     </div>
     <p th:if="${success}" style="color: green"><span class="glyphicon glyphicon-saved" aria-hidden="true" /> <span th:utext="${success}" /></p>
+    <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
     <div>
-        <form class="form-horizontal" th:action="@{/sell}" method="post">
+        <form class="form-horizontal" th:action="@{/sell/createOffer}" method="post">
             <div class="form-group">
                 <div class="col-sm-6">
                     <label for="vin">Car</label>
@@ -44,7 +45,7 @@
                     <label for="buyer">Price</label>
                     <div class="input-group">
                         <span class="input-group-addon glyphicon glyphicon-bitcoin"></span>
-                        <input type="text" class="form-control" id="price" name="price" placeholder="Enter price (eg. 5)"/>
+                        <input type="number" class="form-control" id="price" name="price" placeholder="Enter price (eg. 5)"/>
                         <span class="input-group-addon">.00</span>
                     </div>
                 </div>

@@ -17,7 +17,7 @@ import (
 * On sucess,
 * Returns a map[in64]Car with modification timestamp as key
 * and Car object (from that point in time) as value
-*/
+ */
 func (t *CarChaincode) getHistory(stub shim.ChaincodeStubInterface, vin string) pb.Response {
 	hist, err := stub.GetHistoryForKey(vin)
 	if err != nil {
@@ -297,6 +297,56 @@ func (t *CarChaincode) readCarAsDot(stub shim.ChaincodeStubInterface, username s
 }
 
 /*
+ * Creates selling offer.
+ *
+ * Arguments required:
+ * [0] Price                       (int)
+ * [1] VIN of the car to transfer  (string)
+ * [2] Buyer username              (string)
+ *
+ * On success,
+ * returns the offer.
+ */
+func (t *CarChaincode) createSellingOffer(stub shim.ChaincodeStubInterface, seller string, args []string) pb.Response {
+	price, _ := strconv.Atoi(args[0])
+	vin := args[1]
+	buyer := args[2]
+
+	// price input sanitation
+	if args[0] == "" || price < 0 {
+		return shim.Error("'sell' expects a non-empty, positive price")
+	}
+
+	// create new selling offer
+	offer := Offer{
+		Seller: seller,
+		Buyer:  buyer,
+		Vin:    vin,
+		Price:  price}
+
+	// updating buyer object
+	buyerAsObject, err := t.getUser(stub, buyer)
+	if err != nil {
+		return shim.Error("Error: Could not find buyer in database.")
+	}
+	// allow only one selling offer per car toa  user
+	for _, offer := range buyerAsObject.Offers {
+		if offer.Vin == vin {
+			return shim.Error("Error: It exists already an offer for car '" + vin + "and prospective buyer '" + buyer + "'.")
+		}
+	}
+	buyerAsObject.Offers = append(buyerAsObject.Offers, offer)
+	err = t.saveUser(stub, buyerAsObject)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	offerAsBytes, _ := json.Marshal(offer)
+
+	return shim.Success(offerAsBytes)
+}
+
+/*
  * Sell a car to a new owner (receiver).
  *
  * No balance checks are performed before selling a car,
@@ -326,7 +376,7 @@ func (t *CarChaincode) sell(stub shim.ChaincodeStubInterface, seller string, arg
 	}
 
 	// update buyer and seller balance
-	t.updateBalance(stub, buyer, strconv.Itoa(-1 * price))
+	t.updateBalance(stub, buyer, strconv.Itoa(-1*price))
 	t.updateBalance(stub, seller, args[0])
 
 	// remove price from args and transfer car
