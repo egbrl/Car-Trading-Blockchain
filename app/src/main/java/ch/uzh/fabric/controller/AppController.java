@@ -36,6 +36,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static ch.uzh.fabric.config.SecurityConfig.BOOTSTRAP_GARAGE_USER;
+import static ch.uzh.fabric.config.SecurityConfig.BOOTSTRAP_PRIVATE_USER;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -678,7 +680,7 @@ public class AppController {
         }
         out("!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         out("---------------------------");
-        out("END of User creaton");
+        out("END of User creation");
         out("---------------------------");
         out("!!!!!!!!!!!!!!!!!!!!!!!!!!!");
     }
@@ -707,17 +709,13 @@ public class AppController {
         installchaincode();
         instantiatechaincode();
 
-        createUser("garage");
-        createUser("user");
+        createUser(BOOTSTRAP_GARAGE_USER);
+        createUser(BOOTSTRAP_PRIVATE_USER);
 
         bootstrapCars();
         System.out.println("Hyperledger network is ready to use");
 
         AppController.timeFormat.setTimeZone(TimeZone.getTimeZone("Europe/Zurich"));
-    }
-
-    private void createUsersChain() {
-
     }
 
     private void bootstrapCars() {
