@@ -20,6 +20,11 @@ bash fabric.sh restart
 
 This will assemble and install the docker image for the car app. It will then download the required fabric images and spin up the fabric network. The web app can be accessed on [http://localhost:8080](http://localhost:8080). Log in with the credentials from [SecurityConfig](https://github.com/EGabb/Car-Trading-Blockchain/blob/master/app/src/main/java/ch/uzh/fabric/config/SecurityConfig.java).
 
+## System Requirements
+
+- Linux or MacOS is highly recommended, Windows remains untested
+- 5GB RAM recommended (lower amounts may result in crashes or unsuccessful builds)
+
 
 ## Fetch Cars Directly on Peer(s)
 To check out the bootstrapped car, log into the docker container of `peer0` in `org1` and query the car:
