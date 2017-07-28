@@ -4,6 +4,7 @@ import (
     "encoding/json"
     "testing"
     "strconv"
+    "fmt"
     "github.com/hyperledger/fabric/common/util"
     "github.com/hyperledger/fabric/core/chaincode/shim"
 )
@@ -29,6 +30,20 @@ func TestCreateUserAndUpdateBalance(t *testing.T) {
 
     if userObject.Balance != 0 {
         t.Error("New user should start with balance 0")
+    }
+
+    // read the user again
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("readUser", user, "user"))
+    userObject = User {}
+    err = json.Unmarshal(response.Payload, &userObject)
+    if err != nil {
+        fmt.Println(err.Error())
+        t.Error("Error reading test user")
+        return
+    }
+
+    if userObject.Name != user {
+        t.Error("User creation error")
     }
 
     // update balance of user

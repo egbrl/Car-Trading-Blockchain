@@ -146,8 +146,11 @@ func (t *CarChaincode) readUser(stub shim.ChaincodeStubInterface, username strin
 		return shim.Error("Error reading user (function: readUser, file: user.go)")
 	}
 
-	userAsBytes, _ := json.Marshal(user)
+	userAsBytes, err := json.Marshal(user)
 
+	if err != nil {
+		return shim.Error("Invalid User format")
+	}
 	return shim.Success(userAsBytes)
 }
 
@@ -155,8 +158,14 @@ func (t *CarChaincode) readUser(stub shim.ChaincodeStubInterface, username strin
  * Writes updated user back to ledger
  */
 func (t *CarChaincode) saveUser(stub shim.ChaincodeStubInterface, user User) error {
-	userAsBytes, _ := json.Marshal(user)
-	err := stub.PutState("usr_"+user.Name, userAsBytes)
+	userAsBytes, err := json.Marshal(user)
+
+	if err != nil {
+		fmt.Println(user)
+		return errors.New("User has wrong format")
+	}
+
+	err = stub.PutState("usr_"+user.Name, userAsBytes)
 	if err != nil {
 		return errors.New("Error writing user back to ledger")
 	}
