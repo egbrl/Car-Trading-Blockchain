@@ -141,6 +141,13 @@ public class CarService extends HFCService {
         executeTrx(request, chain);
     }
 
+    public void createUser(HFClient client, Chain chain, String username, String role, String newUser) throws Exception {
+        TransactionProposalRequest request = client.newTransactionProposalRequest();
+        request.setFcn("createUser");
+        request.setArgs(new String[]{username, role, newUser});
+        executeTrx(request, chain);
+    }
+
     public Insurer getInsurer(HFClient client, Chain chain, String username, String role, String company) throws Exception {
         QueryByChaincodeRequest request = client.newQueryProposalRequest();
         request.setArgs(new String[]{username, role, company});
