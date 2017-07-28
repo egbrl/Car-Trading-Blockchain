@@ -19,7 +19,7 @@
 
     <div>
         <p th:if="${success}" style="color: green"><span class="glyphicon glyphicon-ok-circled" aria-hidden="true" /> <span th:utext="${success}" /></p>
-        <p th:if="${error}" style="color: green"><span class="glyphicon glyphicon-remove" aria-hidden="true" /> <span th:utext="${success}" /></p>
+        <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-remove" aria-hidden="true" /> <span th:utext="${error}" /></p>
         <table class="table table-hover">
             <thead>
             <tr>
@@ -44,7 +44,7 @@
                     </td>
                     <td>
                         <span th:text="${offer.price}">price</span>
-                        <input type="hidden" name="vin" th:value="${offer.price}"/>
+                        <input type="hidden" name="price" th:value="${offer.price}"/>
                     </td>
                     <td>
                         <button type="button" class="btn btn-success"

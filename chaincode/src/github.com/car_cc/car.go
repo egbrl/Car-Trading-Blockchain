@@ -346,6 +346,43 @@ func (t *CarChaincode) createSellingOffer(stub shim.ChaincodeStubInterface, sell
 	return shim.Success(offerAsBytes)
 }
 
+func (t *CarChaincode) removeAllSellingOffers(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response {
+	// check that user is allowed to remove his selling offers
+	_, err := t.getCar(stub, username, vin)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	// remove all offers for this car from all users
+	// get all users
+	userIndex, err := t.getUserIndex(stub)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	for username, _ := range userIndex {
+		user, err := t.getUser(stub, username)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+
+		var newOffers []Offer
+		for _, offer := range user.Offers {
+			if offer.Vin != vin {
+				newOffers = append(newOffers, offer)
+			}
+		}
+
+		user.Offers = newOffers
+		err = t.saveUser(stub, user)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+	}
+
+	return shim.Success(nil)
+}
+
 /*
  * Sell a car to a new owner (receiver).
  *

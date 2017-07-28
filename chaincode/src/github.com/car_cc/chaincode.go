@@ -192,6 +192,16 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create selling offers.", role))
 		}
 
+	case "removeAllSellingOffers":
+		if len(args) != 1 {
+			return shim.Error("'removeAllSellingOffers' expects a car vin")
+		} else if role == "user" || role == "garage" {
+			// only allow users and garage users to create an offer
+			return t.removeAllSellingOffers(stub, username, args[0])
+		} else {
+			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create selling offers.", role))
+		}
+
 	case "sell":
 		if len(args) != 3 {
 			return shim.Error("'sell' expects a price, car vin and buyer name to transfer a car")

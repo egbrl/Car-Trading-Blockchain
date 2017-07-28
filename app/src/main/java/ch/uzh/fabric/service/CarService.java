@@ -2,9 +2,7 @@ package ch.uzh.fabric.service;
 
 import ch.uzh.fabric.config.ErrorInfo;
 import ch.uzh.fabric.controller.AppController;
-import ch.uzh.fabric.model.Car;
-import ch.uzh.fabric.model.Insurer;
-import ch.uzh.fabric.model.ProposalData;
+import ch.uzh.fabric.model.*;
 import ch.uzh.fabric.model.User;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
@@ -132,6 +130,20 @@ public class CarService extends HFCService {
         }
 
         return car;
+    }
+
+    public void removeAllSellingOffers(HFClient client, Chain chain, String username, String role, String vin) throws Exception {
+        TransactionProposalRequest request = client.newTransactionProposalRequest();
+        request.setFcn("removeAllSellingOffers");
+        request.setArgs(new String[]{username, role, vin});
+        executeTrx(request, chain);
+    }
+
+    public void sell(HFClient client, Chain chain, String seller, String role, String price, String vin, String buyer) throws Exception {
+        TransactionProposalRequest request = client.newTransactionProposalRequest();
+        request.setFcn("sell");
+        request.setArgs(new String[]{seller, role, price.toString(), vin, buyer});
+        executeTrx(request, chain);
     }
 
     public void acceptInsurance(HFClient client, Chain chain, String username, String role, String userToInsure, String vin, String company) throws Exception {

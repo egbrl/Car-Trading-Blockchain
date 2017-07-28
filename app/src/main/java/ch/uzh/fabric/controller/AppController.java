@@ -557,7 +557,7 @@ public class AppController {
     }
 
     @RequestMapping(value = "/offers", method = RequestMethod.GET)
-    public String showSellingOffers(Model model, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String error, @RequestParam(required = false) String activeVin) {
+    public String showSellingOffers(Model model, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String error) {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
@@ -602,26 +602,27 @@ public class AppController {
 
 
     @RequestMapping(value = "/offers/accept", method = RequestMethod.POST)
-    public String acceptOffer(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin, @RequestParam("buyer") String buyer, @RequestParam("price") Integer price) {
-        String username;
-        String role;
+    public String acceptOffer(RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin, @RequestParam String seller, @RequestParam String price) {
+        String username = auth.getName();
+        String role = userService.getRole(auth);
 
         try {
-            username = auth.getName();
-            role = userService.getRole(auth);
-        } catch (NullPointerException e) {
-            username = SecurityConfig.BOOTSTRAP_GARAGE_USER;
-            role = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
-        }
-
-        try {
-            carService.createOffer(client, chain, username, role, price.toString(), vin, buyer);
+            // remove selling offers as seller first
+            //
+            // tbd: this might not be the best way, because removal of
+            // selling offer and actual selling of the car cannot
+            // happen in the same transaction.
+            //
+            // Note: in the worst case, the selling offer is lost.
+            // -> Create a new one
+            carService.removeAllSellingOffers(client, chain, seller, role, vin);
+            carService.sell(client, chain, seller, role, price, vin, username);
         } catch (Exception e) {
             redirAttr.addAttribute("error", e.getMessage());
             return "redirect:/offers";
         }
 
-        redirAttr.addAttribute("success", "Successfully bought car '" + vin + "' from user '" + buyer + "' for '" + price + "'.");
+        redirAttr.addAttribute("success", "Successfully bought car '" + vin + "' from user '" + seller + "' at price '" + price + "'.");
         return "redirect:/index";
     }
 
