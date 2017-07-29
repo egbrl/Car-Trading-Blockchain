@@ -275,6 +275,12 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		return t.getCarsToConfirm(stub)
 
+	case "getAllCarsAsList":
+		if role != "dot" {
+			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to retrieve all cars.", role))
+		}
+		return t.getAllCars(stub)
+
 	// INSURANCE FUNCTIONS
 	case "insuranceAccept":
 		if len(args) != 3 {

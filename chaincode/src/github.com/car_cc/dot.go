@@ -220,8 +220,7 @@ func (t *CarChaincode) getCarsToConfirm(stub shim.ChaincodeStubInterface) pb.Res
 	// marshal list
 	toConfirmcarListAsBytes, _ := json.Marshal(toConfirmcarList)
 
-	// car confirmation successfull,
-	// return the car with numberplate
+	// return the list of cars to confirm
 	return shim.Success(toConfirmcarListAsBytes)
 }
 
@@ -476,4 +475,35 @@ func (t *CarChaincode) getNumberplateIndex(stub shim.ChaincodeStubInterface) (ma
 	}
 
 	return numberplateIndex, nil
+}
+
+/*
+ * Returns a list of all cars in car index
+ *
+ * On success,
+ * returns a list with cars.
+ */
+func (t *CarChaincode) getAllCars(stub shim.ChaincodeStubInterface) pb.Response {
+	carIndex, err := t.getCarIndex(stub)
+
+	if err != nil {
+		return shim.Error("Error getting car index")
+	}
+
+	var allCarsList []Car
+
+	for k := range carIndex {
+		car, err := t.getCarAsDot(stub, k)
+		if err != nil {
+			return shim.Error("Error getting car")
+		}
+		allCarsList = append(allCarsList, car)
+
+	}
+
+	// marshal list
+	allCarsListAsBytes, _ := json.Marshal(allCarsList)
+
+	// return list with all cars
+	return shim.Success(allCarsListAsBytes)
 }

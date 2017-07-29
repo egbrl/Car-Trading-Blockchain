@@ -45,10 +45,10 @@
                     <td>
                         <div th:switch="${proposal.registered}">
                             <div th:case="true">
-                                <span class="glyphicon glyphicon-ok-circle" aria-hidden="true"></span>
+                                <span class="glyphicon glyphicon-ok" aria-hidden="true" style="color: lightgreen"></span>&nbsp;OK
                             </div>
                             <div th:case="false">
-                                <span class="glyphicon glyphicon-ban-circle " aria-hidden="true"></span>
+                                <span class="glyphicon glyphicon-hourglass" aria-hidden="true"> </span>&nbsp;pending
                             </div>
                         </div>
                     </td>

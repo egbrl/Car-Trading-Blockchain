@@ -351,7 +351,7 @@ public class AppController {
         Collection<Car> cars = new ArrayList<>();
 
         try {
-            cars = carService.getCars(client, chain, username, role);
+            cars = carService.getAllCars(client, chain, username, role);
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
         }

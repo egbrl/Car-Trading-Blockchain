@@ -119,6 +119,19 @@ public class CarService extends HFCService {
         return result;
     }
 
+    public Collection<Car> getAllCars(HFClient client, Chain chain, String username, String role) throws Exception {
+        QueryByChaincodeRequest request = client.newQueryProposalRequest();
+        request.setFcn("getAllCarsAsList");
+        request.setArgs(new String[]{username, role});
+
+        Collection<Car> result = query(request, chain, new TypeToken<Collection<Car>>(){}.getType());
+        if (result == null) {
+            result = new ArrayList<Car>();
+        }
+
+        return result;
+    }
+
     public void confirm(HFClient client, Chain chain, String username, String role, String vin, String numberplate) throws Exception {
         TransactionProposalRequest request = client.newTransactionProposalRequest();
         request.setFcn("confirm");

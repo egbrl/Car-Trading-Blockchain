@@ -57,14 +57,12 @@
                             <div th:switch="${car.isInsured()}">
                                 <div th:case="true">
                                     <td>
-                                        - (contact dot)
-                                        <!-- <button type="button" class="btn btn-success">confirm</button> -->
+                                        <span class="glyphicon glyphicon-remove"> </span> (contact dot)
                                     </td>
                                 </div>
                                 <div th:case="false">
                                     <td>
-                                        -
-                                        <!-- <button type="button" class="btn disabled">confirm</button> -->
+                                        <span class="glyphicon glyphicon-remove"> </span>
                                     </td>
                                 </div>
                             </div>
