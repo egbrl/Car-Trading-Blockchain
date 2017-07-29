@@ -13,24 +13,6 @@
  */
 package ch.uzh.fabric.config;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Serializable;
-import java.io.StringReader;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.Security;
-import java.security.spec.InvalidKeySpecException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -39,6 +21,16 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.hyperledger.fabric.sdk.Enrollment;
+
+import java.io.*;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.Security;
+import java.security.spec.InvalidKeySpecException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * A local file-based key value store.

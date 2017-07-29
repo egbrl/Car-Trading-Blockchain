@@ -13,21 +13,17 @@
  */
 package ch.uzh.fabric.config;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.hyperledger.fabric.sdk.helper.SDKUtil;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.hyperledger.fabric.sdk.helper.SDKUtil;
 
 /**
  * Config allows for a global config of the toolkit. Central location for all

@@ -1,16 +1,10 @@
 package ch.uzh.fabric.config;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.User;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
+
+import java.util.*;
 
 /*
  *  Copyright 2016, 2017 DTCC, Fujitsu Australia Software Technology, IBM - All Rights Reserved.

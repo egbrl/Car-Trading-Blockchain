@@ -17,19 +17,14 @@ package ch.uzh.fabric.config;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.util.List;
-import java.util.Set;
-
 import io.netty.util.internal.StringUtil;
 import org.bouncycastle.util.encoders.Hex;
 import org.hyperledger.fabric.sdk.Enrollment;
 import org.hyperledger.fabric.sdk.User;
+
+import java.io.*;
+import java.util.List;
+import java.util.Set;
 
 @JsonInclude(Include.NON_NULL)
 public class SampleUser implements User, Serializable {
