@@ -69,8 +69,6 @@ public class AppController {
     @Autowired
     private CarService carService;
 
-    private Gson g = new GsonBuilder().create();
-
 
 	/*
      *	URL MAPPINGS
