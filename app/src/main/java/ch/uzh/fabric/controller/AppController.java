@@ -115,7 +115,7 @@ public class AppController {
     }
 
     @RequestMapping("/index")
-    public String index(Authentication auth, Model model, @RequestParam(required = false) String error, @RequestParam(required = false) String success) {
+    public String index(Authentication auth, Model model, RedirectAttributes redirAttr, @RequestParam(required = false) String error, @RequestParam(required = false) String success) {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
@@ -125,13 +125,20 @@ public class AppController {
             return "redirect:/insurance/index";
         }
 
-        HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
+        Collection<Car> cars;
+
+        try {
+            cars = carService.getCars(client, chain, username, role);
+        } catch (Exception e) {
+            redirAttr.addAttribute("error", e.getMessage());
+            return "redirect:/index";
+        }
 
         if (success != null) {
             out(success);
         }
 
-        model.addAttribute("cars", carList.values());
+        model.addAttribute("cars", cars);
         model.addAttribute("role", role.toUpperCase());
         model.addAttribute("success", success);
         model.addAttribute("error", error);
@@ -424,13 +431,19 @@ public class AppController {
     }
 
     @RequestMapping("/dot/all-cars")
-    public String allCars(Authentication auth, Model model) {
+    public String allCars(RedirectAttributes redirAttr, Authentication auth, Model model) {
         String username = auth.getName();
         String role = userService.getRole(auth);
+        Collection<Car> cars;
 
-        HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
+        try {
+            cars = carService.getCars(client, chain, username, role);
+        } catch (Exception e) {
+            redirAttr.addAttribute("error", e.getMessage());
+            return "redirect:/dot/all-cars";
+        }
 
-        model.addAttribute("cars", carList.values());
+        model.addAttribute("cars", cars);
         model.addAttribute("role", role.toUpperCase());
         return "dot/all-cars";
     }
@@ -442,7 +455,7 @@ public class AppController {
 
         ProfileProperties.User user = userService.findOrCreateUser(username, role);
         String companyName = user.getOrganization();
-        Insurer insurer = null;
+        Insurer insurer;
 
         try {
             insurer = carService.getInsurer(client, chain, username, role, companyName);
@@ -483,15 +496,22 @@ public class AppController {
     }
 
     @RequestMapping(value = "/insure", method = RequestMethod.GET)
-    public String insure(Model model, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String error, @RequestParam(required = false) String activeVin) {
+    public String insure(Model model, RedirectAttributes redirAttr, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String error, @RequestParam(required = false) String activeVin) {
         String username = auth.getName();
         String role = userService.getRole(auth);
-        HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
+        Collection<Car> cars;
+
+        try {
+            cars = carService.getCars(client, chain, username, role);
+        } catch (Exception e) {
+            redirAttr.addAttribute("error", e.getMessage());
+            return "redirect:/insure";
+        }
 
         model.addAttribute("activeVin", activeVin);
         model.addAttribute("error", error);
         model.addAttribute("success", success);
-        model.addAttribute("cars", carList.values());
+        model.addAttribute("cars", cars);
         model.addAttribute("role", role.toUpperCase());
         return "insure";
     }
@@ -517,15 +537,22 @@ public class AppController {
     }
 
     @RequestMapping(value = "/sell", method = RequestMethod.GET)
-    public String showSellForm(Model model, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String error, @RequestParam(required = false) String activeVin) {
+    public String showSellForm(Model model, RedirectAttributes redirAttr, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String error, @RequestParam(required = false) String activeVin) {
         String username = auth.getName();
         String role = userService.getRole(auth);
-        HashMap<String, Car> carList = carService.getCars(client, chain, username, role);
+        Collection<Car> cars;
+
+        try {
+            cars = carService.getCars(client, chain, username, role);
+        } catch (Exception e) {
+            redirAttr.addAttribute("error", e.getMessage());
+            return "redirect:/sell";
+        }
 
         model.addAttribute("activeVin", activeVin);
         model.addAttribute("success", success);
         model.addAttribute("error", error);
-        model.addAttribute("cars", carList.values());
+        model.addAttribute("cars", cars);
         model.addAttribute("role", role.toUpperCase());
         return "sell";
     }

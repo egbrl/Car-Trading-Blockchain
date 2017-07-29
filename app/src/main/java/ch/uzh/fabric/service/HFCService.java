@@ -17,7 +17,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 
 public abstract class HFCService {
-    private Gson g = new GsonBuilder().create();
+    protected Gson g = new GsonBuilder().create();
 
     private ChainCodeID chainCodeID = ChainCodeID.newBuilder()
             .setName(AppController.CHAIN_CODE_NAME)

@@ -22,81 +22,19 @@ import java.util.concurrent.TimeoutException;
 @Service
 public class CarService extends HFCService {
 
-    private Gson g = new GsonBuilder().create();
+    public Collection<Car> getCars(HFClient client, Chain chain, String username, String role) throws Exception {
+        QueryByChaincodeRequest request = client.newQueryProposalRequest();
+        request.setArgs(new String[]{username, role});
+        request.setFcn("readUser");
 
-    private ChainCodeID chainCodeID = ChainCodeID.newBuilder()
-                                                 .setName(AppController.CHAIN_CODE_NAME)
-                                                 .setVersion(AppController.CHAIN_CODE_VERSION)
-                                                 .setPath(AppController.CHAIN_CODE_PATH).build();
-
-    public HashMap<String, Car> getCars(HFClient client, Chain chain, String username, String role) {
-        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
-                .setVersion(AppController.CHAIN_CODE_VERSION)
-                .setPath(AppController.CHAIN_CODE_PATH).build();
-
-        QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
-        queryByChaincodeRequest.setArgs(new String[]{username, role});
-        queryByChaincodeRequest.setFcn("readUser");
-        queryByChaincodeRequest.setChaincodeID(chainCodeID);
-
-        Collection<ProposalResponse> queryProposals;
-
-        try {
-            queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
-        } catch (InvalidArgumentException | ProposalException e) {
-            throw new CompletionException(e);
+        ArrayList<Car> cars = new ArrayList<>();
+        User user = query(request, chain, new TypeToken<User>(){}.getType());
+        for (String vin : user.getCars()) {
+            Car car = getCar(client, chain, username, role, vin);
+            cars.add(car);
         }
 
-        User user = null;
-        HashMap<String, Car> carList = new HashMap<>();
-        for (ProposalResponse proposalResponse : queryProposals) {
-            if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
-                ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
-                        + ". Messages: " + proposalResponse.getMessage()
-                        + ". Was verified : " + proposalResponse.isVerified());
-                System.out.println(result.errorMessage.toString());
-            } else {
-                String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-                user = g.fromJson(payload, User.class);
-                if (user.getCars() != null) {
-                    for (String vin : user.getCars()) {
-                        carList.put(vin, new Car(null, 0, vin));
-                    }
-                }
-
-                //System.out.println("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
-            }
-        }
-
-        for (Car car : carList.values()) {
-            QueryByChaincodeRequest carRequest = client.newQueryProposalRequest();
-            carRequest.setArgs(new String[]{username, role, car.getVin()});
-            carRequest.setFcn("readCar");
-            carRequest.setChaincodeID(chainCodeID);
-
-            Collection<ProposalResponse> carQueryProps;
-            try {
-                carQueryProps = chain.queryByChaincode(carRequest);
-            } catch (InvalidArgumentException | ProposalException e) {
-                throw new CompletionException(e);
-            }
-
-            for (ProposalResponse proposalResponse : carQueryProps) {
-                if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
-                    ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
-                            + ". Messages: " + proposalResponse.getMessage()
-                            + ". Was verified : " + proposalResponse.isVerified());
-                    System.out.println(result.errorMessage.toString());
-                } else {
-                    String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-                    car = g.fromJson(payload, Car.class);
-                    carList.replace(car.getVin(), car);
-                    //System.out.println("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
-                }
-            }
-        }
-
-        return carList;
+        return cars;
     }
 
     public Car getCar(HFClient client, Chain chain, String username, String role, String vin) throws Exception {
