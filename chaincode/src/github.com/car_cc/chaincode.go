@@ -154,16 +154,6 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		return t.deleteUser(stub, args[0], args[1])
 
-	case "transfer":
-		if len(args) != 2 {
-			return shim.Error("'transfer' expects a car vin and name of the new owner to transfer a car")
-		} else if role == "user" || role == "garage" {
-			// only allow users and garage users to transer cars
-			return t.transfer(stub, username, args)
-		} else {
-			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to transfer cars.", role))
-		}
-
 	case "revocationProposal":
 		if len(args) != 1 {
 			return shim.Error("'revocationProposal' expects a car vin to revoke a car")
@@ -192,21 +182,10 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create selling offers.", role))
 		}
 
-	case "removeAllSellingOffers":
-		if len(args) != 1 {
-			return shim.Error("'removeAllSellingOffers' expects a car vin")
-		} else if role == "user" || role == "garage" {
-			// only allow users and garage users to create an offer
-			return t.removeAllSellingOffers(stub, username, args[0])
-		} else {
-			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create selling offers.", role))
-		}
-
 	case "sell":
-		if len(args) != 3 {
-			return shim.Error("'sell' expects a price, car vin and buyer name to transfer a car")
+		if len(args) != 2 {
+			return shim.Error("'sell' expects a car vin and buyer name to transfer a car")
 		} else if role == "user" || role == "garage" {
-			// only allow users and garage users to transer cars
 			return t.sell(stub, username, args)
 		} else {
 			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to sell cars.", role))

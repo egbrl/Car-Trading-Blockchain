@@ -116,7 +116,12 @@ func (t *CarChaincode) createCar(stub shim.ChaincodeStubInterface, username stri
 	// check for existing garage user with that name
 	user, err := t.getUser(stub, username)
 	if err != nil {
-		user = User{Name: username, Cars: []string{}, Balance: 0}
+		userResponse := t.createUser(stub, username)
+		user = User{}
+		err := json.Unmarshal(userResponse.Payload, &user)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
 	}
 
 	// check for an existing car with that vin in the car index
@@ -346,15 +351,72 @@ func (t *CarChaincode) createSellingOffer(stub shim.ChaincodeStubInterface, sell
 	return shim.Success(offerAsBytes)
 }
 
-func (t *CarChaincode) removeAllSellingOffers(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response {
-	// check that user is allowed to remove his selling offers
-	_, err := t.getCar(stub, username, vin)
+/*
+ * Sell a car to a new owner (receiver).
+ *
+ * No balance checks are performed before selling a car,
+ * cars are bought on credit.
+ *
+ * Arguments required:
+ * [0] VIN of the car to transfer  (string)
+ * [1] Buyer username              (string)
+ *
+ * On success,
+ * returns the car.
+ */
+func (t *CarChaincode) sell(stub shim.ChaincodeStubInterface, seller string, args []string) pb.Response {
+	vin := args[0]
+	buyer := args[1]
+
+	// input sanitation
+	if vin == "" {
+		return shim.Error("'sell' expects a non-empty VIN to do the transfer")
+	}
+
+	// check for sales offer,
+	// you cannot buy a car without the sellers agreement
+	buyerAsUser, err := t.getUser(stub, buyer)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
-	// remove all offers for this car from all users
-	// get all users
+	var salesOffer Offer
+	for _, o := range buyerAsUser.Offers {
+		if o.Vin == vin {
+			salesOffer = o
+		}
+	}
+
+	if salesOffer == (Offer{}) {
+		return shim.Error("No sale without sales offer. Request an offer from the seller first.")
+	}
+
+	// fetch the car from the ledger
+	// this already checks for ownership
+	car, err := t.getCar(stub, seller, vin)
+	if err != nil {
+		return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
+	}
+
+	// check if car is not confirmed anymore
+	if IsConfirmed(&car) {
+		return shim.Error("The car is still confirmed. It has to be revoked first in order to do the transfer.")
+	}
+
+	// change of ownership in the car certificate
+	car.Certificate.Username = buyer
+
+	// write car with udpated certificate back to ledger
+	carAsBytes, _ := json.Marshal(car)
+	err = stub.PutState(car.Vin, carAsBytes)
+	if err != nil {
+		return shim.Error("Error writing car")
+	}
+
+	// remove all selling offers for this car from all users
+	// this has to happen in the same transaction as 'sell'
+	// to ensure no orphans are left in the system
+	// and that no car is bought/sold twice
 	userIndex, err := t.getUserIndex(stub)
 	if err != nil {
 		return shim.Error(err.Error())
@@ -368,172 +430,61 @@ func (t *CarChaincode) removeAllSellingOffers(stub shim.ChaincodeStubInterface, 
 
 		var newOffers []Offer
 		for _, offer := range user.Offers {
-			if offer.Vin != vin {
+			// check that user is allowed to remove his selling offers
+			// only the seller should be allowed to remove an offer
+			// he created
+			if offer.Vin != vin || offer.Seller != seller {
 				newOffers = append(newOffers, offer)
 			}
 		}
 
 		user.Offers = newOffers
+
+		// if buyer/seller update balances
+		// also update car lists and the car index
+		if user.Name == buyer {
+			user.Balance -= salesOffer.Price
+
+			// attach the car to the buyer
+			user.Cars = append(user.Cars, car.Vin)
+
+			// get the car index
+			carIndex, err := t.getCarIndex(stub)
+			if err != nil {
+				return shim.Error("Error fetching car index")
+			}
+
+			// update the car index to represent
+			// the new ownership rights
+			carIndex[car.Vin] = user.Name
+
+			// write the car index back to ledger
+			indexAsBytes, _ := json.Marshal(carIndex)
+			err = stub.PutState(carIndexStr, indexAsBytes)
+			if err != nil {
+				return shim.Error("Error writing car index")
+			}
+		} else if user.Name == seller {
+			user.Balance += salesOffer.Price
+
+			// go through all his cars
+			// and remove the car we just transferred
+			var newCarList []string
+			for _, carVin := range user.Cars {
+				if carVin != car.Vin {
+					newCarList = append(newCarList, carVin)
+				}
+			}
+
+			user.Cars = newCarList
+		}
+
+		// write the user back to ledger
 		err = t.saveUser(stub, user)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
 	}
 
-	return shim.Success(nil)
-}
-
-/*
- * Sell a car to a new owner (receiver).
- *
- * No balance checks are performed before selling a car,
- * cars are bought on credit.
- *
- * Arguments required:
- * [0] Price                       (int)
- * [1] VIN of the car to transfer  (string)
- * [2] Buyer username              (string)
- *
- * On success,
- * returns the car.
- */
-func (t *CarChaincode) sell(stub shim.ChaincodeStubInterface, seller string, args []string) pb.Response {
-	price, _ := strconv.Atoi(args[0])
-	buyer := args[2]
-
-	// price input sanitation
-	if args[0] == "" || price < 0 {
-		return shim.Error("'sell' expects a non-empty, positive price")
-	}
-
-	// create buyer user if does not exist
-	_, err := t.getUser(stub, buyer)
-	if err != nil {
-		t.createUser(stub, buyer)
-	}
-
-	// update buyer and seller balance
-	t.updateBalance(stub, buyer, strconv.Itoa(-1*price))
-	t.updateBalance(stub, seller, args[0])
-
-	// remove price from args and transfer car
-	args = args[1:]
-	response := t.transfer(stub, seller, args)
-
-	return shim.Success(response.Payload)
-}
-
-/*
- * Transfers a car to a new owner (receiver)
- *
- * Arguments required:
- * [0] VIN of the car to transfer  (string)
- * [1] Username of ther receiver   (string)
- *
- * On success,
- * returns the car.
- */
-func (t *CarChaincode) transfer(stub shim.ChaincodeStubInterface, username string, args []string) pb.Response {
-	vin := args[0]
-	newCarOwnerUsername := args[1]
-
-	if vin == "" {
-		return shim.Error("'transfer' expects a non-empty VIN to do the transfer")
-	}
-
-	if newCarOwnerUsername == "" {
-		return shim.Error("'transfer' expects a non-empty car receiver username to do the transfer")
-	}
-
-	// fetch the car from the ledger
-	// this already checks for ownership
-	car, err := t.getCar(stub, username, vin)
-	if err != nil {
-		return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
-	}
-
-	// check if car is not confirmed anymore
-	if IsConfirmed(&car) {
-		return shim.Error("The car is still confirmed. It has to be revoked first in order to do the transfer")
-	}
-
-	// transfer:
-	// change of ownership in the car certificate
-	car.Certificate.Username = newCarOwnerUsername
-
-	// write car with udpated certificate back to ledger
-	carAsBytes, _ := json.Marshal(car)
-	err = stub.PutState(vin, carAsBytes)
-	if err != nil {
-		return shim.Error("Error writing car")
-	}
-
-	// get the old car owner
-	oldOwner, err := t.getUser(stub, username)
-
-	// go through all his cars
-	// and remove the car we just transferred
-	cars := oldOwner.Cars
-	var newCarList []string
-	for i, carVin := range cars {
-		newCarList = append(newCarList, carVin)
-		if carVin == car.Vin {
-			// remove car from new list
-			newCarList = newCarList[:i]
-		}
-	}
-
-	// save the new car list without the transferred
-	// car to the old owner
-	oldOwner.Cars = newCarList
-
-	// write the old owner back to state
-	err = t.saveUser(stub, oldOwner)
-	if err != nil {
-		return shim.Error("Error writing old owner")
-	}
-
-	// get the receiver of the car
-	// (new car owner)
-	newOwner, err := t.getUser(stub, newCarOwnerUsername)
-
-	if err != nil {
-		fmt.Println("New car owner (receiver) does not exist. Creating this user.")
-		userResponse := t.createUser(stub, newCarOwnerUsername)
-		newOwner = User{}
-		err = json.Unmarshal(userResponse.Payload, &newOwner)
-		if err != nil {
-			return shim.Error("Error creating new car owner")
-		}
-	}
-
-	// attach the car to the receiver (new car owner)
-	newOwner.Cars = append(newOwner.Cars, car.Vin)
-
-	// write back the new owner (reveiver) to state
-	err = t.saveUser(stub, newOwner)
-	if err != nil {
-		return shim.Error("Error writing new car owner (receiver)")
-	}
-
-	// get the car index
-	carIndex, err := t.getCarIndex(stub)
-	if err != nil {
-		return shim.Error("Error fetching car index")
-	}
-
-	// update the car index to represent
-	// the new ownership rights
-	carIndex[car.Vin] = newOwner.Name
-
-	// write the car index back to ledger
-	indexAsBytes, _ := json.Marshal(carIndex)
-	err = stub.PutState(carIndexStr, indexAsBytes)
-	if err != nil {
-		return shim.Error("Error writing car index")
-	}
-
-	// car transfer successfull,
-	// return the car
 	return shim.Success(carAsBytes)
 }

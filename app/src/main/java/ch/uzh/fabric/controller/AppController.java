@@ -607,16 +607,7 @@ public class AppController {
         String role = userService.getRole(auth);
 
         try {
-            // remove selling offers as seller first
-            //
-            // tbd: this might not be the best way, because removal of
-            // selling offer and actual selling of the car cannot
-            // happen in the same transaction.
-            //
-            // Note: in the worst case, the selling offer is lost.
-            // -> Create a new one
-            carService.removeAllSellingOffers(client, chain, seller, role, vin);
-            carService.sell(client, chain, seller, role, price, vin, username);
+            carService.sell(client, chain, seller, role, vin, username);
         } catch (Exception e) {
             redirAttr.addAttribute("error", e.getMessage());
             return "redirect:/offers";

@@ -58,8 +58,10 @@ public class CarService extends HFCService {
             } else {
                 String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
                 user = g.fromJson(payload, User.class);
-                for (String vin : user.getCars()) {
-                    carList.put(vin, new Car(null, 0, vin));
+                if (user.getCars() != null) {
+                    for (String vin : user.getCars()) {
+                        carList.put(vin, new Car(null, 0, vin));
+                    }
                 }
 
                 //System.out.println("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
@@ -132,17 +134,10 @@ public class CarService extends HFCService {
         return car;
     }
 
-    public void removeAllSellingOffers(HFClient client, Chain chain, String username, String role, String vin) throws Exception {
-        TransactionProposalRequest request = client.newTransactionProposalRequest();
-        request.setFcn("removeAllSellingOffers");
-        request.setArgs(new String[]{username, role, vin});
-        executeTrx(request, chain);
-    }
-
-    public void sell(HFClient client, Chain chain, String seller, String role, String price, String vin, String buyer) throws Exception {
+    public void sell(HFClient client, Chain chain, String seller, String role, String vin, String buyer) throws Exception {
         TransactionProposalRequest request = client.newTransactionProposalRequest();
         request.setFcn("sell");
-        request.setArgs(new String[]{seller, role, price.toString(), vin, buyer});
+        request.setArgs(new String[]{seller, role, vin, buyer});
         executeTrx(request, chain);
     }
 
