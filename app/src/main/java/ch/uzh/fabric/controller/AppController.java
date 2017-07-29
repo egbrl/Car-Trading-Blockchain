@@ -546,7 +546,7 @@ public class AppController {
         }
 
         try {
-            carService.createOffer(client, chain, username, role, price.toString(), vin, buyer);
+            carService.createSellingOffer(client, chain, username, role, price.toString(), vin, buyer);
         } catch (Exception e) {
             redirAttr.addAttribute("error", e.getMessage());
             return "redirect:/sell";
@@ -909,7 +909,6 @@ public class AppController {
         orderers.remove(anOrderer);
 
         ChainConfiguration chainConfiguration = new ChainConfiguration(new File(PROJECT_ROOT + "/fixtures/e2e-2Orgs/channel/" + FOO_CHAIN_NAME + ".tx"));
-
         //Only peer Admin org
         client.setUserContext(sampleOrg.getPeerAdmin());
 

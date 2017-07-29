@@ -241,32 +241,11 @@ public class CarService extends HFCService {
         chain.sendTransaction(successful).get(AppController.TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
     }
 
-    public void createOffer(HFClient client, Chain chain, String owner, String role, String price, String vin, String buyer) throws Exception {
-        Collection<ProposalResponse> successful = new LinkedList<>();
-        Collection<ProposalResponse> failed = new LinkedList<>();
-
+    public void createSellingOffer(HFClient client, Chain chain, String owner, String role, String price, String vin, String buyer) throws Exception {
         TransactionProposalRequest request = client.newTransactionProposalRequest();
-        request.setChaincodeID(chainCodeID);
         request.setFcn("createSellingOffer");
         request.setArgs(new String[]{owner, role, price, vin, buyer});
-
-        Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(request, chain.getPeers());
-
-        for (ProposalResponse response : invokePropResp) {
-            if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
-                successful.add(response);
-            } else {
-                failed.add(response);
-            }
-        }
-
-        if (failed.size() > 0) {
-            String error = failed.iterator().next().getMessage();
-            String msg = error.substring(error.indexOf("message: ") + 9, error.indexOf("), cause"));
-            throw new ProposalException(msg);
-        }
-
-        chain.sendTransaction(successful).get(AppController.TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+        executeTrx(request, chain);
     }
 
     public void importCar(HFClient client, Chain chain, String username, String role, Car car, ProposalData proposalData) throws Exception {
