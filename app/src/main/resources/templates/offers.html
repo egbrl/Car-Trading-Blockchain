@@ -32,7 +32,7 @@
             </thead>
             <tbody>
             <tr th:each="offer,iterStat : ${offers}">
-                <form th:id="'offerAccept' + ${iterStat.count}" th:action="@{/offers/accept}" method="post">
+                <form th:id="'offerAccept' + ${iterStat.count}" th:action="@{/offers}" method="post">
                     <td th:text="${iterStat.count}" scope="row"></td>
                     <td>
                         <span th:text="${offer.vin}">VIN</span>

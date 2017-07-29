@@ -18,12 +18,13 @@
     </div>
 
     <div>
-        <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
         <p th:if="${success}" style="color: green"><span class="glyphicon glyphicon-ok" aria-hidden="true" /> <span th:utext="${success}" /></p>
+        <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
         <table class="table table-hover">
             <thead>
             <tr>
                 <th>#</th>
+                <th>Owner</th>
                 <th>Type</th>
                 <th>Brand</th>
                 <th>Color</th>
@@ -38,31 +39,28 @@
             </thead>
             <tbody>
             <tr th:each="pAndC,iterStat : ${proposalAndCarData}">
-                <th th:text="${iterStat.count}" scope="row"></th>
-                <td th:text="${pAndC.car.certificate.type}">M3</td>
-                <td th:text="${pAndC.car.certificate.brand}">BMW</td>
-                <td th:text="${pAndC.car.certificate.color}">black</td>
-                <td th:text="${pAndC.car.vin}">WVWZZZ6RZHY260780</td>
-                <td th:text="${pAndC.proposalData.numberOfDoors}">4</td>
-                <td th:text="${pAndC.proposalData.numberOfCylinders}">AXA Winterthur</td>
-                <td th:text="${pAndC.proposalData.numberOfAxis}">AXA Winterthur</td>
-                <td th:text="${pAndC.proposalData.maxSpeed}">AXA Winterthur</td>
-                <td th:text="${pAndC.car.isRegistered()}">Yes</td>
-                <td>
-                    <button type="button" class="btn btn-success"
-                            th:onclick="'document.getElementById(\'registrationAccept' + ${iterStat.count} + '\').submit()'">
-                        approve request
-                    </button>
-                </td>
-                <form th:id="'registrationAccept' + ${iterStat.count}" th:action="@{/dot/registration/accept}"
-                      method="post">
-                    <input type="hidden" name="vin" th:value="${pAndC.car.vin}"/>
-                    <input type="hidden" name="owner" th:value="${pAndC.proposalData.username}"/>
+                <form th:action="@{/dot/registration}" method="post">
+                    <th th:text="${iterStat.count}" scope="row"></th>
+                    <td th:text="${pAndC.proposalData.username}">Owner</td>
+                    <td th:text="${pAndC.car.certificate.type}">M3</td>
+                    <td th:text="${pAndC.car.certificate.brand}">BMW</td>
+                    <td th:text="${pAndC.car.certificate.color}">black</td>
+                    <td th:text="${pAndC.car.vin}">WVWZZZ6RZHY260780</td>
+                    <td th:text="${pAndC.proposalData.numberOfDoors}">4</td>
+                    <td th:text="${pAndC.proposalData.numberOfCylinders}">AXA Winterthur</td>
+                    <td th:text="${pAndC.proposalData.numberOfAxis}">AXA Winterthur</td>
+                    <td th:text="${pAndC.proposalData.maxSpeed}">AXA Winterthur</td>
+                    <td th:text="${pAndC.car.isRegistered()}">Yes</td>
+                    <td>
+                        <input type="hidden" name="vin" th:value="${pAndC.car.vin}"/>
+                        <input type="hidden" name="owner" th:value="${pAndC.proposalData.username}"/>
+                        <button class="btn btn-success">approve request</button>
+                    </td>
                 </form>
             </tr>
             </tbody>
         </table>
-        <div style="text-align: center;"><p th:if="${noProposals}" style="color: lightsalmon">No pending requests.</p></div>
+        <div style="text-align: center;"><p th:if="${proposalAndCarData.isEmpty()}" style="color: lightsalmon">No pending requests.</p></div>
     </div>
 
     <div th:replace="footer" />

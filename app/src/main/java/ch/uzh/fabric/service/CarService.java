@@ -1,23 +1,19 @@
 package ch.uzh.fabric.service;
 
-import ch.uzh.fabric.config.ErrorInfo;
-import ch.uzh.fabric.controller.AppController;
-import ch.uzh.fabric.model.*;
+import ch.uzh.fabric.model.Car;
+import ch.uzh.fabric.model.Insurer;
+import ch.uzh.fabric.model.ProposalData;
 import ch.uzh.fabric.model.User;
-import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
-import io.grpc.StatusRuntimeException;
-import org.hyperledger.fabric.sdk.*;
-import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
-import org.hyperledger.fabric.sdk.exception.ProposalException;
+import org.hyperledger.fabric.sdk.Chain;
+import org.hyperledger.fabric.sdk.HFClient;
+import org.hyperledger.fabric.sdk.QueryByChaincodeRequest;
+import org.hyperledger.fabric.sdk.TransactionProposalRequest;
 import org.springframework.stereotype.Service;
 
-import java.lang.reflect.Type;
-import java.util.*;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
 
 @Service
 public class CarService extends HFCService {
@@ -35,6 +31,21 @@ public class CarService extends HFCService {
         }
 
         return cars;
+    }
+
+    public Collection<ProposalData> getRegistrationProposals(HFClient client, Chain chain, String username, String role) throws Exception {
+        QueryByChaincodeRequest request = client.newQueryProposalRequest();
+        request.setArgs(new String[]{username, role});
+        request.setFcn("readRegistrationProposalsAsList");
+
+        return query(request, chain, new TypeToken<Collection<ProposalData>>(){}.getType());
+    }
+
+    public void register(HFClient client, Chain chain, String owner, String role, String vin) throws Exception {
+        TransactionProposalRequest request = client.newTransactionProposalRequest();
+        request.setFcn("register");
+        request.setArgs(new String[]{owner, role, vin});
+        executeTrx(request, chain);
     }
 
     public Car getCar(HFClient client, Chain chain, String username, String role, String vin) throws Exception {

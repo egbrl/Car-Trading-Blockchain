@@ -36,9 +36,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static ch.uzh.fabric.config.SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
-import static ch.uzh.fabric.config.SecurityConfig.BOOTSTRAP_GARAGE_USER;
-import static ch.uzh.fabric.config.SecurityConfig.BOOTSTRAP_PRIVATE_USER;
+import static ch.uzh.fabric.config.SecurityConfig.*;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -54,7 +52,7 @@ public class AppController {
     public static final String CHAIN_CODE_PATH = "github.com/car_cc";
     public static final String CHAIN_CODE_VERSION = "1";
 
-    private static final String TEST_VIN  = "WVWZZZ6RZHY260780";
+    private static final String TEST_VIN = "WVWZZZ6RZHY260780";
     private static final String TEST_VIN2 = "XYZDZZ6RZHY820780";
     private static final String TEST_VIN3 = "WVWQAW6RZHY140783";
     private static final String TEST_VIN4 = "AVCQA8WJZHY140783";
@@ -115,7 +113,11 @@ public class AppController {
     }
 
     @RequestMapping("/index")
-    public String index(Authentication auth, Model model, RedirectAttributes redirAttr, @RequestParam(required = false) String error, @RequestParam(required = false) String success) {
+    public String index(Authentication auth,
+                        Model model,
+                        RedirectAttributes redirAttr,
+                        @RequestParam(required = false) String error,
+                        @RequestParam(required = false) String success) {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
@@ -125,17 +127,12 @@ public class AppController {
             return "redirect:/insurance/index";
         }
 
-        Collection<Car> cars;
+        Collection<Car> cars = new ArrayList<>();
 
         try {
             cars = carService.getCars(client, chain, username, role);
         } catch (Exception e) {
-            redirAttr.addAttribute("error", e.getMessage());
-            return "redirect:/index";
-        }
-
-        if (success != null) {
-            out(success);
+            error = e.getMessage();
         }
 
         model.addAttribute("cars", cars);
@@ -146,14 +143,25 @@ public class AppController {
     }
 
     @RequestMapping(value = "/import", method = RequestMethod.GET)
-    public String importCar(Model model, Authentication auth, @ModelAttribute Car car, @ModelAttribute ProposalData proposalData) {
+    public String importCar(Model model,
+                            Authentication auth,
+                            @RequestParam(required = false) String error,
+                            @RequestParam(required = false) String success,
+                            @ModelAttribute Car car,
+                            @ModelAttribute ProposalData proposalData) {
         String role = userService.getRole(auth);
         model.addAttribute("role", role.toUpperCase());
+        model.addAttribute("success", success);
+        model.addAttribute("error", error);
         return "import";
     }
 
     @RequestMapping(value = "/import", method = RequestMethod.POST)
-    public String importCar(Model model, RedirectAttributes redirAttr, Authentication auth, @ModelAttribute Car car, @ModelAttribute ProposalData proposalData) {
+    public String importCar(Model model,
+                            RedirectAttributes redirAttr,
+                            Authentication auth,
+                            @ModelAttribute Car car,
+                            @ModelAttribute ProposalData proposalData) {
         String username = (model != null) ? auth.getName() : SecurityConfig.BOOTSTRAP_GARAGE_USER;
         String role = (model != null) ? userService.getRole(auth) : SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
 
@@ -162,7 +170,7 @@ public class AppController {
             carService.importCar(client, chain, username, role, car, proposalData);
         } catch (Exception e) {
             redirAttr.addAttribute("error", e.getMessage());
-            return "redirect:/index";
+            return "redirect:/import";
         }
 
         if (model != null && redirAttr != null) {
@@ -184,160 +192,63 @@ public class AppController {
         return "login";
     }
 
-    @RequestMapping("/dot/registration")
-    public String dotRegistration(Model model, Authentication auth) {
-        String username = auth.getName();
-        String role = userService.getRole(auth);
+    @RequestMapping(value = "/dot/registration", method = RequestMethod.GET)
+    public String registration(Model model,
+                               RedirectAttributes redirAttr,
+                               Authentication auth,
+                               @RequestParam(required = false) String success,
+                               @RequestParam(required = false) String error) {
+        String username = (model != null) ? auth.getName() : SecurityConfig.BOOTSTRAP_DOT_USER;
+        String role = (model != null) ? userService.getRole(auth) : SecurityConfig.BOOTSTRAP_DOT_ROLE;
 
-        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(CHAIN_CODE_NAME)
-                .setVersion(CHAIN_CODE_VERSION)
-                .setPath(CHAIN_CODE_PATH).build();
-
-        QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
-        queryByChaincodeRequest.setArgs(new String[]{username, role});
-        queryByChaincodeRequest.setFcn("readRegistrationProposalsAsList");
-        queryByChaincodeRequest.setChaincodeID(chainCodeID);
-
-        Collection<ProposalResponse> queryProposals;
+        Collection<ProposalData> registrationProposals;
+        Collection<ProposalAndCar> proposalsAndCars = new ArrayList<>();
 
         try {
-            queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
-        } catch (InvalidArgumentException | ProposalException e) {
-            throw new CompletionException(e);
-        }
-
-        HashMap<String, ProposalAndCar> proposalAndCarMap = new HashMap<>();
-        ArrayList<ProposalData> proposalDataArraylist = new ArrayList<ProposalData>();
-        Boolean noResponseData = false;
-
-        for (ProposalResponse proposalResponse : queryProposals) {
-            if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
-                ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
-                        + ". Messages: " + proposalResponse.getMessage()
-                        + ". Was verified : " + proposalResponse.isVerified());
-                out(result.errorMessage.toString());
-            } else {
-                String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-                ProposalData[] arr = new ProposalData[0];
-                arr = g.fromJson(payload, ProposalData[].class);
-                try {
-                    proposalDataArraylist = new ArrayList<ProposalData>(Arrays.asList(arr));
-                    Iterator<ProposalData> iterator = proposalDataArraylist.iterator();
-                    while (iterator.hasNext()) {
-                        ProposalData proposalData = iterator.next();
-                        ProposalAndCar proposalAndCar = new ProposalAndCar(proposalData, null);
-                        proposalAndCarMap.put(proposalData.getCar(), proposalAndCar);
-                    }
-                } catch (Exception e) {
-                    out("Exception caught: " + e.toString());
-                    noResponseData = true;
-                    out("No data in response payload.");
-                }
-
-                out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
-
-
+            registrationProposals = carService.getRegistrationProposals(client, chain, username, role);
+            for (ProposalData proposal : registrationProposals) {
+                Car car = carService.getCar(client, chain, proposal.getUsername(), role, proposal.getCar());
+                proposalsAndCars.add(new ProposalAndCar(proposal, car));
             }
-
+        } catch (Exception e) {
+            error = e.getMessage();
         }
 
-
-        if (!noResponseData) {
-            for (String vin : proposalAndCarMap.keySet()) {
-                QueryByChaincodeRequest carRequest = client.newQueryProposalRequest();
-                carRequest.setArgs(new String[]{username, role, vin});
-                carRequest.setFcn("readCar");
-                carRequest.setChaincodeID(chainCodeID);
-
-                Collection<ProposalResponse> carQueryProps;
-                try {
-                    carQueryProps = chain.queryByChaincode(carRequest);
-                } catch (InvalidArgumentException | ProposalException e) {
-                    throw new CompletionException(e);
-                }
-
-                for (ProposalResponse proposalResponse : carQueryProps) {
-                    if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
-                        ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
-                                + ". Messages: " + proposalResponse.getMessage()
-                                + ". Was verified : " + proposalResponse.isVerified());
-                        out(result.errorMessage.toString());
-                    } else {
-                        String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-                        Car car = g.fromJson(payload, Car.class);
-
-                        ProposalAndCar proposalAndCarObject = proposalAndCarMap.get(vin);
-                        proposalAndCarObject.setCar(car);
-
-                        proposalAndCarMap.replace(vin, proposalAndCarObject);
-                        out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
-                    }
-                }
-            }
-        }
-
-        model.addAttribute("proposalAndCarData", proposalAndCarMap.values());
-        model.addAttribute("noProposals", noResponseData);
+        model.addAttribute("success", success);
+        model.addAttribute("error", error);
+        model.addAttribute("proposalAndCarData", proposalsAndCars);
         model.addAttribute("role", role.toUpperCase());
-
 
         return "dot/registration";
     }
 
-    @RequestMapping(value = "/dot/registration/accept", method = RequestMethod.POST)
-    public String acceptRegistration(RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin, @RequestParam String owner) {
-        String role;
+    @RequestMapping(value = "/dot/registration", method = RequestMethod.POST)
+    public String registrationAccept(RedirectAttributes redirAttr,
+                                     Authentication auth,
+                                     @RequestParam String vin,
+                                     @RequestParam String owner) {
+        String role = (redirAttr != null) ? userService.getRole(auth) : SecurityConfig.BOOTSTRAP_DOT_ROLE;
 
         try {
-            role = userService.getRole(auth);
-        } catch (NullPointerException e) {
-            role = SecurityConfig.BOOTSTRAP_DOT_ROLE;
-        }
-
-        try {
-            ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
-                    .setVersion(AppController.CHAIN_CODE_VERSION)
-                    .setPath(AppController.CHAIN_CODE_PATH).build();
-
-            Collection<ProposalResponse> successful = new LinkedList<>();
-            Collection<ProposalResponse> failed = new LinkedList<>();
-
-            TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
-            transactionProposalRequest.setChaincodeID(chainCodeID);
-            transactionProposalRequest.setFcn("register");
-
-            transactionProposalRequest.setArgs(new String[]{owner, role, vin});
-            out("sending transaction proposal for 'register' to all peers");
-
-            Collection<ProposalResponse> invokePropResp = chain.sendTransactionProposal(transactionProposalRequest, chain.getPeers());
-            for (ProposalResponse response : invokePropResp) {
-                if (response.getStatus() == ChainCodeResponse.Status.SUCCESS) {
-                    out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
-                    successful.add(response);
-                } else {
-                    failed.add(response);
-                }
-            }
-            out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
-                    invokePropResp.size(), successful.size(), failed.size());
-            if (failed.size() > 0) {
-                throw new ProposalException("Not enough endorsers for invoke");
-
-            }
-            out("Successfully received transaction proposal responses.");
-            out("Sending chain code transaction to orderer");
-            chain.sendTransaction(successful).get(TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+            carService.register(client, chain, owner, role, vin);
         } catch (Exception e) {
-            out(e.toString());
-            e.printStackTrace();
+            redirAttr.addAttribute("error", e.getMessage());
+            return "redirect:/dot/registration";
         }
 
-        // redirAttr.addAttribute("success", "Registration proposal accepted. Car with Vin: '"+vin+"' is successfully registered.");
+        if (redirAttr != null) {
+            redirAttr.addAttribute("success", "Registration proposal accepted. Car with Vin: '" + vin + "' is successfully registered.");
+        }
+
         return "redirect:/dot/registration";
     }
 
     @RequestMapping(value = "/dot/confirmation", method = RequestMethod.GET)
-    public String confirm(Model model, RedirectAttributes redirAttr, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String error) {
+    public String confirm(Model model,
+                          RedirectAttributes redirAttr,
+                          Authentication auth,
+                          @RequestParam(required = false) String success,
+                          @RequestParam(required = false) String error) {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
@@ -346,8 +257,7 @@ public class AppController {
         try {
             carsToConfirm = carService.getCarsToConfirm(client, chain, username, role);
         } catch (Exception e) {
-            redirAttr.addAttribute("error", e.getMessage());
-            return "redirect:/dot/revocation";
+            error = e.getMessage();
         }
 
         model.addAttribute("success", success);
@@ -359,7 +269,10 @@ public class AppController {
     }
 
     @RequestMapping(value = "/dot/confirmation", method = RequestMethod.POST)
-    public String confirm(RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin, @RequestParam String numberplate) {
+    public String confirmationAccept(RedirectAttributes redirAttr,
+                                     Authentication auth,
+                                     @RequestParam String vin,
+                                     @RequestParam String numberplate) {
         String username = (redirAttr != null) ? auth.getName() : SecurityConfig.BOOTSTRAP_DOT_USER;
         String role = (redirAttr != null) ? userService.getRole(auth) : SecurityConfig.BOOTSTRAP_DOT_ROLE;
 
@@ -391,7 +304,11 @@ public class AppController {
     }
 
     @RequestMapping(value = "/dot/revocation", method = RequestMethod.GET)
-    public String revoke(Model model, RedirectAttributes redirAttr, Authentication auth, @RequestParam(required = false) String error, @RequestParam(required = false) String success) {
+    public String revocation(Model model,
+                             RedirectAttributes redirAttr,
+                             Authentication auth,
+                             @RequestParam(required = false) String error,
+                             @RequestParam(required = false) String success) {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
@@ -404,8 +321,7 @@ public class AppController {
                 carList.add(car);
             }
         } catch (Exception e) {
-            redirAttr.addAttribute("error", e.getMessage());
-            return "redirect:/dot/revocation";
+            error = e.getMessage();
         }
 
         model.addAttribute("cars", carList);
@@ -416,7 +332,7 @@ public class AppController {
     }
 
     @RequestMapping(value = "/dot/revocation", method = RequestMethod.POST)
-    public String revoke(RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin, @RequestParam String owner) {
+    public String revocationAccept(RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin, @RequestParam String owner) {
         String role = userService.getRole(auth);
 
         try {
@@ -434,13 +350,12 @@ public class AppController {
     public String allCars(RedirectAttributes redirAttr, Authentication auth, Model model) {
         String username = auth.getName();
         String role = userService.getRole(auth);
-        Collection<Car> cars;
+        Collection<Car> cars = new ArrayList<>();
 
         try {
             cars = carService.getCars(client, chain, username, role);
         } catch (Exception e) {
-            redirAttr.addAttribute("error", e.getMessage());
-            return "redirect:/dot/all-cars";
+            model.addAttribute("error", e.getMessage());
         }
 
         model.addAttribute("cars", cars);
@@ -449,7 +364,10 @@ public class AppController {
     }
 
     @RequestMapping(value = "/insurance/index", method = RequestMethod.GET)
-    public String acceptInsurance(Model model, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String error) {
+    public String insurance(Model model,
+                            Authentication auth,
+                            @RequestParam(required = false) String success,
+                            @RequestParam(required = false) String error) {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
@@ -475,7 +393,10 @@ public class AppController {
     }
 
     @RequestMapping(value = "/insurance/index", method = RequestMethod.POST)
-    public String acceptInsurance(RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin, @RequestParam String userToInsure) {
+    public String insuranceAccept(RedirectAttributes redirAttr,
+                                  Authentication auth,
+                                  @RequestParam String vin,
+                                  @RequestParam String userToInsure) {
         String username = (redirAttr != null) ? auth.getName() : SecurityConfig.BOOTSTRAP_INSURANCE_USER;
         String role = (redirAttr != null) ? userService.getRole(auth) : SecurityConfig.BOOTSTRAP_INSURANCE_USER;
 
@@ -485,7 +406,9 @@ public class AppController {
         try {
             carService.acceptInsurance(client, chain, username, role, userToInsure, vin, company);
         } catch (Exception e) {
-            redirAttr.addAttribute("error", e.getMessage());
+            if (redirAttr != null) {
+                redirAttr.addAttribute("error", e.getMessage());
+            }
         }
 
         if (redirAttr != null) {
@@ -496,16 +419,20 @@ public class AppController {
     }
 
     @RequestMapping(value = "/insure", method = RequestMethod.GET)
-    public String insure(Model model, RedirectAttributes redirAttr, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String error, @RequestParam(required = false) String activeVin) {
+    public String insure(Model model,
+                         RedirectAttributes redirAttr,
+                         Authentication auth,
+                         @RequestParam(required = false) String success,
+                         @RequestParam(required = false) String error,
+                         @RequestParam(required = false) String activeVin) {
         String username = auth.getName();
         String role = userService.getRole(auth);
-        Collection<Car> cars;
+        Collection<Car> cars = new ArrayList<>();
 
         try {
             cars = carService.getCars(client, chain, username, role);
         } catch (Exception e) {
-            redirAttr.addAttribute("error", e.getMessage());
-            return "redirect:/insure";
+            error = e.getMessage();
         }
 
         model.addAttribute("activeVin", activeVin);
@@ -537,16 +464,20 @@ public class AppController {
     }
 
     @RequestMapping(value = "/sell", method = RequestMethod.GET)
-    public String showSellForm(Model model, RedirectAttributes redirAttr, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String error, @RequestParam(required = false) String activeVin) {
+    public String sell(Model model,
+                       RedirectAttributes redirAttr,
+                       Authentication auth,
+                       @RequestParam(required = false) String success,
+                       @RequestParam(required = false) String error,
+                       @RequestParam(required = false) String activeVin) {
         String username = auth.getName();
         String role = userService.getRole(auth);
-        Collection<Car> cars;
+        Collection<Car> cars = new ArrayList<>();
 
         try {
             cars = carService.getCars(client, chain, username, role);
         } catch (Exception e) {
-            redirAttr.addAttribute("error", e.getMessage());
-            return "redirect:/sell";
+            error = e.getMessage();
         }
 
         model.addAttribute("activeVin", activeVin);
@@ -557,8 +488,12 @@ public class AppController {
         return "sell";
     }
 
-    @RequestMapping(value = "/sell/createOffer", method = RequestMethod.POST)
-    public String createSellingOffer(RedirectAttributes redirAttr, Authentication auth, @RequestParam("vin") String vin, @RequestParam("buyer") String buyer, @RequestParam("price") Integer price) {
+    @RequestMapping(value = "/sell", method = RequestMethod.POST)
+    public String sellOfferCreate(RedirectAttributes redirAttr,
+                                  Authentication auth,
+                                  @RequestParam String vin,
+                                  @RequestParam String buyer,
+                                  @RequestParam Integer price) {
         String username;
         String role;
 
@@ -582,7 +517,10 @@ public class AppController {
     }
 
     @RequestMapping(value = "/offers", method = RequestMethod.GET)
-    public String showSellingOffers(Model model, Authentication auth, @RequestParam(required = false) String success, @RequestParam(required = false) String error) {
+    public String sellOfferShow(Model model,
+                                Authentication auth,
+                                @RequestParam(required = false) String success,
+                                @RequestParam(required = false) String error) {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
@@ -626,8 +564,12 @@ public class AppController {
     }
 
 
-    @RequestMapping(value = "/offers/accept", method = RequestMethod.POST)
-    public String acceptOffer(RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin, @RequestParam String seller, @RequestParam String price) {
+    @RequestMapping(value = "/offers", method = RequestMethod.POST)
+    public String sellOfferAccept(RedirectAttributes redirAttr,
+                                  Authentication auth,
+                                  @RequestParam String vin,
+                                  @RequestParam String seller,
+                                  @RequestParam String price) {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
@@ -643,7 +585,11 @@ public class AppController {
     }
 
     @RequestMapping(value = "/history", method = RequestMethod.GET)
-    public String history(Model model, RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin, @RequestParam(required = false) String error) {
+    public String history(Model model,
+                          RedirectAttributes redirAttr,
+                          Authentication auth,
+                          @RequestParam String vin,
+                          @RequestParam(required = false) String error) {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
@@ -651,8 +597,7 @@ public class AppController {
         try {
             history = carService.getCarHistory(client, chain, username, role, vin);
         } catch (Exception e) {
-            redirAttr.addAttribute("error", e.getMessage());
-            return "redirect:/history";
+            error = e.getMessage();
         }
 
         model.addAttribute("error", error);
@@ -678,8 +623,8 @@ public class AppController {
     @PostConstruct
     public void AppController() throws Exception {
         System.out.println("╔═╗┌─┐┌┐ ┬─┐┬┌─┐  ╔╗ ┌─┐┌─┐┌┬┐┌─┐┌┬┐┬─┐┌─┐┌─┐\n" +
-                           "╠╣ ├─┤├┴┐├┬┘││    ╠╩╗│ ││ │ │ └─┐ │ ├┬┘├─┤├─┘\n" +
-                           "╚  ┴ ┴└─┘┴└─┴└─┘  ╚═╝└─┘└─┘ ┴ └─┘ ┴ ┴└─┴ ┴┴  ");
+                "╠╣ ├─┤├┴┐├┬┘││    ╠╩╗│ ││ │ │ └─┐ │ ├┬┘├─┤├─┘\n" +
+                "╚  ┴ ┴└─┘┴└─┴└─┘  ╚═╝└─┘└─┘ ┴ └─┘ ┴ ┴└─┴ ┴┴  ");
 
         initSampleStore();
         setupclient();
@@ -720,8 +665,8 @@ public class AppController {
         );
 
         insure(null, null, TEST_VIN, "AXA");
-        acceptRegistration(null, null, TEST_VIN, SecurityConfig.BOOTSTRAP_GARAGE_USER);
-        acceptInsurance(null, null, TEST_VIN, SecurityConfig.BOOTSTRAP_GARAGE_USER);
+        registrationAccept(null, null, TEST_VIN, SecurityConfig.BOOTSTRAP_GARAGE_USER);
+        insuranceAccept(null, null, TEST_VIN, SecurityConfig.BOOTSTRAP_GARAGE_USER);
         //confirmCar(null, null, TEST_VIN, "ZH 1234");
 
 //        // create an unregistered car

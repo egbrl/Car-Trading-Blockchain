@@ -20,6 +20,7 @@
         <h1>Import Car</h1>
     </div>
     <div>
+        <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
         <form class="form-horizontal" th:action="@{/import}" method="post">
             <div class="form-group">
                 <div class="col-sm-6">

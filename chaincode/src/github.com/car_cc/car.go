@@ -108,6 +108,8 @@ func (t *CarChaincode) createCar(stub shim.ChaincodeStubInterface, username stri
 	err := json.Unmarshal([]byte(args[0]), &car)
 	if err != nil {
 		return shim.Error("Error parsing car data. Expecting Car with VIN as json.")
+	} else if car.Vin == "" {
+		return shim.Error("Vin is required, cannot be empty.")
 	}
 
 	// add car birth date
