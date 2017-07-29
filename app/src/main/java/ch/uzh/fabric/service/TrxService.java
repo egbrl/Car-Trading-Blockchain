@@ -1,11 +1,12 @@
 package ch.uzh.fabric.service;
 
-import ch.uzh.fabric.controller.AppController;
+import ch.uzh.fabric.config.TestConfig;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -13,21 +14,20 @@ import java.util.LinkedList;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 
-public abstract class HFCService {
-    protected Gson g = new GsonBuilder().create();
+abstract class TrxService {
+    @Autowired
+    HfcService hfc;
 
-    private ChainCodeID chainCodeID = ChainCodeID.newBuilder()
-            .setName(AppController.CHAIN_CODE_NAME)
-            .setVersion(AppController.CHAIN_CODE_VERSION)
-            .setPath(AppController.CHAIN_CODE_PATH).build();
+    private static final TestConfig testConfig = TestConfig.getConfig();
+    static final Gson g = new GsonBuilder().create();
 
-    protected String getCCErrorMsg(Collection<ProposalResponse> failedProposals) {
+    String getCCErrorMsg(Collection<ProposalResponse> failedProposals) {
         String error = failedProposals.iterator().next().getMessage();
         return error.substring(error.indexOf("message: ") + 9, error.indexOf("), cause"));
     }
 
-    protected <T> T query(QueryByChaincodeRequest request, Chain chain, Type type) throws Exception {
-        request.setChaincodeID(chainCodeID);
+    <T> T query(QueryByChaincodeRequest request, Chain chain, Type type) throws Exception {
+        request.setChaincodeID(hfc.getCcId());
 
         Collection<ProposalResponse> queryProposals;
 
@@ -50,8 +50,8 @@ public abstract class HFCService {
         return result;
     }
 
-    protected Collection<ProposalResponse> executeTrx(TransactionProposalRequest request, Chain chain) throws Exception {
-        request.setChaincodeID(chainCodeID);
+    Collection<ProposalResponse> executeTrx(TransactionProposalRequest request, Chain chain) throws Exception {
+        request.setChaincodeID(hfc.getCcId());
 
         Collection<ProposalResponse> successful = new LinkedList<>();
         Collection<ProposalResponse> failed = new LinkedList<>();
@@ -67,7 +67,7 @@ public abstract class HFCService {
 
         if (!failed.isEmpty()) throw new ProposalException(getCCErrorMsg(failed));
 
-        chain.sendTransaction(successful).get(AppController.TESTCONFIG.getTransactionWaitTime(), TimeUnit.SECONDS);
+        chain.sendTransaction(successful).get(testConfig.getTransactionWaitTime(), TimeUnit.SECONDS);
         return successful;
     }
 }
