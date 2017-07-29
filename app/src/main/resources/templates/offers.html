@@ -32,7 +32,7 @@
             </thead>
             <tbody>
             <tr th:each="offer,iterStat : ${offers}">
-                <form th:id="'offerAccept' + ${iterStat.count}" th:action="@{/offers}" method="post">
+                <form th:action="@{/offers}" method="post">
                     <td th:text="${iterStat.count}" scope="row"></td>
                     <td>
                         <span th:text="${offer.vin}">VIN</span>
@@ -47,10 +47,7 @@
                         <input type="hidden" name="price" th:value="${offer.price}"/>
                     </td>
                     <td>
-                        <button type="button" class="btn btn-success"
-                                th:onclick="'document.getElementById(\'offerAccept' + ${iterStat.count} + '\').submit()'">
-                            accept
-                        </button>
+                        <button class="btn btn-success">accept</button>
                     </td>
                 </form>
             </tr>

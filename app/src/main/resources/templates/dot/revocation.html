@@ -37,36 +37,32 @@
             </thead>
             <tbody>
             <tr th:each="car,iterStat : ${cars}">
-                <th th:text="${iterStat.count}" scope="row"></th>
-                <td th:text="${car.certificate.username}">Owner</td>
-                <td th:text="${car.certificate.type}">M3</td>
-                <td th:text="${car.certificate.brand}">BMW</td>
-                <td th:text="${car.certificate.color}">black</td>
-                <td th:text="${car.vin}">WVWZZZ6RZHY260780</td>
-                <td th:text="${car.certificate.insurer}">WVWZZZ6RZHY260780</td>
-                <td>
-                    <div th:switch="${car.isRegistered()}">
-                        <div th:case="true">
-                            <span class="glyphicon glyphicon-ok" aria-hidden="true" style="color: lightgreen"></span>&nbsp;OK
+                <form th:action="@{/dot/revocation}" method="post">
+                    <th th:text="${iterStat.count}" scope="row"></th>
+                    <td th:text="${car.certificate.username}">Owner</td>
+                    <td th:text="${car.certificate.type}">M3</td>
+                    <td th:text="${car.certificate.brand}">BMW</td>
+                    <td th:text="${car.certificate.color}">black</td>
+                    <td th:text="${car.vin}">WVWZZZ6RZHY260780</td>
+                    <td th:text="${car.certificate.insurer}">WVWZZZ6RZHY260780</td>
+                    <td>
+                        <div th:switch="${car.isRegistered()}">
+                            <div th:case="true">
+                                <span class="glyphicon glyphicon-ok" aria-hidden="true" style="color: lightgreen"></span>&nbsp;OK
+                            </div>
+                            <div th:case="false">
+                                <span class="glyphicon glyphicon-remove-sign" aria-hidden="true" style="color: lightgreen">&nbsp;Error!</span>
+                            </div>
                         </div>
-                        <div th:case="false">
-                            <span class="glyphicon glyphicon-remove-sign" aria-hidden="true" style="color: lightgreen">&nbsp;Error!</span>
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <form th:id="'revokeCar' + ${iterStat.count}" th:action="@{/dot/revocation}"
-                          method="post">
+                    </td>
+                    <td>
                         <input type="hidden" name="vin" th:value="${car.vin}"/>
                         <input type="hidden" name="owner" th:value="${car.certificate.username}"/>
-                    </form>
                     </td>
-                <td>
-                    <button type="button" class="btn btn-danger"
-                            th:onclick="'document.getElementById(\'revokeCar' + ${iterStat.count} + '\').submit()'">
-                        revoke
-                    </button>
-                </td>
+                    <td>
+                        <button class="btn btn-danger">revoke</button>
+                    </td>
+                </form>
             </tr>
             </tbody>
         </table>

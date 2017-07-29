@@ -39,7 +39,7 @@
             </thead>
             <tbody>
             <tr th:each="car,iterStat : ${cars}">
-                <form th:id="'revocationProposal' + ${iterStat.count}" th:action="@{/revocationProposal}" method="post">
+                <form th:action="@{/revocationProposal}" method="post">
                     <th th:text="${iterStat.count}" scope="row"></th>
                     <td th:text="${car.getCreatedTime()}">Created At</td>
                     <td th:text="${car.certificate.type}">M3</td>
@@ -95,16 +95,15 @@
                     <td>
                         <div th:switch="${car.isConfirmed()}">
                             <div th:case="true">
-                                <button type="button" th:onclick="'document.getElementById(\'revocationProposal' + ${iterStat.count} + '\').submit()'" class="btn btn-danger">revoke</button>
+                                <button class="btn btn-danger">revoke</button>
                             </div>
                             <div th:case="false">
-                                <button type="button" class="btn disabled">revoke</button>
+                                <button class="btn disabled">revoke</button>
                             </div>
                         </div>
                     </td>
                     <td>
                         <a th:href="@{/history(vin=${car.vin})}">
-                            <!--<span class="glyphicon glyphicon-fast-backward" aria-hidden="true" />-->
                             <i class="icon-history icon-large"></i>
                         </a>
                     </td>

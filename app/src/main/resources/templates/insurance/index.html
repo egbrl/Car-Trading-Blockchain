@@ -32,7 +32,7 @@
             </thead>
             <tbody>
             <tr th:each="proposal,iterStat : ${insurer.proposals}">
-                <form th:id="'insuranceAccept' + ${iterStat.count}" th:action="@{/insurance/index}" method="post">
+                <form th:action="@{/insurance/index}" method="post">
                     <th th:text="${iterStat.count}" scope="row"></th>
                     <td>
                         <span th:text="${proposal.user}">Username</span>
@@ -55,7 +55,7 @@
                     <td>
                         <div th:switch="${proposal.registered}">
                             <div th:case="true">
-                                <button type="button" th:onclick="'document.getElementById(\'insuranceAccept' + ${iterStat.count} + '\').submit()'" class="btn btn-success">insure</button>
+                                <button class="btn btn-success">insure</button>
                             </div>
                             <div th:case="false">
                                 <button type="button" class="btn disabled">insure</button>
