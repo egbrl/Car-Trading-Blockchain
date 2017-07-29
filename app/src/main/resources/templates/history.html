@@ -28,7 +28,6 @@
                 <th><abbr title="Revision Number">Rev#</abbr></th>
                 <th><abbr title="Modification Time">Mod. Time</abbr></th>
                 <th>Owner</th>
-                <th>VIN</th>
                 <th>Numberplate</th>
                 <th>Insurer</th>
                 <th>Registration</th>
@@ -39,7 +38,6 @@
                 <th th:text="${iterStat.count}" scope="row"></th>
                 <td th:text="${timeFmt.format(e.getKey()*1000L)}">Created At</td>
                 <td th:text="${e.getValue().certificate.username}">bob</td>
-                <td th:text="${e.getValue().vin}">WVWZZZ6RZHY260780</td>
                 <td th:text="${e.getValue().certificate.numberplate}">ZH 1234</td>
                 <td th:text="${e.getValue().certificate.insurer}">AXA Winterthur</td>
                 <td>

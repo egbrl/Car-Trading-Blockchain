@@ -55,11 +55,10 @@
                             </div>
                         </div>
                     </td>
+                    <td th:text="${car.certificate.numberplate}">Numberplate</td>
                     <td>
                         <input type="hidden" name="vin" th:value="${car.vin}"/>
                         <input type="hidden" name="owner" th:value="${car.certificate.username}"/>
-                    </td>
-                    <td>
                         <button class="btn btn-danger">revoke</button>
                     </td>
                 </form>

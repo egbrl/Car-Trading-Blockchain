@@ -424,7 +424,7 @@ func (t *CarChaincode) sell(stub shim.ChaincodeStubInterface, seller string, arg
 		return shim.Error(err.Error())
 	}
 
-	for username, _ := range userIndex {
+	for username := range userIndex {
 		user, err := t.getUser(stub, username)
 		if err != nil {
 			return shim.Error(err.Error())

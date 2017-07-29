@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
@@ -57,6 +58,10 @@ func (t *CarChaincode) getInsurerIndex(stub shim.ChaincodeStubInterface) (map[st
  * Returns an insurer with a list of insurance proposals.
  */
 func (t *CarChaincode) getInsurer(stub shim.ChaincodeStubInterface, company string) pb.Response {
+
+	// lowercase insurance company string
+	company = strings.ToLower(company)
+
 	// load all insurers
 	insurerIndex, err := t.getInsurerIndex(stub)
 	if err != nil {
@@ -80,6 +85,10 @@ func (t *CarChaincode) getInsurer(stub shim.ChaincodeStubInterface, company stri
  * returns the removed insurance proposal
  */
 func (t *CarChaincode) insuranceAccept(stub shim.ChaincodeStubInterface, username string, vin string, company string) pb.Response {
+
+	// lowercase insurance company string
+	company = strings.ToLower(company)
+
 	car, err := t.getCar(stub, username, vin)
 	if err != nil {
 		return shim.Error("Error fetching car")
@@ -171,6 +180,9 @@ func (t *CarChaincode) insuranceAccept(stub shim.ChaincodeStubInterface, usernam
  * returns the insurance proposal
  */
 func (t *CarChaincode) insureProposal(stub shim.ChaincodeStubInterface, username string, vin string, company string) pb.Response {
+
+	// lowercase insurance company string
+	company = strings.ToLower(company)
 
 	// load all insurers
 	insurerIndex, err := t.getInsurerIndex(stub)
