@@ -1,9 +1,6 @@
 package ch.uzh.fabric.service;
 
-import ch.uzh.fabric.model.Car;
-import ch.uzh.fabric.model.Insurer;
-import ch.uzh.fabric.model.ProposalData;
-import ch.uzh.fabric.model.User;
+import ch.uzh.fabric.model.*;
 import com.google.gson.reflect.TypeToken;
 import org.hyperledger.fabric.sdk.Chain;
 import org.hyperledger.fabric.sdk.HFClient;
@@ -31,6 +28,15 @@ public class CarService extends HFCService {
         }
 
         return cars;
+    }
+
+    public Collection<Offer> getSalesOffers(HFClient client, Chain chain, String username, String role) throws Exception {
+        QueryByChaincodeRequest request = client.newQueryProposalRequest();
+        request.setArgs(new String[]{username, role});
+        request.setFcn("readUser");
+
+        User user = query(request, chain, new TypeToken<User>(){}.getType());
+        return user.getOffers();
     }
 
     public Collection<ProposalData> getRegistrationProposals(HFClient client, Chain chain, String username, String role) throws Exception {

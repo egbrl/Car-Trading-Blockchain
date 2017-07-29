@@ -252,7 +252,7 @@ public class AppController {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
-        Collection<Car> carsToConfirm = null;
+        Collection<Car> carsToConfirm = new ArrayList<>();
 
         try {
             carsToConfirm = carService.getCarsToConfirm(client, chain, username, role);
@@ -448,7 +448,6 @@ public class AppController {
         String username = (redirAttr != null) ? auth.getName() : SecurityConfig.BOOTSTRAP_GARAGE_USER;
         String role = (redirAttr != null) ? userService.getRole(auth) : SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
 
-        Map<Integer, Car> history = null;
         try {
             carService.insureProposal(client, chain, username, role, vin, company);
         } catch (Exception e) {
@@ -492,21 +491,13 @@ public class AppController {
     public String sellOfferCreate(RedirectAttributes redirAttr,
                                   Authentication auth,
                                   @RequestParam String vin,
-                                  @RequestParam String buyer,
-                                  @RequestParam Integer price) {
-        String username;
-        String role;
+                                  @RequestParam(required = false) String buyer,
+                                  @RequestParam(required = false) String price) {
+        String username = auth.getName();
+        String role = userService.getRole(auth);
 
         try {
-            username = auth.getName();
-            role = userService.getRole(auth);
-        } catch (NullPointerException e) {
-            username = SecurityConfig.BOOTSTRAP_GARAGE_USER;
-            role = SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
-        }
-
-        try {
-            carService.createSellingOffer(client, chain, username, role, price.toString(), vin, buyer);
+            carService.createSellingOffer(client, chain, username, role, price, vin, buyer);
         } catch (Exception e) {
             redirAttr.addAttribute("error", e.getMessage());
             return "redirect:/sell";
@@ -524,41 +515,17 @@ public class AppController {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
-        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
-                .setVersion(AppController.CHAIN_CODE_VERSION)
-                .setPath(AppController.CHAIN_CODE_PATH).build();
-
-        QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
-
-        queryByChaincodeRequest.setArgs(new String[]{username, role});
-        queryByChaincodeRequest.setFcn("readUser");
-        queryByChaincodeRequest.setChaincodeID(chainCodeID);
-
-        Collection<ProposalResponse> queryProposals;
+        Collection<Offer> offers = new ArrayList<>();
 
         try {
-            queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
-        } catch (InvalidArgumentException | ProposalException e) {
-            throw new CompletionException(e);
-        }
-
-        User user = null;
-        for (ProposalResponse proposalResponse : queryProposals) {
-            if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
-                ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
-                        + ". Messages: " + proposalResponse.getMessage()
-                        + ". Was verified : " + proposalResponse.isVerified());
-                System.out.println(result.errorMessage.toString());
-            } else {
-                String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-                user = g.fromJson(payload, User.class);
-                out("Query payload of a from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
-            }
+            offers = carService.getSalesOffers(client, chain, username, role);
+        } catch (Exception e) {
+            error = e.getMessage();
         }
 
         model.addAttribute("success", success);
         model.addAttribute("error", error);
-        model.addAttribute("offers", user.getOffers());
+        model.addAttribute("offers", offers);
         model.addAttribute("role", role.toUpperCase());
         return "offers";
     }
@@ -593,7 +560,7 @@ public class AppController {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
-        Map<Integer, Car> history = null;
+        Map<Integer, Car> history = new HashMap<>();
         try {
             history = carService.getCarHistory(client, chain, username, role, vin);
         } catch (Exception e) {

@@ -143,7 +143,7 @@ func (t *CarChaincode) readUser(stub shim.ChaincodeStubInterface, username strin
 	user, err := t.getUser(stub, username)
 
 	if err != nil {
-		return shim.Error("Error reading user (function: readUser, file: user.go)")
+		return shim.Error(err.Error())
 	}
 
 	userAsBytes, err := json.Marshal(user)

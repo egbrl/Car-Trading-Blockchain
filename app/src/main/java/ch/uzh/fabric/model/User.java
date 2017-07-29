@@ -4,8 +4,8 @@ import java.util.ArrayList;
 
 public class User {
     private String name;
-    private ArrayList<String> cars;
     private Integer balance;
+    private ArrayList<String> cars;
     private ArrayList<Offer> offers;
 
     public User(String name, ArrayList<String> cars, Integer balance, ArrayList<Offer> offers) {
