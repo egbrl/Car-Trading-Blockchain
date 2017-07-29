@@ -99,39 +99,12 @@ public class CarService extends HFCService {
         return carList;
     }
 
-    public Car getCar(HFClient client, Chain chain, String username, String role, String vin) {
-        ChainCodeID chainCodeID = ChainCodeID.newBuilder().setName(AppController.CHAIN_CODE_NAME)
-                .setVersion(AppController.CHAIN_CODE_VERSION)
-                .setPath(AppController.CHAIN_CODE_PATH).build();
+    public Car getCar(HFClient client, Chain chain, String username, String role, String vin) throws Exception {
+        QueryByChaincodeRequest request = client.newQueryProposalRequest();
+        request.setArgs(new String[]{username, role, vin});
+        request.setFcn("readCar");
 
-        QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
-        queryByChaincodeRequest.setArgs(new String[]{username, role, vin});
-        queryByChaincodeRequest.setFcn("readCar");
-        queryByChaincodeRequest.setChaincodeID(chainCodeID);
-
-        Collection<ProposalResponse> queryProposals;
-
-        try {
-            queryProposals = chain.queryByChaincode(queryByChaincodeRequest);
-        } catch (InvalidArgumentException | ProposalException e) {
-            throw new CompletionException(e);
-        }
-
-        Car car = null;
-        HashMap<String, Car> carList = new HashMap<>();
-        for (ProposalResponse proposalResponse : queryProposals) {
-            if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ChainCodeResponse.Status.SUCCESS) {
-                ErrorInfo result = new ErrorInfo(0, "", "Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus()
-                        + ". Messages: " + proposalResponse.getMessage()
-                        + ". Was verified : " + proposalResponse.isVerified());
-                System.out.println(result.errorMessage.toString());
-            } else {
-                String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
-                car = g.fromJson(payload, Car.class);
-            }
-        }
-
-        return car;
+        return query(request, chain, new TypeToken<Car>(){}.getType());
     }
 
     public void sell(HFClient client, Chain chain, String seller, String role, String vin, String buyer) throws Exception {

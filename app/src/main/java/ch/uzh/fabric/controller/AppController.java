@@ -388,19 +388,17 @@ public class AppController {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
-        Map<String, String> revocationProposals = null;
+        Collection<Car> carList = new ArrayList<>();
 
         try {
-            revocationProposals = carService.getRevocationProposals(client, chain, username, role);
+            Map<String, String> revocationProposals = carService.getRevocationProposals(client, chain, username, role);
+            for (Map.Entry<String, String> e : revocationProposals.entrySet()) {
+                Car car = carService.getCar(client, chain, e.getValue(), role, e.getKey());
+                carList.add(car);
+            }
         } catch (Exception e) {
             redirAttr.addAttribute("error", e.getMessage());
             return "redirect:/dot/revocation";
-        }
-
-        Collection<Car> carList = new ArrayList<>();
-        for (Map.Entry<String, String> e : revocationProposals.entrySet()) {
-            Car car = carService.getCar(client, chain, e.getValue(), role, e.getKey());
-            carList.add(car);
         }
 
         model.addAttribute("cars", carList);
