@@ -6,6 +6,9 @@ if [ ! -e "docker-compose.yaml" ];then
   exit 8
 fi
 
+function ping_gw() {
+  ping -q -w 1 -c 1 google.com > /dev/null && return 1 || return 0
+}
 
 function clean(){
 
@@ -46,6 +49,13 @@ function down(){
   docker-compose down;
 }
 
+while ping_gw
+do
+  echo "No network, connect to ethernet or wireless first"
+  echo "Then press any key to continue.."
+  read cont
+  echo "Reprobing connection.."
+done
 
 for opt in "$@"
 do
