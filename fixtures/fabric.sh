@@ -51,7 +51,7 @@ function watch() {
   done
 
   echo "Spring app ready, launching http://localhost:8080"
-  /usr/bin/xdg-open localhost:8080
+  /usr/bin/xdg-open "http://localhost:8080"
 }
 
 function up(){
