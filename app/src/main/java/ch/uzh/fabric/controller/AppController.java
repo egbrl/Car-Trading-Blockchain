@@ -471,17 +471,22 @@ public class AppController {
         String username = auth.getName();
         String role = userService.getRole(auth);
 
-        Collection<Offer> offers = new ArrayList<>();
+        Collection<Offer> offers;
+        Collection<OfferAndCar> offersAndCars = new ArrayList<>();
 
         try {
             offers = carService.getSalesOffers(username, role);
+            for (Offer offer : offers) {
+                Car car = carService.getCar(offer.getSeller(), role, offer.getVin());
+                offersAndCars.add(new OfferAndCar(offer, car));
+            }
         } catch (Exception e) {
             error = e.getMessage();
         }
 
         model.addAttribute("success", success);
         model.addAttribute("error", error);
-        model.addAttribute("offers", offers);
+        model.addAttribute("offersAndCars", offersAndCars);
         model.addAttribute("role", role.toUpperCase());
         return "offers";
     }

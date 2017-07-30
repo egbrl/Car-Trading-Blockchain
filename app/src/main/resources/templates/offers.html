@@ -24,27 +24,39 @@
             <thead>
             <tr>
                 <th>#</th>
-                <th>Seller</th>
+                <th>Type</th>
+                <th>Brand</th>
+                <th>Color</th>
                 <th>VIN</th>
+                <th>Seller</th>
                 <th>Price</th>
                 <th></th>
             </tr>
             </thead>
             <tbody>
-            <tr th:each="offer,iterStat : ${offers}">
+            <tr th:each="offerAndCar,iterStat : ${offersAndCars}">
                 <form th:action="@{/offers}" method="post">
                     <td th:text="${iterStat.count}" scope="row"></td>
                     <td>
-                        <span th:text="${offer.vin}">VIN</span>
-                        <input type="hidden" name="vin" th:value="${offer.vin}"/>
+                        <span th:text="${offerAndCar.car.certificate.type}">Type</span>
                     </td>
                     <td>
-                        <span th:text="${offer.seller}">seller</span>
-                        <input type="hidden" name="seller" th:value="${offer.seller}"/>
+                        <span th:text="${offerAndCar.car.certificate.brand}">Brand</span>
                     </td>
                     <td>
-                        <span th:text="${offer.price}">price</span>
-                        <input type="hidden" name="price" th:value="${offer.price}"/>
+                        <span th:text="${offerAndCar.car.certificate.color}">Color</span>
+                    </td>
+                    <td>
+                        <span th:text="${offerAndCar.offer.vin}">VIN</span>
+                        <input type="hidden" name="vin" th:value="${offerAndCar.offer.vin}"/>
+                    </td>
+                    <td>
+                        <span th:text="${offerAndCar.offer.seller}">seller</span>
+                        <input type="hidden" name="seller" th:value="${offerAndCar.offer.seller}"/>
+                    </td>
+                    <td>
+                        <span th:text="${offerAndCar.offer.price}">price</span>
+                        <input type="hidden" name="price" th:value="${offerAndCar.offer.price}"/>
                     </td>
                     <td>
                         <button class="btn btn-success">accept</button>
