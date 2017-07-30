@@ -71,9 +71,6 @@ do
   echo "Reprobing connection.."
 done
 
-echo "Pulling latest blockchain demo.."
-git pull
-
 for opt in "$@"
 do
 
