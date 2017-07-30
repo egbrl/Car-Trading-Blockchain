@@ -331,11 +331,14 @@ public class AppController {
         String companyName = user.getOrganization();
         Insurer insurer;
 
+        Collection<InsPropAndCar> insPropsAndCars = new ArrayList<>();
+
         try {
             insurer = carService.getInsurer(username, role, companyName);
             for (InsureProposal proposal : insurer.getProposals()) {
                 Car car = carService.getCar(proposal.getUser(), "user", proposal.getCar());
                 proposal.setRegistered(car.isRegistered());
+                insPropsAndCars.add(new InsPropAndCar(proposal, car));
             }
         } catch (Exception e) {
             insurer = new Insurer(companyName, null);
@@ -345,6 +348,7 @@ public class AppController {
         model.addAttribute("error", error);
         model.addAttribute("role", role.toUpperCase());
         model.addAttribute("insurer", insurer);
+        model.addAttribute("insPropsAndCars", insPropsAndCars);
         return "insurance/index";
     }
 

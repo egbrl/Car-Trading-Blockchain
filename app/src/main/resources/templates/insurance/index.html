@@ -24,26 +24,38 @@
             <thead>
             <tr>
                 <th>#</th>
-                <th>Username</th>
+                <th>Owner</th>
+                <th>Type</th>
+                <th>Brand</th>
+                <th>Color</th>
                 <th>Car VIN</th>
                 <th>Registered</th>
                 <th>Insurance</th>
             </tr>
             </thead>
             <tbody>
-            <tr th:each="proposal,iterStat : ${insurer.proposals}">
+            <tr th:each="insPropAndCar,iterStat : ${insPropsAndCars}">
                 <form th:action="@{/insurance/index}" method="post">
                     <th th:text="${iterStat.count}" scope="row"></th>
                     <td>
-                        <span th:text="${proposal.user}">Username</span>
-                        <input type="hidden" name="userToInsure" th:value="${proposal.user}"/>
+                        <span th:text="${insPropAndCar.insureProposal.user}">Username</span>
+                        <input type="hidden" name="userToInsure" th:value="${insPropAndCar.insureProposal.user}"/>
                     </td>
                     <td>
-                        <span th:text="${proposal.car}">VIN</span>
-                        <input type="hidden" name="vin" th:value="${proposal.car}"/>
+                        <span th:text="${insPropAndCar.car.certificate.type}">Type</span>
                     </td>
                     <td>
-                        <div th:switch="${proposal.registered}">
+                        <span th:text="${insPropAndCar.car.certificate.brand}">Brand</span>
+                    </td>
+                    <td>
+                        <span th:text="${insPropAndCar.car.certificate.color}">Color</span>
+                    </td>
+                    <td>
+                        <span th:text="${insPropAndCar.insureProposal.car}">VIN</span>
+                        <input type="hidden" name="vin" th:value="${insPropAndCar.insureProposal.car}"/>
+                    </td>
+                    <td>
+                        <div th:switch="${insPropAndCar.insureProposal.registered}">
                             <div th:case="true">
                                 <span class="glyphicon glyphicon-ok" aria-hidden="true" style="color: lightgreen"></span>&nbsp;OK
                             </div>
@@ -53,7 +65,7 @@
                         </div>
                     </td>
                     <td>
-                        <div th:switch="${proposal.registered}">
+                        <div th:switch="${insPropAndCar.insureProposal.registered}">
                             <div th:case="true">
                                 <button class="btn btn-success">insure</button>
                             </div>
