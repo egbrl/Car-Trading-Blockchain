@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # simple batch script making it easier to cleanup and start a relatively fresh fabric env.
 
+LOCKFILE="../app/app.lock"
+
 if [ ! -e "docker-compose.yaml" ];then
   echo "docker-compose.yaml not found."
   exit 8
@@ -40,6 +42,18 @@ function clean(){
 
 }
 
+function watch() {
+  rm -f $LOCKFILE
+
+  while [ ! -f $LOCKFILE ];
+  do
+    sleep 4
+  done
+
+  echo "Spring app ready, launching http://localhost:8080"
+  /usr/bin/xdg-open localhost:8080
+}
+
 function up(){
   # docker-compose up --force-recreate
   docker-compose up
@@ -65,6 +79,7 @@ do
 
     case "$opt" in
         up)
+            watch &
             up
             ;;
         down)
@@ -76,6 +91,7 @@ do
         restart)
             down
             clean
+            watch &
             up
             ;;
 
