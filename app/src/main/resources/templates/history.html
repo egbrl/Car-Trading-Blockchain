@@ -18,7 +18,7 @@
 
     <div class="page-header" style="border-bottom: none">
         <h1>Car History</h1>
-        <p><span class="glyphicon glyphicon-info-sign" style="font-size: 125%;"></span>&nbsp;<span style="font-size: 125%" th:text="${history.entrySet()[0].getValue().certificate.brand + ', ' + history.entrySet()[0].getValue().certificate.type + ', ' + history.entrySet()[0].getValue().certificate.color + '  (' + vin + ')'}"></span></p>
+        <p><span class="glyphicon glyphicon-info-sign" style="font-size: 125%;"></span>&nbsp;<span style="font-size: 125%" th:text="${history.entrySet()[0].getValue().certificate.brand + ' ' + history.entrySet()[0].getValue().certificate.type + ', ' + history.entrySet()[0].getValue().certificate.color + '  (' + vin + ')'}"></span></p>
     </div>
     <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
     <div>
