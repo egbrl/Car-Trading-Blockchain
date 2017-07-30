@@ -200,6 +200,14 @@ func (t *CarChaincode) insureProposal(stub shim.ChaincodeStubInterface, username
 		insurer = Insurer{Name: company}
 	}
 
+	// check if there is already a proposal
+	// for this car and this insurance company
+	for _, proposal := range insurer.Proposals {
+		if proposal.Car == vin {
+			return shim.Error("You have already submitted an inquiry to this insurance company ('" + company + "')")
+		}
+	}
+
 	// create the proposal
 	proposal := InsureProposal{User: username,
 		Car: vin}
