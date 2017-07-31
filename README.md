@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.org/EGabb/Car-Trading-Blockchain.svg?branch=master)](https://travis-ci.org/EGabb/Car-Trading-Blockchain)
 
 ## Env Setup
+
 You may need to clean your docker env first:
 ```
 sudo systemctl stop docker
@@ -24,6 +25,10 @@ This will assemble and install the docker image for the car app. It will then do
 
 - Linux or MacOS is highly recommended, Windows remains untested
 - 5GB RAM recommended (lower amounts may result in crashes or unsuccessful builds)
+- Docker
+- Java 8
+- Maven
+- Git
 
 
 ## Fetch Cars Directly on Peer(s)
