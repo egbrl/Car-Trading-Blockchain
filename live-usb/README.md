@@ -9,4 +9,4 @@ Instructions used to bootstrap the iso can be found here:
 * Make an empty DOS partitoin table
 * Create an empty FAT32 partition
 * Copy image to drive with [UNetbootin](https://unetbootin.github.io/)
-* To boot instantly with small timeout, replace the grub configuration file on the drive in `boot/grub/grub.cfg` with the provided [grub.cfg](https://github.com/EGabb/Car-Trading-Blockchain/tree/live-iso/live-iso/grub.cfg)
+* To boot instantly with small timeout, replace the grub configuration file on the drive in `boot/grub/grub.cfg` with the provided [grub.cfg](https://github.com/EGabb/Car-Trading-Blockchain/blob/live-iso/live-usb/grub.cfg)
