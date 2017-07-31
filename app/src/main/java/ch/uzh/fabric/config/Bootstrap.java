@@ -103,7 +103,7 @@ public class Bootstrap implements ApplicationRunner {
                                 null,
                                 "black",
                                 "Batmobile",
-                                "The Dark Knight"), 0, TEST_VIN4),
+                                "Wayne Enterprises"), 0, TEST_VIN4),
                 new ProposalData(
                         "5",
                         8,
