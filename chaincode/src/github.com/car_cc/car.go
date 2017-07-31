@@ -488,5 +488,30 @@ func (t *CarChaincode) sell(stub shim.ChaincodeStubInterface, seller string, arg
 		}
 	}
 
+	// clear pending insureProposals
+	// from all insurers for this car
+	insurerIndex, err := t.getInsurerIndex(stub)
+	if err != nil {
+		return shim.Error("Error getting insurer index.")
+	}
+
+	for _, insurer := range insurerIndex {
+		var newProposals []InsureProposal
+		for _, insProposal := range insurer.Proposals {
+			if insProposal.Car != vin {
+				newProposals = append(newProposals, insProposal)
+			}
+		}
+		insurer.Proposals = newProposals
+		insurerIndex[insurer.Name] = insurer
+	}
+
+	// write insurer index to ledger
+	indexAsBytes, _ := json.Marshal(insurerIndex)
+	err = stub.PutState(insurerIndexStr, indexAsBytes)
+	if err != nil {
+		return shim.Error("Error writing insurer index")
+	}
+
 	return shim.Success(carAsBytes)
 }
