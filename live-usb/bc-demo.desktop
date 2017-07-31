@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Exec=/home/carly/startup.sh
+Terminal=true
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Name=Blockchain Demo
