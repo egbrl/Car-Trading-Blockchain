@@ -39,7 +39,7 @@
             </thead>
             <tbody>
             <tr th:each="pAndC,iterStat : ${proposalAndCarData}">
-                <form th:action="@{/dot/registration}" method="post">
+                <form th:action="@{/dot/}" method="post">
                     <th th:text="${iterStat.count}" scope="row"></th>
                     <td th:text="${pAndC.proposalData.username}">Owner</td>
                     <td th:text="${pAndC.car.certificate.type}">M3</td>

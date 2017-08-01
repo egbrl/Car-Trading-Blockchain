@@ -34,22 +34,20 @@
                 <th>Numberplate</th>
                 <th>Insurer</th>
                 <th>Registration</th>
+                <th><abbr title="Revoke">REV</abbr></th>
                 <th><abbr title="History">HIS</abbr></th>
             </tr>
             </thead>
             <tbody>
             <tr th:each="car,iterStat : ${cars}">
-                <form th:action="@{/revocationProposal}" method="post">
+                <form th:action="@{/dot/revocation}" method="post">
                     <th th:text="${iterStat.count}" scope="row"></th>
                     <td th:text="${car.getCreatedTime()}">Created At</td>
                     <td th:text="${car.certificate.username}">Owner</td>
                     <td th:text="${car.certificate.type}">M3</td>
                     <td th:text="${car.certificate.brand}">BMW</td>
                     <td th:text="${car.certificate.color}">black</td>
-                    <td>
-                        <span th:text="${car.vin}">VIN</span>
-                        <input type="hidden" name="vin" th:value="${car.vin}"/>
-                    </td>
+                    <td><span th:text="${car.vin}">VIN</span></td>
                     <div th:switch="${car.isConfirmed()}">
                         <div th:case="true">
                             <td th:text="${car.certificate.numberplate}">ZH 1234</td>
@@ -88,6 +86,19 @@
                             </div>
                             <div th:case="false">
                                 <span class="glyphicon glyphicon-hourglass" aria-hidden="true"> </span>&nbsp;pending
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+
+                        <div th:switch="${car.isRegistered()}">
+                            <div th:case="true">
+                                <input type="hidden" name="vin" th:value="${car.vin}"/>
+                                <input type="hidden" name="owner" th:value="${car.certificate.username}"/>
+                                <button class="btn btn-danger">revoke</button>
+                            </div>
+                            <div th:case="false">
+                                <button class="btn btn-disabled">revoke</button>
                             </div>
                         </div>
                     </td>

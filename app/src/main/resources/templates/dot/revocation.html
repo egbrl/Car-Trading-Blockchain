@@ -14,7 +14,7 @@
 
 <div class="container">
     <div class="page-header" style="border-bottom: none">
-        <h1>Revocation Proposals</h1>
+        <h1>Requests for Revocation</h1>
     </div>
 
     <div>
@@ -32,7 +32,8 @@
                 <th>Insurer</th>
                 <th>Registration</th>
                 <th>Numberplate</th>
-                <th></th>
+                <th><abbr title="Revoke">REV</abbr></th>
+                <th><abbr title="History">HIS</abbr></th>
             </tr>
             </thead>
             <tbody>
@@ -60,6 +61,11 @@
                         <input type="hidden" name="vin" th:value="${car.vin}"/>
                         <input type="hidden" name="owner" th:value="${car.certificate.username}"/>
                         <button class="btn btn-danger">revoke</button>
+                    </td>
+                    <td>
+                        <a th:href="@{/history(vin=${car.vin})}">
+                            <i class="icon-history icon-large"></i>
+                        </a>
                     </td>
                 </form>
             </tr>
