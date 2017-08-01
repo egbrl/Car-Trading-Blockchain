@@ -75,9 +75,7 @@ public class InsuranceController {
         try {
             carService.acceptInsurance(username, role, userToInsure, vin, company);
         } catch (Exception e) {
-            if (redirAttr != null) {
-                redirAttr.addAttribute("error", e.getMessage());
-            }
+            redirAttr.addAttribute("error", e.getMessage());
         }
 
         redirAttr.addAttribute("success", "Insurance proposal accepted. '" + company + "' now insures car '" + vin + "' of user '" + userToInsure + "'.");
