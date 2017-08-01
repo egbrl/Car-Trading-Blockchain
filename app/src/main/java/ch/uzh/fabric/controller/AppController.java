@@ -513,7 +513,7 @@ public class AppController {
         }
 
         redirAttr.addAttribute("success", "Successfully bought car '" + vin + "' from user '" + seller + "' at price '" + price + "'.");
-        return "redirect:/index";
+        return "redirect:/offers";
     }
 
     @RequestMapping(value = "/history", method = RequestMethod.GET)

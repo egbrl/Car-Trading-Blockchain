@@ -30,6 +30,7 @@ public class Bootstrap implements ApplicationRunner {
         carService.createUser(BOOTSTRAP_GARAGE_USER, BOOTSTRAP_GARAGE_ROLE, BOOTSTRAP_GARAGE_USER);
 
         // fully confirmed car
+        // sales offer already made for user
         carService.importCar(BOOTSTRAP_GARAGE_USER,
                 BOOTSTRAP_GARAGE_ROLE,
                 new Car(
@@ -50,6 +51,8 @@ public class Bootstrap implements ApplicationRunner {
         carService.insureProposal(BOOTSTRAP_GARAGE_USER, BOOTSTRAP_GARAGE_ROLE, TEST_VIN, TEST_INSURANCE_COMPANY);
         carService.acceptInsurance(BOOTSTRAP_INSURANCE_USER, BOOTSTRAP_INSURANCE_ROLE, BOOTSTRAP_GARAGE_USER, TEST_VIN, TEST_INSURANCE_COMPANY);
         carService.confirm(BOOTSTRAP_DOT_USER, BOOTSTRAP_DOT_ROLE, TEST_VIN, "ZH 99837");
+        carService.createSellingOffer(BOOTSTRAP_GARAGE_USER, BOOTSTRAP_GARAGE_ROLE, "5", TEST_VIN, BOOTSTRAP_PRIVATE_USER);
+        carService.revoke(BOOTSTRAP_GARAGE_USER, BOOTSTRAP_DOT_ROLE, TEST_VIN);
 
         // create an unregistered car
         // with insurance proposal
