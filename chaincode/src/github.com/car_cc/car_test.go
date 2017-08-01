@@ -58,6 +58,8 @@ func TestSellCar(t *testing.T) {
 	var username string = "amag"
 	var receiver string = "bobby"
 	var vin string = "WVW ZZZ 6RZ HY26 0780"
+	var insuranceCompany string = "axa"
+	var insuranceCompany2 string = "mobiliar"
 
 	// create and name a new chaincode mock
 	carChaincode := &CarChaincode{}
@@ -88,6 +90,37 @@ func TestSellCar(t *testing.T) {
 	if !IsRegistered(&car) {
 		t.Error("Car should now be registered!")
 	}
+
+	// create insurance proposals for the car
+	stub.MockInvoke(uuid, util.ToChaincodeArgs("insureProposal", username, "user", vin, insuranceCompany))
+	stub.MockInvoke(uuid, util.ToChaincodeArgs("insureProposal", username, "user", vin, insuranceCompany2))
+
+	// ensure it got created
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("getInsurer", username, "insurer", insuranceCompany))
+    insurer := Insurer {}
+    err = json.Unmarshal(response.Payload, &insurer)
+    if (err != nil) {
+        t.Error("Error fetching insurance records")
+        return
+    }
+
+    if insurer.Proposals[0].Car != vin {
+		t.Error("Insurance proposal for company 1 not saved")
+        return
+    }
+
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("getInsurer", username, "insurer", insuranceCompany2))
+    insurer2 := Insurer {}
+    err = json.Unmarshal(response.Payload, &insurer2)
+    if (err != nil) {
+		t.Error("Error fetching insurance records")
+        return
+    }
+
+    if insurer2.Proposals[0].Car != vin {
+		t.Error("Insurance proposal for company 2 not saved")
+        return
+    }
 
 	// create receiver
 	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("createUser", username, "garage", receiver))
@@ -123,6 +156,23 @@ func TestSellCar(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
+
+	// check that all insurance proposals for this car are removed
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("getInsurer", username, "insurer", insuranceCompany))
+    err = json.Unmarshal(response.Payload, &insurer)
+
+    if len(insurer.Proposals) != 0 {
+		t.Error("Insurance proposal for company 1 not removed")
+        return
+    }
+
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("getInsurer", username, "insurer", insuranceCompany2))
+    err = json.Unmarshal(response.Payload, &insurer2)
+
+    if len(insurer2.Proposals) != 0 {
+		t.Error("Insurance proposal for company 2 not removed")
+        return
+    }
 
 	// check that the old owner has no longer access to the car
 	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("readCar", username, "TESTING", car.Vin))
