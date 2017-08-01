@@ -443,6 +443,36 @@ func TestReadRegistrationProposals(t *testing.T) {
 	}
 }
 
+func TestAllCars(t *testing.T) {
+	username         := "test"
+    vin              := "WVW ZZZ 6RZ HY26 0780"
+
+    // create and name a new chaincode mock
+    carChaincode := &CarChaincode{}
+    stub := shim.NewMockStub("car", carChaincode)
+
+    ccSetup(t, stub)
+
+    // create a new car
+    carData := `{ "vin": "` + vin + `" }`
+    stub.MockInvoke(uuid, util.ToChaincodeArgs("create", username, "garage", carData))
+
+    // read all cars
+    response := stub.MockInvoke(uuid, util.ToChaincodeArgs("getAllCarsAsList", "dot-user", "dot"))
+	var cars []Car
+	err := json.Unmarshal(response.Payload, &cars)
+
+	if err != nil {
+		t.Error("Error reading all cars")
+		return
+	}
+
+	if len(cars) != 1 || cars[0].Vin != vin {
+		t.Error("Wrong car in car list")
+		return
+	}
+}
+
 func TestCarsToConfirmList(t *testing.T) {
 	username         := "test"
     vin              := "WVW ZZZ 6RZ HY26 0780"
