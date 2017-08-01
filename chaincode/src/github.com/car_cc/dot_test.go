@@ -370,6 +370,79 @@ func TestConfirmRevokeAndDelete(t *testing.T) {
 	}
 }
 
+func TestReadRegistrationProposals(t *testing.T) {
+	username         := "test"
+    vin              := "WVW ZZZ 6RZ HY26 0780"
+
+    // create and name a new chaincode mock
+    carChaincode := &CarChaincode{}
+    stub := shim.NewMockStub("car", carChaincode)
+
+    ccSetup(t, stub)
+
+    // create a new car
+    carData := `{ "vin": "` + vin + `" }`
+    stub.MockInvoke(uuid, util.ToChaincodeArgs("create", username, "garage", carData))
+
+    // read proposals as map
+    response := stub.MockInvoke(uuid, util.ToChaincodeArgs("readRegistrationProposals", "dot-user", "dot"))
+	index := make(map[string]RegistrationProposal)
+	err := json.Unmarshal(response.Payload, &index)
+
+	if err != nil {
+		t.Error("Error reading registration proposals as map")
+		return
+	}
+
+	if len(index) != 1 {
+		t.Error("Registration proposal not added during car creation")
+		return
+	}
+
+	// read proposals as list
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("readRegistrationProposalsAsList", "dot-user", "dot"))
+	var proposalList []RegistrationProposal
+	err = json.Unmarshal(response.Payload, &proposalList)
+
+	if err != nil {
+		t.Error("Error reading registration proposals as list")
+		return
+	}
+
+	if len(proposalList) != 1 {
+		t.Error("Registration proposal not added during car creation")
+		return
+	}
+
+	// read single proposal
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("readRegistrationProposal", "dot-user", "dot", vin))
+	var proposal RegistrationProposal
+	err = json.Unmarshal(response.Payload, &proposal)
+
+	if err != nil {
+		t.Error("Error reading registration proposal")
+		return
+	}
+
+	if proposal.Car != vin {
+		t.Error("Read wrong proposal")
+		return
+	}
+
+	// register car
+	stub.MockInvoke(uuid, util.ToChaincodeArgs("register", "dot-user", "dot", vin))
+
+    // read proposals again
+    response = stub.MockInvoke(uuid, util.ToChaincodeArgs("readRegistrationProposals", "dot-user", "dot"))
+	index = make(map[string]RegistrationProposal)
+	err = json.Unmarshal(response.Payload, &index)
+
+	if len(index) > 0 {
+		t.Error("Registration proposal not removed after registration")
+		return
+	}
+}
+
 func TestCarsToConfirmList(t *testing.T) {
 	username         := "test"
     vin              := "WVW ZZZ 6RZ HY26 0780"
