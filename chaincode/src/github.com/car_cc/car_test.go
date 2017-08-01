@@ -323,5 +323,17 @@ func TestCreateAndReadCar(t *testing.T) {
 		t.Error(fmt.Sprintf("Only one car with vin '%s' can exist", vin))
 	}
 
-	fmt.Println(carFetched)
+	// test reading the car as dot
+	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("readCar", "dot-user", "dot", carCreated.Vin))
+	var dotCar Car
+	err = json.Unmarshal(response.Payload, &dotCar)
+	if err != nil {
+		t.Error("Dot could not read the car")
+		return
+	}
+
+	if dotCar.Vin != carCreated.Vin {
+		t.Error("Dot read wrong car")
+		return
+	}
 }
