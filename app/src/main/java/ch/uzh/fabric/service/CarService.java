@@ -52,26 +52,11 @@ public class CarService extends TrxService {
         executeTrx(request, hfc.getChain());
     }
 
-    public void acceptInsurance(String username, String role, String userToInsure, String vin, String company) throws Exception {
-        TransactionProposalRequest request = hfc.getClient().newTransactionProposalRequest();
-        request.setFcn("insuranceAccept");
-        request.setArgs(new String[]{username, role, userToInsure, vin, company});
-        executeTrx(request, hfc.getChain());
-    }
-
     public void createUser(String username, String role, String newUser) throws Exception {
         TransactionProposalRequest request = hfc.getClient().newTransactionProposalRequest();
         request.setFcn("createUser");
         request.setArgs(new String[]{username, role, newUser});
         executeTrx(request, hfc.getChain());
-    }
-
-    public Insurer getInsurer(String username, String role, String company) throws Exception {
-        QueryByChaincodeRequest request = hfc.getClient().newQueryProposalRequest();
-        request.setArgs(new String[]{username, role, company});
-        request.setFcn("getInsurer");
-
-        return query(request, hfc.getChain(), new TypeToken<Insurer>(){}.getType());
     }
 
     public void insureProposal(String username, String role, String vin, String company) throws Exception {

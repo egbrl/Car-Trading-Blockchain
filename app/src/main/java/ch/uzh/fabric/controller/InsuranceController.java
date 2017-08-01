@@ -7,6 +7,7 @@ import ch.uzh.fabric.model.InsPropAndCar;
 import ch.uzh.fabric.model.InsureProposal;
 import ch.uzh.fabric.model.Insurer;
 import ch.uzh.fabric.service.CarService;
+import ch.uzh.fabric.service.InsuranceService;
 import ch.uzh.fabric.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -27,6 +28,8 @@ public class InsuranceController {
     private UserService userService;
     @Autowired
     private CarService carService;
+    @Autowired
+    private InsuranceService insuranceService;
 
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public String insurance(Model model,
@@ -43,7 +46,7 @@ public class InsuranceController {
         Collection<InsPropAndCar> insPropsAndCars = new ArrayList<>();
 
         try {
-            insurer = carService.getInsurer(username, role, companyName);
+            insurer = insuranceService.getInsurer(username, role, companyName);
             for (InsureProposal proposal : insurer.getProposals()) {
                 Car car = carService.getCar(proposal.getUser(), "user", proposal.getCar());
                 proposal.setRegistered(car.isRegistered());
@@ -73,7 +76,7 @@ public class InsuranceController {
         String company = user.getOrganization();
 
         try {
-            carService.acceptInsurance(username, role, userToInsure, vin, company);
+            insuranceService.acceptInsurance(username, role, userToInsure, vin, company);
         } catch (Exception e) {
             redirAttr.addAttribute("error", e.getMessage());
         }
