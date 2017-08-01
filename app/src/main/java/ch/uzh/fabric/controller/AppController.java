@@ -118,8 +118,8 @@ public class AppController {
                             Authentication auth,
                             @ModelAttribute Car car,
                             @ModelAttribute ProposalData proposalData) {
-        String username = (model != null) ? auth.getName() : SecurityConfig.BOOTSTRAP_GARAGE_USER;
-        String role = (model != null) ? userService.getRole(auth) : SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
+        String username = auth.getName();
+        String role = userService.getRole(auth);
 
         proposalData.setCar(car.getVin());
         try {
@@ -129,10 +129,8 @@ public class AppController {
             return "redirect:/import";
         }
 
-        if (model != null && redirAttr != null) {
-            model.addAttribute("role", role.toUpperCase());
-            redirAttr.addAttribute("success", "Successfully imported car with VIN '" + car.getVin() + "'");
-        }
+        model.addAttribute("role", role.toUpperCase());
+        redirAttr.addAttribute("success", "Successfully imported car with VIN '" + car.getVin() + "'");
 
         return "redirect:/index";
     }
@@ -191,8 +189,8 @@ public class AppController {
 
     @RequestMapping(value = "/insure", method = RequestMethod.POST)
     public String insure(RedirectAttributes redirAttr, Authentication auth, @RequestParam String vin, @RequestParam String company) {
-        String username = (redirAttr != null) ? auth.getName() : SecurityConfig.BOOTSTRAP_GARAGE_USER;
-        String role = (redirAttr != null) ? userService.getRole(auth) : SecurityConfig.BOOTSTRAP_GARAGE_ROLE;
+        String username = auth.getName();
+        String role = userService.getRole(auth);
 
         try {
             carService.insureProposal(username, role, vin, company);
@@ -201,9 +199,7 @@ public class AppController {
             return "redirect:/insure";
         }
 
-        if (redirAttr != null) {
-            redirAttr.addAttribute("success", "Insurance proposal saved. '" + company + "' will get back to you for confirmation.");
-        }
+        redirAttr.addAttribute("success", "Insurance proposal saved. '" + company + "' will get back to you for confirmation.");
 
         return "redirect:/insure";
     }
