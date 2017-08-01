@@ -369,3 +369,66 @@ func TestConfirmRevokeAndDelete(t *testing.T) {
 		t.Error("Failed to delete car")
 	}
 }
+
+func TestCarsToConfirmList(t *testing.T) {
+	username         := "test"
+    vin              := "WVW ZZZ 6RZ HY26 0780"
+    insuranceCompany := "axa"
+
+    // create and name a new chaincode mock
+    carChaincode := &CarChaincode{}
+    stub := shim.NewMockStub("car", carChaincode)
+
+    ccSetup(t, stub)
+
+    // create a new car
+    carData := `{ "vin": "` + vin + `" }`
+    stub.MockInvoke(uuid, util.ToChaincodeArgs("create", username, "garage", carData))
+
+    // make an insurance proposal for AXA
+    stub.MockInvoke(uuid, util.ToChaincodeArgs("insureProposal", username, "user", vin, insuranceCompany))
+
+	response := stub.MockInvoke(uuid, util.ToChaincodeArgs("getCarsToConfirmAsList", "dot-user", "dot"))
+	var cars []Car
+	err := json.Unmarshal(response.Payload, &cars)
+	fmt.Println(cars)
+	if err != nil {
+		t.Error("Error getting cars to confirm")
+		return
+	}
+
+	if len(cars) > 0 {
+		t.Error("Unregistered car should not be confirmed")
+		return
+	}
+
+	// register car
+	stub.MockInvoke(uuid, util.ToChaincodeArgs("register", "dot-user", "dot", vin))
+
+	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("getCarsToConfirmAsList", "dot-user", "dot"))
+	err = json.Unmarshal(response.Payload, &cars)
+	if err != nil {
+		t.Error("Error getting cars to confirm")
+		return
+	}
+
+	if len(cars) > 0 {
+		t.Error("Uninsured car should not be confirmed")
+		return
+	}
+
+	// accept insurance
+	stub.MockInvoke(uuid, util.ToChaincodeArgs("insuranceAccept", "insurance-user", "insurer", username, vin, insuranceCompany))
+
+	response = stub.MockInvoke(uuid, util.ToChaincodeArgs("getCarsToConfirmAsList", "dot-user", "dot"))
+	err = json.Unmarshal(response.Payload, &cars)
+	if err != nil {
+		t.Error("Error getting cars to confirm")
+		return
+	}
+
+	if len(cars) != 1 && cars[0].Vin != vin {
+		t.Error("Function does not return the right cars ready for confirmation")
+		return
+	}
+}
