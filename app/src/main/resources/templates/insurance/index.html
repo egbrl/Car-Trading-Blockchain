@@ -35,7 +35,7 @@
             </thead>
             <tbody>
             <tr th:each="insPropAndCar,iterStat : ${insPropsAndCars}">
-                <form th:action="@{/insurance/index}" method="post">
+                <form th:action="@{/insurance/}" method="post">
                     <th th:text="${iterStat.count}" scope="row"></th>
                     <td>
                         <span th:text="${insPropAndCar.insureProposal.user}">Username</span>
