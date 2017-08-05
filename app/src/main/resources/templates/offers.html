@@ -18,11 +18,6 @@
     </div>
 
     <div>
-        <p th:if="${success}" style="color: green">
-            <img th:src="@{/img/TRUST-LOGO-orange.png}" class="trusted-img" alt="Trust Logo" />
-            <span th:utext="${success}" />
-        </p>
-        <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-remove" aria-hidden="true" /> <span th:utext="${error}" /></p>
         <table class="table table-hover">
             <thead>
             <tr>
@@ -64,7 +59,7 @@
                     </td>
                     <td style="text-align: center">
                         <a th:href="@{/history(vin=${offerAndCar.offer.vin})}">
-                            <img th:src="@{/img/TRUST-LOGO-orange.png}" class="trusted-img" alt="Trust Logo" />
+                            <img th:src="@{/img/TRUST-LOGO.png}" class="trusted-img" alt="Trust Logo" />
                         </a>
                     </td>
                     <td>
