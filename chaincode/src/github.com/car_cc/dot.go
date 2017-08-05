@@ -321,6 +321,11 @@ func (t *CarChaincode) revoke(stub shim.ChaincodeStubInterface, username string,
 		return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
 	}
 
+	// check if car is already revoked
+	if !IsInsured(&car) && !IsConfirmed(&car) {
+		return shim.Error("Car is already revoked!")
+	}
+
 	// remove car insurance
 	car.Certificate.Insurer = ""
 

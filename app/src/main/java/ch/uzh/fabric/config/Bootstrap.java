@@ -91,7 +91,7 @@ public class Bootstrap implements ApplicationRunner {
                                 null,
                                 null,
                                 "red",
-                                "TDI",
+                                "Golf TDI",
                                 "VW"), 0, TEST_VIN3),
                 new ProposalData(
                         "5",

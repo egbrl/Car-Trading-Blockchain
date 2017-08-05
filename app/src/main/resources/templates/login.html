@@ -9,32 +9,14 @@
     <meta name="author" content=""/>
     <title>carchain Login</title>
     <!-- Bootstrap core CSS -->
-    <link href="../static/css/bootstrap.min.css" th:href="@{/css/bootstrap.min.css}" rel="stylesheet" />
+    <link href="../static/css/bootstrap.css" th:href="@{/css/bootstrap.css}" rel="stylesheet"/>
     <!-- Custom styles for this template -->
-    <link href="../static/css/cover.css" th:href="@{/css/cover.css}" rel="stylesheet" />
+    <link href="../static/css/cover.css" th:href="@{/css/cover.css}" rel="stylesheet"/>
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
     <script src="../static/js/html5shiv.min.js" h:href="@{/js/html5shiv.min.js}"></script>
     <script src="../static/js/respond.min.js" h:href="@{/js/respond.min.js}"></script>
     <![endif]-->
-    <style>
-        .logo {
-            background: url('img/Logo_Final.png') no-repeat center;
-            background-size: contain;
-            min-height: 150px;
-            margin-bottom: 20px;
-
-    /* Hide the text. */
-    text-indent: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-        }
-
-        /*.inner.cover {
-            padding: 20px 0;
-            background: white;
-        }*/
-    </style>
 </head>
 
 <body>
@@ -45,20 +27,36 @@
 
         <div class="cover-container">
 
-            <!-- <div class="masthead clearfix">
-                <div class="inner">
-                    <h3 class="masthead-brand"></h3>
-                    <nav>
-                        <ul class="nav masthead-nav">
-                            <li class="active"><a href="#">Login</a></li>
-                            <li><a href="#">Features</a></li>
-                            <li><a href="#">Contact</a></li>
-                        </ul>
-                    </nav>
-                </div>
-            </div> -->
 
             <div class="inner cover">
+
+                <div class="wrapper">
+                    <form th:action="@{/login}" method="post" class="form-signin">
+                        <div class="row text-center bol"><i class="fa fa-circle"></i></div>
+                        <h3 class="form-signin-heading text-center">
+                            <img th:src="@{/img/Logo_Final.png}" src="../static/img/Logo_Final.png" alt="CarChain" width="200"/>
+                        </h3>
+                        <hr class="spartan" />
+                        <p th:if="${loginError}" style="color: red">Wrong username or password!</p>
+
+                        <div class="input-group">
+                            <div class="input-group-addon"><span class="glyphicon glyphicon-user"> </span></div>
+                            <input type="text" class="form-control" id="username" name="username" placeholder="Username"/>
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-group-addon"><span class="glyphicon glyphicon glyphicon-lock"> </span></div>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Password"/>
+                        </div>
+
+                        <button class="btn btn-lg btn-success btn-block" type="Submit">
+                            Sign in
+                        </button>
+                    </form>
+                </div>
+
+
+                <!--
                 <div class="logo">User Login</div>
                 <p th:if="${loginError}" style="color: red">Wrong user or password</p>
 
@@ -73,22 +71,15 @@
                             <input type="password" class="form-control" id="password" name="password" placeholder="Password"/>
                         </div>
                     </div>
-                    <!--<div class="form-group">
-                        <div class="col-sm-offset-2 col-sm-5">
-                            <div class="checkbox">
-                                <label>
-                                    <input type="checkbox"/> Remember me
-                                </label>
-                            </div>
-                        </div>
-                    </div>-->
                     <div class="form-group">
                         <div class="col-sm-offset-2 col-sm-8">
-                            <button type="submit" class="btn btn-default"><span style="color: #e6e6e6">Sign in</span></button>
+                            <button type="submit" class="btn btn-primary">Sign in</button>
                         </div>
                     </div>
                 </form>
+                -->
             </div>
+
 
             <div class="mastfoot">
                 <div class="inner">
