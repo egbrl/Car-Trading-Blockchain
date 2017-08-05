@@ -19,8 +19,8 @@
     </div>
 
     <div>
-        <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
-        <p th:if="${success}" style="color: green"><span class="glyphicon glyphicon-ok" aria-hidden="true" /> <span th:utext="${success}" /></p>
+        <p th:if="${error}" style="color: #e74c3c"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
+        <p th:if="${success}" style="color: #18bc9c"><span class="glyphicon glyphicon-ok" aria-hidden="true" /> <span th:utext="${success}" /></p>
         <table class="table table-hover">
             <thead>
             <tr>
@@ -83,7 +83,7 @@
                     <td>
                         <div th:switch="${car.isRegistered()}">
                             <div th:case="true">
-                                <span class="glyphicon glyphicon-ok" aria-hidden="true" style="color: lightgreen"></span>&nbsp;OK
+                                <span class="glyphicon glyphicon-ok" aria-hidden="true" style="color: #18bc9c"></span>&nbsp;OK
                             </div>
                             <div th:case="false">
                                 <span class="glyphicon glyphicon-hourglass" aria-hidden="true"> </span>&nbsp;pending

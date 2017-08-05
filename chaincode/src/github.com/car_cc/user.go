@@ -87,6 +87,10 @@ func (t *CarChaincode) deleteUser(stub shim.ChaincodeStubInterface, username str
 
 	// transfer remaining balance to chosen recipient
 	balanceRecipient.Balance += userToDelete.Balance
+	err = t.saveUser(stub, balanceRecipient)
+	if err != nil {
+		return shim.Error("Transfer of remaining balance failed")
+	}
 
 	// delete user from user index
 	delete(userIndexMap, userToDelete.Name)
@@ -130,7 +134,7 @@ func (t *CarChaincode) getUser(stub shim.ChaincodeStubInterface, username string
 	var user User
 	err := json.Unmarshal(response.Payload, &user)
 	if err != nil {
-		return User{}, errors.New("Error parsing user index")
+		return User{}, errors.New(fmt.Sprintf("Could not find user %s", username))
 	}
 
 	return user, nil

@@ -14,12 +14,12 @@
 
 <div class="container">
     <div class="page-header" style="border-bottom: none">
-        <h1>Revocation Proposals</h1>
+        <h1>Requests for Revocation</h1>
     </div>
 
     <div>
-        <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
-        <p th:if="${success}" style="color: green"><span class="glyphicon glyphicon-ok" aria-hidden="true" /> <span th:utext="${success}" /></p>
+        <p th:if="${error}" style="color: #e74c3c"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
+        <p th:if="${success}" style="color: #18bc9c"><span class="glyphicon glyphicon-ok" aria-hidden="true" /> <span th:utext="${success}" /></p>
         <table class="table table-hover">
             <thead>
             <tr>
@@ -32,7 +32,8 @@
                 <th>Insurer</th>
                 <th>Registration</th>
                 <th>Numberplate</th>
-                <th></th>
+                <th><abbr title="Revoke">REV</abbr></th>
+                <th><abbr title="History">HIS</abbr></th>
             </tr>
             </thead>
             <tbody>
@@ -48,10 +49,10 @@
                     <td>
                         <div th:switch="${car.isRegistered()}">
                             <div th:case="true">
-                                <span class="glyphicon glyphicon-ok" aria-hidden="true" style="color: lightgreen"></span>&nbsp;OK
+                                <span class="glyphicon glyphicon-ok" aria-hidden="true" style="color: #18bc9c"></span>&nbsp;OK
                             </div>
                             <div th:case="false">
-                                <span class="glyphicon glyphicon-remove-sign" aria-hidden="true" style="color: lightgreen">&nbsp;Error!</span>
+                                <span class="glyphicon glyphicon-remove-sign" aria-hidden="true" style="color: red">&nbsp;Error!</span>
                             </div>
                         </div>
                     </td>
@@ -61,11 +62,16 @@
                         <input type="hidden" name="owner" th:value="${car.certificate.username}"/>
                         <button class="btn btn-danger">revoke</button>
                     </td>
+                    <td>
+                        <a th:href="@{/history(vin=${car.vin})}">
+                            <i class="icon-history icon-large"></i>
+                        </a>
+                    </td>
                 </form>
             </tr>
             </tbody>
         </table>
-        <div style="text-align: center;"><p th:if="${cars.isEmpty()}" style="color: lightsalmon">No pending requests.</p></div>
+        <div style="text-align: center;"><p th:if="${cars.isEmpty()}" style="color: #e74c3c">No pending requests.</p></div>
     </div>
 
     <div th:replace="footer" />

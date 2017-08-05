@@ -20,7 +20,7 @@
         <h1>Car History</h1>
         <p><span class="glyphicon glyphicon-info-sign" style="font-size: 125%;"></span>&nbsp;<span style="font-size: 125%" th:text="${history.entrySet()[0].getValue().certificate.brand + ' ' + history.entrySet()[0].getValue().certificate.type + ', ' + history.entrySet()[0].getValue().certificate.color + '  (' + vin + ')'}"></span></p>
     </div>
-    <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
+    <p th:if="${error}" style="color: #e74c3c"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
     <div>
         <table class="table table-hover">
             <thead>
@@ -43,7 +43,7 @@
                 <td>
                     <div th:switch="${e.getValue().isRegistered()}">
                         <div th:case="true">
-                            <span class="glyphicon glyphicon-ok" aria-hidden="true" style="color: lightgreen"></span>&nbsp;OK
+                            <span class="glyphicon glyphicon-ok" aria-hidden="true" style="color: #18bc9c"></span>&nbsp;OK
                         </div>
                         <div th:case="false">
                             <span class="glyphicon glyphicon-hourglass" aria-hidden="true"> </span>&nbsp;pending

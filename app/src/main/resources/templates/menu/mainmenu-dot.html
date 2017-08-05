@@ -1,6 +1,6 @@
 <ul class="nav navbar-nav">
     <li th:class="${currentPage} eq 'dot/registration' ? 'active'">
-        <a href="index.html" th:href="@{/dot/registration}">
+        <a href="index.html" th:href="@{/dot/}">
             <span class="glyphicon glyphicon-ok-sign" aria-hidden="true"></span>&nbsp;Registration
         </a>
     </li>
@@ -11,7 +11,7 @@
     </li>
     <li th:class="${currentPage} eq 'dot/revocation' ? 'active'">
         <a href="all-cars.html" th:href="@{/dot/revocation}">
-            <span class="glyphicon glyphicon-erase" aria-hidden="true"></span>&nbsp;Revocation
+            <span class="glyphicon glyphicon-erase" aria-hidden="true"></span>&nbsp;Revocation Requests
         </a>
     </li>
     <li th:class="${currentPage} eq 'dot/all-cars' ? 'active'">

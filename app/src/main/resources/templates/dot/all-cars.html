@@ -11,7 +11,7 @@
     <link rel="stylesheet" th:href="@{/css/main.css}"/>
 </head>
 <body>
-<div th:replace="navigation" />
+<div th:replace="navigation"/>
 
 <div class="container">
     <div class="page-header" style="border-bottom: none">
@@ -19,8 +19,10 @@
     </div>
 
     <div>
-        <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
-        <p th:if="${success}" style="color: green"><span class="glyphicon glyphicon-ok" aria-hidden="true" /> <span th:utext="${success}" /></p>
+        <p th:if="${error}" style="color: #e74c3c"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true"/> <span
+                th:utext="${error}"/></p>
+        <p th:if="${success}" style="color: #18bc9c"><span class="glyphicon glyphicon-ok" aria-hidden="true"/> <span
+                th:utext="${success}"/></p>
         <table class="table table-hover">
             <thead>
             <tr>
@@ -34,75 +36,84 @@
                 <th>Numberplate</th>
                 <th>Insurer</th>
                 <th>Registration</th>
+                <th><abbr title="Revoke">REV</abbr></th>
                 <th><abbr title="History">HIS</abbr></th>
             </tr>
             </thead>
             <tbody>
             <tr th:each="car,iterStat : ${cars}">
-                <form th:action="@{/revocationProposal}" method="post">
-                    <th th:text="${iterStat.count}" scope="row"></th>
-                    <td th:text="${car.getCreatedTime()}">Created At</td>
-                    <td th:text="${car.certificate.username}">Owner</td>
-                    <td th:text="${car.certificate.type}">M3</td>
-                    <td th:text="${car.certificate.brand}">BMW</td>
-                    <td th:text="${car.certificate.color}">black</td>
-                    <td>
-                        <span th:text="${car.vin}">VIN</span>
-                        <input type="hidden" name="vin" th:value="${car.vin}"/>
-                    </td>
-                    <div th:switch="${car.isConfirmed()}">
-                        <div th:case="true">
-                            <td th:text="${car.certificate.numberplate}">ZH 1234</td>
-                        </div>
-                        <div th:case="false">
-                            <div th:switch="${car.isInsured()}">
-                                <div th:case="true">
-                                    <td>
-                                        <span class="glyphicon glyphicon-remove"> </span>
-                                    </td>
-                                </div>
-                                <div th:case="false">
-                                    <td>
-                                        <span class="glyphicon glyphicon-remove"> </span>
-                                    </td>
-                                </div>
-                            </div>
-                        </div>
+                <th th:text="${iterStat.count}" scope="row"></th>
+                <td th:text="${car.getCreatedTime()}">Created At</td>
+                <td th:text="${car.certificate.username}">Owner</td>
+                <td th:text="${car.certificate.type}">M3</td>
+                <td th:text="${car.certificate.brand}">BMW</td>
+                <td th:text="${car.certificate.color}">black</td>
+                <td><span th:text="${car.vin}">VIN</span></td>
+                <div th:switch="${car.isConfirmed()}">
+                    <div th:case="true">
+                        <td th:text="${car.certificate.numberplate}">ZH 1234</td>
                     </div>
-                    <div th:switch="${car.isInsured()}">
-                        <div th:case="true">
-                            <td th:text="${car.certificate.insurer}">AXA Winterthur</td>
-                        </div>
-                        <div th:case="false">
-                            <td>
-                                <a href="#" th:href="@{/insure(activeVin=${car.vin})}">
-                                    <span class="glyphicon glyphicon-remove"> </span>
-                                </a>
-                            </td>
-                        </div>
-                    </div>
-                    <td>
-                        <div th:switch="${car.isRegistered()}">
+                    <div th:case="false">
+                        <div th:switch="${car.isInsured()}">
                             <div th:case="true">
-                                <span class="glyphicon glyphicon-ok" aria-hidden="true" style="color: lightgreen"></span>&nbsp;OK
+                                <td>
+                                    <span class="glyphicon glyphicon-remove"> </span>
+                                </td>
                             </div>
                             <div th:case="false">
-                                <span class="glyphicon glyphicon-hourglass" aria-hidden="true"> </span>&nbsp;pending
+                                <td>
+                                    <span class="glyphicon glyphicon-remove"> </span>
+                                </td>
                             </div>
                         </div>
-                    </td>
-                    <td>
-                        <a th:href="@{/history(vin=${car.vin})}">
-                            <i class="icon-history icon-large"></i>
-                        </a>
-                    </td>
-                </form>
+                    </div>
+                </div>
+                <div th:switch="${car.isInsured()}">
+                    <div th:case="true">
+                        <td th:text="${car.certificate.insurer}">AXA Winterthur</td>
+                    </div>
+                    <div th:case="false">
+                        <td>
+                            <span class="glyphicon glyphicon-remove"> </span>
+                        </td>
+                    </div>
+                </div>
+                <td>
+                    <div th:switch="${car.isRegistered()}">
+                        <div th:case="true">
+                            <span class="glyphicon glyphicon-ok" aria-hidden="true" style="color: #18bc9c"></span>&nbsp;OK
+                        </div>
+                        <div th:case="false">
+                            <span class="glyphicon glyphicon-hourglass" aria-hidden="true"> </span>&nbsp;pending
+                        </div>
+                    </div>
+                </td>
+                <td>
+
+                    <div th:switch="${car.isRegistered()}">
+                        <div th:case="true">
+                            <form th:action="@{/dot/revocation}" method="post">
+                                <input type="hidden" name="vin" th:value="${car.vin}"/>
+                                <input type="hidden" name="owner" th:value="${car.certificate.username}"/>
+                                <button class="btn btn-danger">revoke</button>
+                            </form>
+                        </div>
+                        <div th:case="false">
+                            <button class="btn btn-disabled">revoke</button>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <a th:href="@{/history(vin=${car.vin})}">
+                        <i class="icon-history icon-large"></i>
+                    </a>
+                </td>
             </tr>
             </tbody>
         </table>
     </div>
 
-    <div th:replace="footer" />
+    <div th:replace="footer"/>
 
 
 </div>

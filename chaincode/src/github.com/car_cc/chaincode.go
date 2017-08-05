@@ -243,6 +243,13 @@ func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		return t.readRegistrationProposals(stub)
 
+	case "readRegistrationProposal":
+		if role != "dot" {
+			// only the DOT is allowed to read a registration proposal
+			return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to read registration proposals.", role))
+		}
+		return t.getRegistrationProposal(stub, args[0])
+
 	case "register":
 		if len(args) != 1 {
 			return shim.Error("'register' expects a car vin to register")

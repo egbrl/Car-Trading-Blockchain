@@ -18,8 +18,6 @@
     </div>
 
     <div>
-        <p th:if="${success}" style="color: green"><span class="glyphicon glyphicon-ok-circled" aria-hidden="true" /> <span th:utext="${success}" /></p>
-        <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-remove" aria-hidden="true" /> <span th:utext="${error}" /></p>
         <table class="table table-hover">
             <thead>
             <tr>
@@ -30,6 +28,7 @@
                 <th>VIN</th>
                 <th>Seller</th>
                 <th>Price</th>
+                <th style="text-align: center"><abbr title="Trusted car history">HIS</abbr></th>
                 <th></th>
             </tr>
             </thead>
@@ -58,6 +57,11 @@
                         <span th:text="${offerAndCar.offer.price}">price</span>
                         <input type="hidden" name="price" th:value="${offerAndCar.offer.price}"/>
                     </td>
+                    <td style="text-align: center">
+                        <a th:href="@{/history(vin=${offerAndCar.offer.vin})}">
+                            <img th:src="@{/img/TRUST-LOGO.png}" class="trusted-img" alt="Trust Logo" />
+                        </a>
+                    </td>
                     <td>
                         <button class="btn btn-success">accept</button>
                     </td>
@@ -65,7 +69,7 @@
             </tr>
             </tbody>
         </table>
-
+        <div style="text-align: center;"><p th:if="${offersAndCars.isEmpty()}" style="color: #e74c3c">No offers pending.</p></div>
     </div>
 
     <div th:replace="footer" />

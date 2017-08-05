@@ -4,6 +4,8 @@ import ch.uzh.fabric.model.Car;
 import ch.uzh.fabric.model.Certificate;
 import ch.uzh.fabric.model.ProposalData;
 import ch.uzh.fabric.service.CarService;
+import ch.uzh.fabric.service.DotService;
+import ch.uzh.fabric.service.InsuranceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -22,6 +24,10 @@ public class Bootstrap implements ApplicationRunner {
 
     @Autowired
     private CarService carService;
+    @Autowired
+    private DotService dotService;
+    @Autowired
+    private InsuranceService insuranceService;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -30,6 +36,7 @@ public class Bootstrap implements ApplicationRunner {
         carService.createUser(BOOTSTRAP_GARAGE_USER, BOOTSTRAP_GARAGE_ROLE, BOOTSTRAP_GARAGE_USER);
 
         // fully confirmed car
+        // sales offer already made for user
         carService.importCar(BOOTSTRAP_GARAGE_USER,
                 BOOTSTRAP_GARAGE_ROLE,
                 new Car(
@@ -46,10 +53,12 @@ public class Bootstrap implements ApplicationRunner {
                         4,
                         2,
                         200));
-        carService.register(BOOTSTRAP_GARAGE_USER, BOOTSTRAP_DOT_ROLE, TEST_VIN);
+        dotService.register(BOOTSTRAP_GARAGE_USER, BOOTSTRAP_DOT_ROLE, TEST_VIN);
         carService.insureProposal(BOOTSTRAP_GARAGE_USER, BOOTSTRAP_GARAGE_ROLE, TEST_VIN, TEST_INSURANCE_COMPANY);
-        carService.acceptInsurance(BOOTSTRAP_INSURANCE_USER, BOOTSTRAP_INSURANCE_ROLE, BOOTSTRAP_GARAGE_USER, TEST_VIN, TEST_INSURANCE_COMPANY);
-        carService.confirm(BOOTSTRAP_DOT_USER, BOOTSTRAP_DOT_ROLE, TEST_VIN, "ZH 99837");
+        insuranceService.acceptInsurance(BOOTSTRAP_INSURANCE_USER, BOOTSTRAP_INSURANCE_ROLE, BOOTSTRAP_GARAGE_USER, TEST_VIN, TEST_INSURANCE_COMPANY);
+        dotService.confirm(BOOTSTRAP_DOT_USER, BOOTSTRAP_DOT_ROLE, TEST_VIN, "ZH 99837");
+        carService.createSellingOffer(BOOTSTRAP_GARAGE_USER, BOOTSTRAP_GARAGE_ROLE, "5", TEST_VIN, BOOTSTRAP_PRIVATE_USER);
+        dotService.revoke(BOOTSTRAP_GARAGE_USER, BOOTSTRAP_DOT_ROLE, TEST_VIN);
 
         // create an unregistered car
         // with insurance proposal
@@ -82,14 +91,14 @@ public class Bootstrap implements ApplicationRunner {
                                 null,
                                 null,
                                 "red",
-                                "TDI",
+                                "Golf TDI",
                                 "VW"), 0, TEST_VIN3),
                 new ProposalData(
                         "5",
                         4,
                         2,
                         150));
-        carService.register(BOOTSTRAP_GARAGE_USER, BOOTSTRAP_DOT_ROLE, TEST_VIN3);
+        dotService.register(BOOTSTRAP_GARAGE_USER, BOOTSTRAP_DOT_ROLE, TEST_VIN3);
 
         // create a registered and insured batmobile
         // ready to be confirmed
@@ -103,15 +112,15 @@ public class Bootstrap implements ApplicationRunner {
                                 null,
                                 "black",
                                 "Batmobile",
-                                "The Dark Knight"), 0, TEST_VIN4),
+                                "Wayne Enterprises"), 0, TEST_VIN4),
                 new ProposalData(
                         "5",
                         8,
                         2,
                         250));
-        carService.register(BOOTSTRAP_PRIVATE_USER, BOOTSTRAP_DOT_ROLE, TEST_VIN4);
+        dotService.register(BOOTSTRAP_PRIVATE_USER, BOOTSTRAP_DOT_ROLE, TEST_VIN4);
         carService.insureProposal(BOOTSTRAP_PRIVATE_USER, BOOTSTRAP_PRIVATE_USER_ROLE, TEST_VIN4, TEST_INSURANCE_COMPANY);
-        carService.acceptInsurance(BOOTSTRAP_INSURANCE_USER, BOOTSTRAP_INSURANCE_ROLE, BOOTSTRAP_PRIVATE_USER, TEST_VIN4, TEST_INSURANCE_COMPANY);
+        insuranceService.acceptInsurance(BOOTSTRAP_INSURANCE_USER, BOOTSTRAP_INSURANCE_ROLE, BOOTSTRAP_PRIVATE_USER, TEST_VIN4, TEST_INSURANCE_COMPANY);
 
         System.out.println(
                 "  _   _                       _          _                                      _         \n" +

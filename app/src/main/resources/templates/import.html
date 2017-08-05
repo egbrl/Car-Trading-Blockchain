@@ -20,7 +20,7 @@
         <h1>Import Car</h1>
     </div>
     <div>
-        <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
+        <p th:if="${error}" style="color: #e74c3c"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
         <form class="form-horizontal" th:action="@{/import}" method="post">
             <div class="form-group">
                 <div class="col-sm-6">
@@ -64,8 +64,8 @@
             </div>
             <div class="form-group">
                 <div class="col-sm-6">
-                    * required
-                    <button type="submit" class="btn btn-default"><span style="color: #e6e6e6">Submit</span></button>
+                    <p>* required</p>
+                    <button type="submit" class="btn btn-primary">Submit</button>
                 </div>
             </div>
         </form>
