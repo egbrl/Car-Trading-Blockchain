@@ -18,7 +18,7 @@
     </div>
 
     <div>
-        <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
+        <p th:if="${error}" style="color: #e74c3c"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
         <p th:if="${success}" style="color: #18bc9c"><span class="glyphicon glyphicon-ok" aria-hidden="true" /> <span th:utext="${success}" /></p>
         <table class="table table-hover">
             <thead>
@@ -78,7 +78,7 @@
             </tr>
             </tbody>
         </table>
-
+        <div style="text-align: center;"><p th:if="${insPropsAndCars.isEmpty()}" style="color: #e74c3c">No pending requests.</p></div>
     </div>
 
     <div th:replace="footer" />

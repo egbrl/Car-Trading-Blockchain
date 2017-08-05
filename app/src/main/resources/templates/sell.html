@@ -21,7 +21,7 @@
         <h1>Sell Car</h1>
     </div>
     <p th:if="${success}" style="color: #18bc9c"><span class="glyphicon glyphicon-saved" aria-hidden="true" /> <span th:utext="${success}" /></p>
-    <p th:if="${error}" style="color: red"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
+    <p th:if="${error}" style="color: #e74c3c"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true" /> <span th:utext="${error}" /></p>
     <div>
         <form class="form-horizontal" th:action="@{/sell}" method="post">
             <div class="form-group">
