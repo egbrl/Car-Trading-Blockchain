@@ -1,5 +1,5 @@
 # Car Demo Live ISO
-:arrow_down: [download](https://drive.google.com/drive/folders/0BxPMjikasQPoLVQ3UmtkbjliUlk?usp=sharing) (latest  v0.0.1)
+:arrow_down: [download](https://drive.google.com/drive/folders/0BxPMjikasQPoLVQ3UmtkbjliUlk?usp=sharing) (latest  v0.0.2)
 
 ## Description
 The car-demo.iso image is based on Ubuntu 16.04. The OS will automatically launch the needed docker containers on startup. The startup script will ask you to establish an internet connection on startup.
