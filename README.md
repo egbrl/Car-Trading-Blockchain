@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/EGabb/Car-Trading-Blockchain.svg?branch=master)](https://travis-ci.org/EGabb/Car-Trading-Blockchain)
 
-## Env Setup
+## Environment Setup
 
 You may need to clean your docker env first:
 ```
@@ -30,6 +30,8 @@ This will assemble and install the docker image for the car app. It will then do
 - Maven
 - Git
 
+## Usage Instructions
+[carchain Tutorial on Google Drive](https://docs.google.com/document/d/1iMdJZwNY2aqjwtAbqdR45JeQ8bxwokO7Oqa_IZ2C9mY)
 
 ## Fetch Cars Directly on Peer(s)
 To check out the bootstrapped car, log into the docker container of `peer0` in `org1` and query the car:
