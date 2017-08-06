@@ -9,7 +9,7 @@ function ping_gw() {
 while ping_gw
 do
   echo "No network, connect to ethernet or wireless first"
-  echo "Then press any key to continue.."
+  echo "Then press [enter] key to continue.."
   read cont
   echo "Reprobing connection.."
 done
