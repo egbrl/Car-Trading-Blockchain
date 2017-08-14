@@ -1,0 +1,1995 @@
+<!DOCTYPE html>
+<!-- saved from url=(0046)file:///tmp/cover370957444/coverage.html#file0 -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/car_cc/car.go (73.3%)</option>
+				
+				<option value="file1">github.com/car_cc/chaincode.go (65.3%)</option>
+				
+				<option value="file2">github.com/car_cc/dot.go (78.8%)</option>
+				
+				<option value="file3">github.com/car_cc/insurance.go (86.1%)</option>
+				
+				<option value="file4">github.com/car_cc/user.go (77.1%)</option>
+				
+				<option value="file5">github.com/car_cc/utils.go (80.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: block;">package main
+
+import (
+        "encoding/json"
+        "errors"
+        "fmt"
+        "strconv"
+        "time"
+
+        "github.com/hyperledger/fabric/core/chaincode/shim"
+        pb "github.com/hyperledger/fabric/protos/peer"
+)
+
+/*
+* Queries the car history.
+*
+* On sucess,
+* Returns a map[in64]Car with modification timestamp as key
+* and Car object (from that point in time) as value
+ */
+func (t *CarChaincode) getHistory(stub shim.ChaincodeStubInterface, vin string) pb.Response <span class="cov0" title="0">{
+        hist, err := stub.GetHistoryForKey(vin)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error(err.Error())
+        }</span>
+
+        <span class="cov0" title="0">carHistory := make(map[int64]Car)
+        for hist.HasNext() </span><span class="cov0" title="0">{
+                mod, _ := hist.Next()
+                var car Car
+                err := json.Unmarshal(mod.GetValue(), &amp;car)
+                if err != nil </span><span class="cov0" title="0">{
+                        return shim.Error(err.Error())
+                }</span>
+
+                <span class="cov0" title="0">carHistory[mod.GetTimestamp().GetSeconds()] = car</span>
+        }
+
+        <span class="cov0" title="0">carHistoryAsBytes, _ := json.Marshal(carHistory)
+        return shim.Success(carHistoryAsBytes)</span>
+}
+
+/*
+ * Returns the car index
+ */
+func (t *CarChaincode) getCarIndex(stub shim.ChaincodeStubInterface) (map[string]string, error) <span class="cov8" title="1">{
+        response := t.read(stub, carIndexStr)
+        carIndex := make(map[string]string)
+        err := json.Unmarshal(response.Payload, &amp;carIndex)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, errors.New("Error parsing car index")
+        }</span>
+
+        <span class="cov8" title="1">return carIndex, nil</span>
+}
+
+/*
+ * Reads the car index at key 'vin'
+ *
+ * Returns username of car owner with VIN 'vin'.
+ */
+func (t *CarChaincode) getOwner(stub shim.ChaincodeStubInterface, vin string) (string, error) <span class="cov8" title="1">{
+        carIndex, err := t.getCarIndex(stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+        <span class="cov8" title="1">return carIndex[vin], nil</span>
+}
+
+/*
+ * Creates a new, unregistered car with the current timestamp
+ * and appends it to the car index. Returns an error if a
+ * car with the desired VIN already exists.
+ *
+ * A registration proposal will be issued on successfull car creation.
+ * For this proposal, optional registration data can be passed to
+ * 'createCar' to createCar a tailored registration proposal.
+ *
+ * Expects 'args':
+ *  Car with VIN                             json
+ *  (optional) RegistrationProposal          json
+ *
+ * On success,
+ * returns the car.
+ */
+func (t *CarChaincode) createCar(stub shim.ChaincodeStubInterface, username string, args []string) pb.Response <span class="cov8" title="1">{
+        if len(args) &lt; 1 </span><span class="cov0" title="0">{
+                return shim.Error("'create' expects Car with VIN as json")
+        }</span>
+
+        // create new registration proposal for the DOT
+        <span class="cov8" title="1">regProposal := RegistrationProposal{}
+
+        // if provided, read additional registration data
+        if len(args) &gt; 1 </span><span class="cov8" title="1">{
+                fmt.Printf("Received registration data: %s\n", args[1])
+                err := json.Unmarshal([]byte(args[1]), &amp;regProposal)
+                if err != nil </span><span class="cov0" title="0">{
+                        fmt.Println("Unable to parse your registration data")
+                }</span>
+        }
+
+        // let the invoker know if his data was well formatted
+        <span class="cov8" title="1">fmt.Printf("Creating car with parsed registration proposal: %v\n", regProposal)
+
+        // create car from arguments
+        car := Car{}
+        err := json.Unmarshal([]byte(args[0]), &amp;car)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error parsing car data. Expecting Car with VIN as json.")
+        }</span><span class="cov8" title="1"> else if car.Vin == "" </span><span class="cov0" title="0">{
+                return shim.Error("Vin is required, cannot be empty.")
+        }</span>
+
+        // add car birth date
+        <span class="cov8" title="1">car.CreatedTs = time.Now().Unix()
+
+        // check for existing garage user with that name
+        user, err := t.getUser(stub, username)
+        if err != nil </span><span class="cov8" title="1">{
+                userResponse := t.createUser(stub, username)
+                user = User{}
+                err := json.Unmarshal(userResponse.Payload, &amp;user)
+                if err != nil </span><span class="cov0" title="0">{
+                        return shim.Error(err.Error())
+                }</span>
+        }
+
+        // check for an existing car with that vin in the car index
+        <span class="cov8" title="1">owner, err := t.getOwner(stub, car.Vin)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error(err.Error())
+        }</span><span class="cov8" title="1"> else if owner != "" </span><span class="cov8" title="1">{
+                return shim.Error(fmt.Sprintf("Car with vin '%s' already exists. Choose another vin.", car.Vin))
+        }</span>
+
+        // save car to ledger, the car vin serves
+        // as the index to find the car again
+        <span class="cov8" title="1">carAsBytes, _ := json.Marshal(car)
+        err = stub.PutState(car.Vin, carAsBytes)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error writing car to ledger")
+        }</span>
+
+        // map the car to the users name
+        <span class="cov8" title="1">carIndex, err := t.getCarIndex(stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error(err.Error())
+        }</span>
+        <span class="cov8" title="1">carIndex[car.Vin] = user.Name
+        fmt.Printf("Added car with VIN '%s' created at '%d' in garage '%s' to car index.\n",
+                car.Vin, car.CreatedTs, user.Name)
+
+        // write udpated car index back to ledger
+        indexAsBytes, _ := json.Marshal(carIndex)
+        err = stub.PutState(carIndexStr, indexAsBytes)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error writing car index")
+        }</span>
+
+        // hand over the car and write user to ledger
+        <span class="cov8" title="1">user.Cars = append(user.Cars, car.Vin)
+        err = t.saveUser(stub, user)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error saving user")
+        }</span>
+
+        // load all proposals
+        <span class="cov8" title="1">proposalIndex, err := t.getRegistrationProposals(stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error loading registration proposal index")
+        }</span>
+
+        // update the car vin and the username
+        // in the registration proposal
+        // and save the proposal for the DOT
+        <span class="cov8" title="1">regProposal.Car = car.Vin
+        regProposal.Username = username
+        proposalIndex[car.Vin] = regProposal
+
+        // write udpated proposal index back to ledger
+        // for the DOT to read and register the car
+        indexAsBytes, _ = json.Marshal(proposalIndex)
+        err = stub.PutState(registrationProposalIndexStr, indexAsBytes)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error writing registration proposal index")
+        }</span>
+
+        // car creation successfull,
+        // return the car
+        <span class="cov8" title="1">return shim.Success(carAsBytes)</span>
+}
+
+/*
+ * Reads a car and checks for ownership
+ *
+ * Only the car owner can read the car.
+ *
+ * On success,
+ * returns the car.
+ */
+func (t *CarChaincode) getCar(stub shim.ChaincodeStubInterface, username string, vin string) (Car, error) <span class="cov8" title="1">{
+        if vin == "" </span><span class="cov0" title="0">{
+                return Car{}, errors.New("'readCar' expects a non-empty VIN to do the look up")
+        }</span>
+
+        // fetch the car from the ledger
+        <span class="cov8" title="1">carResponse := t.read(stub, vin)
+        car := Car{}
+        err := json.Unmarshal(carResponse.Payload, &amp;car)
+        if err != nil </span><span class="cov0" title="0">{
+                return Car{}, errors.New("Failed to fetch car with vin '" + vin + "' from ledger")
+        }</span>
+
+        // fetch the car index to check if the user owns the car
+        <span class="cov8" title="1">owner, err := t.getOwner(stub, vin)
+        if err != nil </span><span class="cov0" title="0">{
+                return Car{}, errors.New(err.Error())
+        }</span><span class="cov8" title="1"> else if owner != username </span><span class="cov0" title="0">{
+                return Car{}, errors.New("Forbidden: this is not your car")
+        }</span>
+
+        <span class="cov8" title="1">return car, nil</span>
+}
+
+/*
+ * Reads a car as DOT
+ *
+ * The DOT is allowed to read all cars
+ *
+ * On success,
+ * returns the car.
+ */
+func (t *CarChaincode) getCarAsDot(stub shim.ChaincodeStubInterface, vin string) (Car, error) <span class="cov8" title="1">{
+        if vin == "" </span><span class="cov0" title="0">{
+                return Car{}, errors.New("'readCar' expects a non-empty VIN to do the look up")
+        }</span>
+
+        // fetch the car from the ledger
+        <span class="cov8" title="1">carResponse := t.read(stub, vin)
+        car := Car{}
+        err := json.Unmarshal(carResponse.Payload, &amp;car)
+        if err != nil </span><span class="cov8" title="1">{
+                return Car{}, errors.New("Failed to fetch car with vin '" + vin + "' from ledger")
+        }</span>
+
+        <span class="cov8" title="1">return car, nil</span>
+}
+
+/*
+ * Reads a car.
+ *
+ * Only the car owner can read the car.
+ *
+ * On success,
+ * returns the car.
+ */
+func (t *CarChaincode) readCar(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response <span class="cov8" title="1">{
+        if vin == "" </span><span class="cov0" title="0">{
+                return shim.Error("'readCar' expects a non-empty VIN to do the look up")
+        }</span>
+
+        // fetch the car from the ledger
+        <span class="cov8" title="1">carResponse := t.read(stub, vin)
+        car := Car{}
+        err := json.Unmarshal(carResponse.Payload, &amp;car)
+        if err != nil </span><span class="cov8" title="1">{
+                return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
+        }</span>
+
+        // fetch the car index to check if the user owns the car
+        <span class="cov8" title="1">owner, err := t.getOwner(stub, vin)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error(err.Error())
+        }</span><span class="cov8" title="1"> else if owner != username </span><span class="cov8" title="1">{
+                return shim.Error("Forbidden: this is not your car")
+        }</span>
+
+        <span class="cov8" title="1">return shim.Success(carResponse.Payload)</span>
+}
+
+/*
+ * Reads a car as DOT
+ *
+ * Extra function for DOT to read cars
+ *
+ * On success,
+ * returns the car.
+ */
+func (t *CarChaincode) readCarAsDot(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response <span class="cov8" title="1">{
+        if vin == "" </span><span class="cov0" title="0">{
+                return shim.Error("'readCar' expects a non-empty VIN to do the look up")
+        }</span>
+
+        // fetch the car from the ledger
+        <span class="cov8" title="1">carResponse := t.read(stub, vin)
+        car := Car{}
+        err := json.Unmarshal(carResponse.Payload, &amp;car)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
+        }</span>
+
+        <span class="cov8" title="1">return shim.Success(carResponse.Payload)</span>
+}
+
+/*
+ * Creates selling offer.
+ *
+ * Arguments required:
+ * [0] Price                       (int)
+ * [1] VIN of the car to transfer  (string)
+ * [2] Buyer username              (string)
+ *
+ * On success,
+ * returns the offer.
+ */
+func (t *CarChaincode) createSellingOffer(stub shim.ChaincodeStubInterface, seller string, args []string) pb.Response <span class="cov8" title="1">{
+        price, _ := strconv.Atoi(args[0])
+        vin := args[1]
+        buyer := args[2]
+
+        // price input sanitation
+        if args[0] == "" || price &lt; 0 </span><span class="cov0" title="0">{
+                return shim.Error("'sell' expects a non-empty, positive price")
+        }</span>
+
+        // create new selling offer
+        <span class="cov8" title="1">offer := Offer{
+                Seller: seller,
+                Buyer:  buyer,
+                Vin:    vin,
+                Price:  price}
+
+        // updating buyer object
+        buyerAsObject, err := t.getUser(stub, buyer)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error: Could not find buyer in database.")
+        }</span>
+        // allow only one selling offer per car toa  user
+        <span class="cov8" title="1">for _, offer := range buyerAsObject.Offers </span><span class="cov0" title="0">{
+                if offer.Vin == vin </span><span class="cov0" title="0">{
+                        return shim.Error("Error: It exists already an offer for car '" + vin + "and prospective buyer '" + buyer + "'.")
+                }</span>
+        }
+        <span class="cov8" title="1">buyerAsObject.Offers = append(buyerAsObject.Offers, offer)
+        err = t.saveUser(stub, buyerAsObject)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error(err.Error())
+        }</span>
+
+        <span class="cov8" title="1">offerAsBytes, _ := json.Marshal(offer)
+
+        return shim.Success(offerAsBytes)</span>
+}
+
+/*
+ * Sell a car to a new owner (receiver).
+ *
+ * No balance checks are performed before selling a car,
+ * cars are bought on credit.
+ *
+ * Arguments required:
+ * [0] VIN of the car to transfer  (string)
+ * [1] Buyer username              (string)
+ *
+ * On success,
+ * returns the car.
+ */
+func (t *CarChaincode) sell(stub shim.ChaincodeStubInterface, seller string, args []string) pb.Response <span class="cov8" title="1">{
+        vin := args[0]
+        buyer := args[1]
+
+        // input sanitation
+        if vin == "" </span><span class="cov0" title="0">{
+                return shim.Error("'sell' expects a non-empty VIN to do the transfer")
+        }</span>
+
+        // check for sales offer,
+        // you cannot buy a car without the sellers agreement
+        <span class="cov8" title="1">buyerAsUser, err := t.getUser(stub, buyer)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error(err.Error())
+        }</span>
+
+        <span class="cov8" title="1">var salesOffer Offer
+        for _, o := range buyerAsUser.Offers </span><span class="cov8" title="1">{
+                if o.Vin == vin </span><span class="cov8" title="1">{
+                        salesOffer = o
+                }</span>
+        }
+
+        <span class="cov8" title="1">if salesOffer == (Offer{}) </span><span class="cov8" title="1">{
+                return shim.Error("No sale without sales offer. Request an offer from the seller first.")
+        }</span>
+
+        // fetch the car from the ledger
+        // this already checks for ownership
+        <span class="cov8" title="1">car, err := t.getCar(stub, seller, vin)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
+        }</span>
+
+        // check if car is not confirmed anymore
+        <span class="cov8" title="1">if IsConfirmed(&amp;car) </span><span class="cov0" title="0">{
+                return shim.Error("The car is still confirmed. It has to be revoked first in order to do the transfer.")
+        }</span>
+
+        // change of ownership in the car certificate
+        <span class="cov8" title="1">car.Certificate.Username = buyer
+
+        // write car with udpated certificate back to ledger
+        carAsBytes, _ := json.Marshal(car)
+        err = stub.PutState(car.Vin, carAsBytes)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error writing car")
+        }</span>
+
+        // remove all selling offers for this car from all users
+        // this has to happen in the same transaction as 'sell'
+        // to ensure no orphans are left in the system
+        // and that no car is bought/sold twice
+        <span class="cov8" title="1">userIndex, err := t.getUserIndex(stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error(err.Error())
+        }</span>
+
+        <span class="cov8" title="1">for username := range userIndex </span><span class="cov8" title="1">{
+                user, err := t.getUser(stub, username)
+                if err != nil </span><span class="cov0" title="0">{
+                        return shim.Error(err.Error())
+                }</span>
+
+                <span class="cov8" title="1">var newOffers []Offer
+                for _, offer := range user.Offers </span><span class="cov8" title="1">{
+                        // check that user is allowed to remove his selling offers
+                        // only the seller should be allowed to remove an offer
+                        // he created
+                        if offer.Vin != vin || offer.Seller != seller </span><span class="cov0" title="0">{
+                                newOffers = append(newOffers, offer)
+                        }</span>
+                }
+
+                <span class="cov8" title="1">user.Offers = newOffers
+
+                // if buyer/seller update balances
+                // also update car lists and the car index
+                if user.Name == buyer </span><span class="cov8" title="1">{
+                        user.Balance -= salesOffer.Price
+
+                        // attach the car to the buyer
+                        user.Cars = append(user.Cars, car.Vin)
+
+                        // get the car index
+                        carIndex, err := t.getCarIndex(stub)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return shim.Error("Error fetching car index")
+                        }</span>
+
+                        // update the car index to represent
+                        // the new ownership rights
+                        <span class="cov8" title="1">carIndex[car.Vin] = user.Name
+
+                        // write the car index back to ledger
+                        indexAsBytes, _ := json.Marshal(carIndex)
+                        err = stub.PutState(carIndexStr, indexAsBytes)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return shim.Error("Error writing car index")
+                        }</span>
+                }<span class="cov8" title="1"> else if user.Name == seller </span><span class="cov8" title="1">{
+                        user.Balance += salesOffer.Price
+
+                        // go through all his cars
+                        // and remove the car we just transferred
+                        var newCarList []string
+                        for _, carVin := range user.Cars </span><span class="cov8" title="1">{
+                                if carVin != car.Vin </span><span class="cov0" title="0">{
+                                        newCarList = append(newCarList, carVin)
+                                }</span>
+                        }
+
+                        <span class="cov8" title="1">user.Cars = newCarList</span>
+                }
+
+                // write the user back to ledger
+                <span class="cov8" title="1">err = t.saveUser(stub, user)
+                if err != nil </span><span class="cov0" title="0">{
+                        return shim.Error(err.Error())
+                }</span>
+        }
+
+        // clear pending insureProposals
+        // from all insurers for this car
+        <span class="cov8" title="1">insurerIndex, err := t.getInsurerIndex(stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error getting insurer index.")
+        }</span>
+
+        <span class="cov8" title="1">for _, insurer := range insurerIndex </span><span class="cov8" title="1">{
+                var newProposals []InsureProposal
+                for _, insProposal := range insurer.Proposals </span><span class="cov8" title="1">{
+                        if insProposal.Car != vin </span><span class="cov0" title="0">{
+                                newProposals = append(newProposals, insProposal)
+                        }</span>
+                }
+                <span class="cov8" title="1">insurer.Proposals = newProposals
+                insurerIndex[insurer.Name] = insurer</span>
+        }
+
+        // write insurer index to ledger
+        <span class="cov8" title="1">indexAsBytes, _ := json.Marshal(insurerIndex)
+        err = stub.PutState(insurerIndexStr, indexAsBytes)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error writing insurer index")
+        }</span>
+
+        <span class="cov8" title="1">return shim.Success(carAsBytes)</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package main
+
+import (
+        "fmt"
+        "reflect"
+        "strconv"
+        "strings"
+
+        "github.com/hyperledger/fabric/core/chaincode/shim"
+        pb "github.com/hyperledger/fabric/protos/peer"
+)
+
+type CarChaincode struct {
+}
+
+// uuid for test mocks
+const uuid string = "1"
+
+// indexes
+const carIndexStr string = "_cars"
+const userIndexStr string = "_users"
+const insurerIndexStr string = "_insurers"
+const registrationProposalIndexStr string = "_registrationProposals"
+const revocationProposalIndexStr string = "_revocationProposals"
+
+// numberplate -&gt; vin
+const numberplateIndex string = "_numberplates"
+
+func (t *CarChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response <span class="cov8" title="1">{
+        fmt.Println("Car demo Init")
+
+        var aval int
+        var err error
+
+        _, args := stub.GetFunctionAndParameters()
+        if len(args) != 1 </span><span class="cov0" title="0">{
+                return shim.Error("Incorrect number of arguments. Expecting 1 integer to test chain.")
+        }</span>
+
+        // initialize the chaincode
+        <span class="cov8" title="1">aval, err = strconv.Atoi(args[0])
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Expecting integer value for asset holding")
+        }</span>
+
+        // write the state to the ledger
+        // make a test var "abc" in order to able to query it and see if it worked
+        <span class="cov8" title="1">err = stub.PutState("abc", []byte(strconv.Itoa(aval)))
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error(err.Error())
+        }</span>
+
+        // clear the car index
+        <span class="cov8" title="1">err = clearStringIndex(carIndexStr, stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error(err.Error())
+        }</span>
+
+        // clear the user index
+        <span class="cov8" title="1">err = clearStringIndex(userIndexStr, stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error(err.Error())
+        }</span>
+
+        // clear the revocation proposal index
+        <span class="cov8" title="1">err = clearStringIndex(revocationProposalIndexStr, stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error(err.Error())
+        }</span>
+
+        // clear the insurer index
+        <span class="cov8" title="1">err = clearInsurerIndex(insurerIndexStr, stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error(err.Error())
+        }</span>
+
+        // clear the registration proposal index
+        <span class="cov8" title="1">err = clearRegistrationProposalIndex(registrationProposalIndexStr, stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error(err.Error())
+        }</span>
+
+        //clear the numberplate index
+        <span class="cov8" title="1">err = clearStringIndex(numberplateIndex, stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error(err.Error())
+        }</span>
+
+        <span class="cov8" title="1">fmt.Println("Init terminated")
+        return shim.Success(nil)</span>
+}
+
+/*
+ * Invokes an action on the ledger.
+ *
+ * Expects 'username' and 'role' as first two parameters.
+ * Unrestricted queries can only be done from test files.
+ */
+func (t *CarChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response <span class="cov8" title="1">{
+        function, args := stub.GetFunctionAndParameters()
+
+        if len(args) &lt; 2 </span><span class="cov0" title="0">{
+                return shim.Error("Invoke expects 'username' and 'role' as first two args.")
+        }</span>
+
+        <span class="cov8" title="1">username := args[0]
+        role := args[1]
+        args = args[2:]
+
+        fmt.Printf("Invoke is running as user '%s' with role '%s'\n", username, role)
+        fmt.Printf("Invoke is running function '%s' with args: %s\n", function, strings.Join(args, ", "))
+
+        switch function </span>{
+
+        // GENERAL FUNCTIONS
+        <span class="cov0" title="0">case "getHistory":
+                if len(args) != 1 </span><span class="cov0" title="0">{
+                        return shim.Error("'getHistory' expects a car vin")
+                }</span>
+                <span class="cov0" title="0">return t.getHistory(stub, args[0])</span>
+
+        <span class="cov8" title="1">case "read":
+                if len(args) != 1 </span><span class="cov0" title="0">{
+                        return shim.Error("'read' expects a key to do the look up")
+                }</span><span class="cov8" title="1"> else if reflect.TypeOf(stub).String() != "*shim.MockStub" </span><span class="cov0" title="0">{
+                        // only allow unrestricted queries from the test files
+                        return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to do unrestricted queries on the ledger.", role))
+                }</span><span class="cov8" title="1"> else {
+                        return t.read(stub, args[0])
+                }</span>
+
+        <span class="cov8" title="1">case "readCar":
+                if len(args) != 1 </span><span class="cov0" title="0">{
+                        return shim.Error("'readCar' expects a car vin to do the look up")
+                }</span><span class="cov8" title="1"> else if role == "dot" </span><span class="cov8" title="1">{
+                        return t.readCarAsDot(stub, username, args[0])
+                }</span><span class="cov8" title="1"> else {
+                        return t.readCar(stub, username, args[0])
+                }</span>
+
+        // USER FUNCTIONS
+        <span class="cov8" title="1">case "readUser":
+                return t.readUser(stub, username)</span>
+
+        <span class="cov8" title="1">case "createUser":
+                if len(args) != 1 </span><span class="cov0" title="0">{
+                        return shim.Error("'createUser' expects a username to create a new user")
+                }</span>
+                <span class="cov8" title="1">return t.createUser(stub, args[0])</span>
+
+        <span class="cov8" title="1">case "deleteUser":
+                if len(args) != 2 </span><span class="cov0" title="0">{
+                        return shim.Error("'deleteUser' expects a username and a remainingBalanceRecipient username")
+                }</span>
+                <span class="cov8" title="1">return t.deleteUser(stub, args[0], args[1])</span>
+
+        <span class="cov8" title="1">case "revocationProposal":
+                if len(args) != 1 </span><span class="cov0" title="0">{
+                        return shim.Error("'revocationProposal' expects a car vin to revoke a car")
+                }</span><span class="cov8" title="1"> else if role == "user" || role == "garage" </span><span class="cov8" title="1">{
+                        return t.revocationProposal(stub, username, args[0])
+                }</span><span class="cov0" title="0"> else {
+                        return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create a revocation proposal.", role))
+                }</span>
+
+        <span class="cov8" title="1">case "insureProposal":
+                if len(args) != 2 </span><span class="cov0" title="0">{
+                        return shim.Error("'insureProposal' expects a car vin and an insurance company")
+                }</span><span class="cov8" title="1"> else if role == "user" || role == "garage" </span><span class="cov8" title="1">{
+                        return t.insureProposal(stub, username, args[0], args[1])
+                }</span><span class="cov0" title="0"> else {
+                        return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create an insurance proposal.", role))
+                }</span>
+
+        <span class="cov8" title="1">case "createSellingOffer":
+                if len(args) != 3 </span><span class="cov0" title="0">{
+                        return shim.Error("'sell' expects a price, car vin and buyer name to transfer a car")
+                }</span><span class="cov8" title="1"> else if role == "user" || role == "garage" </span><span class="cov8" title="1">{
+                        // only allow users and garage users to create an offer
+                        return t.createSellingOffer(stub, username, args)
+                }</span><span class="cov0" title="0"> else {
+                        return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create selling offers.", role))
+                }</span>
+
+        <span class="cov8" title="1">case "sell":
+                if len(args) != 2 </span><span class="cov0" title="0">{
+                        return shim.Error("'sell' expects a car vin and buyer name to transfer a car")
+                }</span><span class="cov8" title="1"> else if role == "user" || role == "garage" </span><span class="cov8" title="1">{
+                        return t.sell(stub, username, args)
+                }</span><span class="cov0" title="0"> else {
+                        return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to sell cars.", role))
+                }</span>
+
+        <span class="cov8" title="1">case "updateBalance":
+                if len(args) != 1 </span><span class="cov0" title="0">{
+                        return shim.Error("'updateBalance' expects update amount")
+                }</span><span class="cov8" title="1"> else if role != "user" </span><span class="cov0" title="0">{
+                        // only a user is allowed to update balance
+                        return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to update the balance of a user.", role))
+                }</span><span class="cov8" title="1"> else {
+                        return t.updateBalance(stub, username, args[0])
+                }</span>
+
+        // GARAGE FUNCTIONS
+        <span class="cov8" title="1">case "create":
+                if role != "garage" &amp;&amp; role != "user" </span><span class="cov0" title="0">{
+                        return shim.Error("'create' expects you to be a garage or common user")
+                }</span>
+                <span class="cov8" title="1">return t.createCar(stub, username, args)</span>
+
+        // DOT FUNCTIONS
+        <span class="cov8" title="1">case "revoke":
+                if len(args) != 1 </span><span class="cov0" title="0">{
+                        return shim.Error("'revoke' expects a car vin to revoke a car")
+                }</span><span class="cov8" title="1"> else if role != "dot" </span><span class="cov0" title="0">{
+                        // only the DOT is allowed to revoke cars
+                        return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to revoke cars.", role))
+                }</span><span class="cov8" title="1"> else {
+                        return t.revoke(stub, username, args[0])
+                }</span>
+
+        <span class="cov8" title="1">case "delete":
+                if len(args) != 1 </span><span class="cov0" title="0">{
+                        return shim.Error("'delete' expects a car vin to delete a car")
+                }</span><span class="cov8" title="1"> else if role != "dot" </span><span class="cov0" title="0">{
+                        // only the DOT is allowed to delete cars
+                        return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to delete cars.", role))
+                }</span><span class="cov8" title="1"> else {
+                        return t.deleteCar(stub, args[0])
+                }</span>
+
+        <span class="cov8" title="1">case "readRegistrationProposalsAsList":
+                if role != "dot" </span><span class="cov0" title="0">{
+                        // only the DOT is allowed to read registration proposals
+                        return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to read registration proposals.", role))
+                }</span>
+                <span class="cov8" title="1">return t.readRegistrationProposalsList(stub)</span>
+
+        <span class="cov8" title="1">case "readRegistrationProposals":
+                if role != "dot" </span><span class="cov0" title="0">{
+                        // only the DOT is allowed to read registration proposals
+                        return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to read registration proposals.", role))
+                }</span>
+                <span class="cov8" title="1">return t.readRegistrationProposals(stub)</span>
+
+        <span class="cov8" title="1">case "readRegistrationProposal":
+                if role != "dot" </span><span class="cov0" title="0">{
+                        // only the DOT is allowed to read a registration proposal
+                        return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to read registration proposals.", role))
+                }</span>
+                <span class="cov8" title="1">return t.getRegistrationProposal(stub, args[0])</span>
+
+        <span class="cov8" title="1">case "register":
+                if len(args) != 1 </span><span class="cov0" title="0">{
+                        return shim.Error("'register' expects a car vin to register")
+                }</span><span class="cov8" title="1"> else if role != "dot" </span><span class="cov8" title="1">{
+                        // only the DOT is allowed to register new cars
+                        return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to register cars.", role))
+                }</span><span class="cov8" title="1"> else {
+                        return t.registerCar(stub, username, args[0])
+                }</span>
+
+        <span class="cov8" title="1">case "confirm":
+                if len(args) != 2 </span><span class="cov0" title="0">{
+                        return shim.Error(fmt.Sprintf("'confirm' expects a car vin and numberplate to confirm a car.\n You can choose your numberplate yourself."))
+                }</span><span class="cov8" title="1"> else if role != "dot" </span><span class="cov0" title="0">{
+                        // only the DOT is allowed to confirm cars
+                        return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to confirm cars.", role))
+                }</span><span class="cov8" title="1"> else {
+                        return t.confirmCar(stub, username, args)
+                }</span>
+
+        <span class="cov8" title="1">case "getRevocationProposals":
+                if role != "dot" </span><span class="cov0" title="0">{
+                        return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to query revocation proposals.", role))
+                }</span>
+                <span class="cov8" title="1">return t.getRevocationProposals(stub)</span>
+
+        <span class="cov8" title="1">case "getCarsToConfirmAsList":
+                if role != "dot" </span><span class="cov0" title="0">{
+                        return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to query revocation proposals.", role))
+                }</span>
+                <span class="cov8" title="1">return t.getCarsToConfirm(stub)</span>
+
+        <span class="cov8" title="1">case "getAllCarsAsList":
+                if role != "dot" </span><span class="cov0" title="0">{
+                        return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to retrieve all cars.", role))
+                }</span>
+                <span class="cov8" title="1">return t.getAllCars(stub)</span>
+
+        // INSURANCE FUNCTIONS
+        <span class="cov8" title="1">case "insuranceAccept":
+                if len(args) != 3 </span><span class="cov0" title="0">{
+                        return shim.Error("'insuranceAccept' expects username to insure, a car vin and an insurance company")
+                }</span><span class="cov8" title="1"> else if role != "insurer" </span><span class="cov8" title="1">{
+                        // only insurers are allowed to create insurance contracts
+                        return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create an insurance proposal.", role))
+                }</span><span class="cov8" title="1"> else {
+                        return t.insuranceAccept(stub, args[0], args[1], args[2])
+                }</span>
+
+        <span class="cov8" title="1">case "getInsurer":
+                if len(args) != 1 </span><span class="cov0" title="0">{
+                        return shim.Error("'getInsurer' expects an insurance company name")
+                }</span><span class="cov8" title="1"> else if role != "insurer" </span><span class="cov0" title="0">{
+                        // only insurers are allowed to read their insurance proposals
+                        return shim.Error(fmt.Sprintf("Sorry, role '%s' is not allowed to create an insurance proposal.", role))
+                }</span><span class="cov8" title="1"> else {
+                        return t.getInsurer(stub, args[0])
+                }</span>
+
+        <span class="cov0" title="0">default:</span>
+
+        }
+
+        <span class="cov0" title="0">return shim.Error("Invoke did not find function: " + function)</span>
+}
+
+/*
+ * Reads ledger state from position 'key'.
+ *
+ * Can be any of:
+ *  - Car   (expects car timestamp as key)
+ *  - User  (expects user name as key)
+ *  - or an index like '_cars'
+ *
+ * On success,
+ * returns ledger state in bytes at position 'key'.
+ */
+func (t *CarChaincode) read(stub shim.ChaincodeStubInterface, key string) pb.Response <span class="cov8" title="1">{
+        if key == "" </span><span class="cov0" title="0">{
+                return shim.Error("'read' expects a non-empty key to do the look up")
+        }</span>
+
+        <span class="cov8" title="1">valAsBytes, err := stub.GetState(key)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Failed to fetch value at key '" + key + "' from ledger")
+        }</span>
+
+        <span class="cov8" title="1">return shim.Success(valAsBytes)</span>
+}
+
+func main() <span class="cov0" title="0">{
+        err := shim.Start(new(CarChaincode))
+        if err != nil </span><span class="cov0" title="0">{
+                fmt.Printf("Error starting Car chaincode: %s", err)
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package main
+
+import (
+        "encoding/json"
+        "errors"
+        "fmt"
+
+        "github.com/hyperledger/fabric/core/chaincode/shim"
+        pb "github.com/hyperledger/fabric/protos/peer"
+)
+
+/*
+ * Checks the car numberplate.
+ *
+ * The numberplate is handed out by the DOT.
+ */
+func IsConfirmed(car *Car) bool <span class="cov8" title="1">{
+        // cannot have a numberplate without car papers
+        if !IsRegistered(car) </span><span class="cov8" title="1">{
+                return false
+        }</span>
+
+        // cannot give you a numberplate without insurance contract
+        <span class="cov8" title="1">if !IsInsured(car) </span><span class="cov8" title="1">{
+                return false
+        }</span>
+
+        <span class="cov8" title="1">confirmed := car.Certificate.Numberplate != ""
+
+        // because the car is registered, the car VIN can be trusted
+        if confirmed </span><span class="cov8" title="1">{
+                fmt.Printf("Car with VIN '%s' is confirmed\n", car.Vin)
+        }</span><span class="cov0" title="0"> else {
+                fmt.Printf("Car with VIN '%s' has no valid numberplate\n", car.Vin)
+        }</span>
+
+        <span class="cov8" title="1">return confirmed</span>
+}
+
+/*
+ * Checks for a valid car VIN.
+ *
+ * The car VIN is valid if the DOT certificate contains
+ * the same information. Registration guarantees that
+ * certificate VIN and a car VIN are equal and that
+ * a certificate was issued by the DOT at least once.
+ */
+func IsRegistered(car *Car) bool <span class="cov8" title="1">{
+        // cannot be registered without certificate
+        if car.Certificate.Vin == "" </span><span class="cov8" title="1">{
+                fmt.Printf("Car created at ts '%d' is not yet registered\n", car.CreatedTs)
+                return false
+        }</span>
+
+        // validate car VIN
+        <span class="cov8" title="1">carVin := car.Vin
+        registered := car.Certificate.Vin == carVin
+
+        if registered </span><span class="cov8" title="1">{
+                fmt.Printf("Car created at ts '%d' is registered with VIN '%s'\n", car.CreatedTs, carVin)
+        }</span><span class="cov0" title="0"> else {
+                fmt.Printf("Car created at ts '%d' is not yet registered\n", car.CreatedTs)
+        }</span>
+
+        <span class="cov8" title="1">return registered</span>
+}
+
+/*
+ * Returns the registration proposal index with all
+ * registration proposals.
+ */
+func (t *CarChaincode) getRegistrationProposals(stub shim.ChaincodeStubInterface) (map[string]RegistrationProposal, error) <span class="cov8" title="1">{
+        response := t.read(stub, registrationProposalIndexStr)
+        proposalIndex := make(map[string]RegistrationProposal)
+        err := json.Unmarshal(response.Payload, &amp;proposalIndex)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, errors.New("Error parsing registration proposal index")
+        }</span>
+
+        <span class="cov8" title="1">return proposalIndex, nil</span>
+}
+
+/*
+ * Reads all registration proposals.
+ */
+func (t *CarChaincode) readRegistrationProposals(stub shim.ChaincodeStubInterface) pb.Response <span class="cov8" title="1">{
+        proposalIndex, err := t.getRegistrationProposals(stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error reading registration proposal index")
+        }</span>
+
+        <span class="cov8" title="1">indexAsBytes, _ := json.Marshal(proposalIndex)
+        return shim.Success(indexAsBytes)</span>
+}
+
+/*
+ * Reads all registration proposals and returns them as an array
+ */
+func (t *CarChaincode) readRegistrationProposalsList(stub shim.ChaincodeStubInterface) pb.Response <span class="cov8" title="1">{
+        proposalIndex, err := t.getRegistrationProposals(stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error reading registration proposal index")
+        }</span>
+        <span class="cov8" title="1">var registrationProposalList []RegistrationProposal
+
+        for _, v := range proposalIndex </span><span class="cov8" title="1">{
+                registrationProposalList = append(registrationProposalList, v)
+        }</span>
+
+        <span class="cov8" title="1">indexListAsBytes, _ := json.Marshal(registrationProposalList)
+        return shim.Success(indexListAsBytes)</span>
+}
+
+/*
+ * Returns a registration proposal for a car.
+ */
+func (t *CarChaincode) getRegistrationProposal(stub shim.ChaincodeStubInterface, car string) pb.Response <span class="cov8" title="1">{
+        // load all proposals
+        proposalIndex, err := t.getRegistrationProposals(stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error reading registration proposal index")
+        }</span>
+
+        <span class="cov8" title="1">ret := proposalIndex[car]
+        retAsBytes, _ := json.Marshal(ret)
+        return shim.Success(retAsBytes)</span>
+}
+
+/*
+ * Registers a car.
+ *
+ * Registration guarantees that certificate VIN
+ * and a car VIN are equal and that a certificate
+ * was issued by the DOT at least once.
+ *
+ * To registerCar a car, a RegistrationProposal needs to be present.
+ * This proposal is removed/deleted after successfull registration.
+ * This is not consistent with reality, but serves the purpose
+ * for now, because the Form 13.20 A (RegistrationProposal)
+ * is not used anywhere else right now. Like this, the RegistrationProposal
+ * only serves the purpose to signal the DOT, that there is a new
+ * car waiting for registration.
+ *
+ * On success,
+ * returns the car with certificate.
+ */
+func (t *CarChaincode) registerCar(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response <span class="cov8" title="1">{
+        // reading the car already checks that the user
+        // is the actual owner of the car
+        car, err := t.getCarAsDot(stub, vin)
+        if err != nil </span><span class="cov8" title="1">{
+                return shim.Error(fmt.Sprintf("Error getting car as DOT"))
+        }</span>
+        <span class="cov8" title="1">if vin != car.Vin </span><span class="cov0" title="0">{
+                return shim.Error(fmt.Sprintf("Cannot register, invalid VIN.\nCar VIN is '%s' and you want to register VIN '%s'", car.Vin, vin))
+        }</span>
+
+        // get all registration proposals
+        <span class="cov8" title="1">proposals, err := t.getRegistrationProposals(stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error reading registration proposal index")
+        }</span>
+
+        // check if there exists a registration proposal for that car
+        <span class="cov8" title="1">if proposals[car.Vin].Car != vin </span><span class="cov8" title="1">{
+                return shim.Error(fmt.Sprintf("There exists no registration proposal for car with VIN: %s", vin))
+        }</span>
+
+        // create a certificate, approve vin
+        // and update the car in the ledger
+        <span class="cov8" title="1">car.Certificate.Username = username
+        car.Certificate.Vin = vin
+        carAsBytes, _ := json.Marshal(car)
+        err = stub.PutState(car.Vin, carAsBytes)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error writing car")
+        }</span>
+
+        // remove the proposal we just registered
+        <span class="cov8" title="1">delete(proposals, car.Vin)
+
+        // save the new proposal index
+        // without the car we just registered
+        proposalsAsBytes, _ := json.Marshal(proposals)
+        err = stub.PutState(registrationProposalIndexStr, proposalsAsBytes)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error writing proposal index")
+        }</span>
+
+        <span class="cov8" title="1">fmt.Printf("Successfully registered car created at ts '%d' with VIN '%s'\n", car.CreatedTs, vin)
+
+        return shim.Success(carAsBytes)</span>
+}
+
+/*
+ * Returns a list of cars to be confirmed
+ *
+ * On success,
+ * returns a list with cars to confirm.
+ */
+func (t *CarChaincode) getCarsToConfirm(stub shim.ChaincodeStubInterface) pb.Response <span class="cov8" title="1">{
+        carIndex, err := t.getCarIndex(stub)
+
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error getting car index")
+        }</span>
+
+        <span class="cov8" title="1">var toConfirmcarList []Car
+
+        for k := range carIndex </span><span class="cov8" title="1">{
+                car, err := t.getCarAsDot(stub, k)
+                if err != nil </span><span class="cov0" title="0">{
+                        return shim.Error("Error getting car")
+                }</span>
+                <span class="cov8" title="1">if IsRegistered(&amp;car) &amp;&amp; IsInsured(&amp;car) &amp;&amp; (car.Certificate.Numberplate == "") </span><span class="cov8" title="1">{
+                        toConfirmcarList = append(toConfirmcarList, car)
+                }</span>
+        }
+
+        // marshal list
+        <span class="cov8" title="1">toConfirmcarListAsBytes, _ := json.Marshal(toConfirmcarList)
+
+        // return the list of cars to confirm
+        return shim.Success(toConfirmcarListAsBytes)</span>
+}
+
+/*
+ * Confirms a car and assigns a numberplate.
+ *
+ * Only the owner of a car can request confirmation of a car.
+ * Car needs to be insured as a requirement for getting
+ * the permit to drive on the roads. Only insured cars can get
+ * confirmed and get a numberplate.
+ *
+ * Required arguments:
+ *   [0] Vin         (string)
+ *   [1] Numberplate (string)
+ *
+ * On success,
+ * returns the car with numberplate.
+ */
+func (t *CarChaincode) confirmCar(stub shim.ChaincodeStubInterface, username string, args []string) pb.Response <span class="cov8" title="1">{
+        vin := args[0]
+        numberplate := args[1]
+
+        if vin == "" </span><span class="cov0" title="0">{
+                return shim.Error("'confirm' expects a non-empty VIN to assign a numberplate")
+        }</span>
+
+        // check numberplate argument
+        <span class="cov8" title="1">if numberplate == "" </span><span class="cov0" title="0">{
+                return shim.Error("Car numberplate is empty. Please provide a numberplate to confirm your car")
+        }</span>
+
+        // checking if numberplate is yet available
+        <span class="cov8" title="1">numberplateIndex, err := t.getNumberplateIndex(stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Failed to fetch numberplate index")
+        }</span>
+        <span class="cov8" title="1">vinNumberplateExisting, numberplateExisting := numberplateIndex[numberplate]
+        if numberplateExisting </span><span class="cov0" title="0">{
+                return shim.Error("Numberplate already taken. Confirmation for car " + vin + "' with numberplate '" + vinNumberplateExisting + "' failed.")
+        }</span>
+
+        // fetch the car from the ledger
+        <span class="cov8" title="1">car, err := t.getCarAsDot(stub, vin)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
+        }</span>
+
+        // check if car is insured
+        <span class="cov8" title="1">if !IsInsured(&amp;car) </span><span class="cov8" title="1">{
+                return shim.Error("Car is not insured. Please insure car first before trying to confirm it")
+        }</span>
+
+        // updating numberplate index
+        <span class="cov8" title="1">numberplateIndex[numberplate] = vin
+
+        // write updated numberplate index to ledger
+        numberplateIndexAsBytes, _ := json.Marshal(numberplateIndex)
+        err = stub.PutState(vin, numberplateIndexAsBytes)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error writing numberplate index to ledger")
+        }</span>
+
+        // assign the numberplate to the car
+        <span class="cov8" title="1">car.Certificate.Numberplate = numberplate
+
+        // write udpated car back to ledger
+        carAsBytes, _ := json.Marshal(car)
+        err = stub.PutState(vin, carAsBytes)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error writing car")
+        }</span>
+
+        // car confirmation successfull,
+        // return the car with numberplate
+        <span class="cov8" title="1">return shim.Success(carAsBytes)</span>
+}
+
+/*
+ * Revokes a car.
+ *
+ * Only the owner of a car can request revocation of a car.
+ * A revocation will render the numberplate
+ * and the insurance contract as invalid.
+ * This is required before a car transfer.
+ *
+ * On success,
+ * returns the car.
+ */
+func (t *CarChaincode) revoke(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response <span class="cov8" title="1">{
+        if vin == "" </span><span class="cov0" title="0">{
+                return shim.Error("'revoke' expects a non-empty VIN to do the revocation")
+        }</span>
+
+        // fetch the car from the ledger
+        // this already checks for ownership
+        <span class="cov8" title="1">car, err := t.getCar(stub, username, vin)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
+        }</span>
+
+        // check if car is already revoked
+        <span class="cov8" title="1">if !IsInsured(&amp;car) &amp;&amp; !IsConfirmed(&amp;car) </span><span class="cov0" title="0">{
+                return shim.Error("Car is already revoked!")
+        }</span>
+
+        // remove car insurance
+        <span class="cov8" title="1">car.Certificate.Insurer = ""
+
+        // check if car is not anymore insured
+        if IsInsured(&amp;car) </span><span class="cov0" title="0">{
+                return shim.Error("Whoops... Something went wrong while revoking car. Car is still insured.")
+        }</span>
+
+        // remove numberplate
+        <span class="cov8" title="1">car.Certificate.Numberplate = ""
+
+        // check if not confirmed anymore
+        if IsConfirmed(&amp;car) </span><span class="cov0" title="0">{
+                return shim.Error("Whoops... Something went wrong while revoking car. Car is still confirmed.")
+        }</span>
+
+        // write udpated car back to ledger
+        <span class="cov8" title="1">carAsBytes, _ := json.Marshal(car)
+        err = stub.PutState(vin, carAsBytes)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error writing car")
+        }</span>
+
+        // fetch all revocation proposals
+        <span class="cov8" title="1">response := t.getRevocationProposals(stub)
+        index := make(map[string]string)
+        err = json.Unmarshal(response.Payload, &amp;index)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Failed to fetch revocation proposals")
+        }</span>
+
+        // remove the revocation proposal if any
+        <span class="cov8" title="1">delete(index, car.Vin)
+
+        // save proposals back to ledger
+        indexAsBytes, _ := json.Marshal(index)
+        err = stub.PutState(revocationProposalIndexStr, indexAsBytes)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error writing revocation proposals")
+        }</span>
+
+        // car revokation successfull,
+        // return the car
+        <span class="cov8" title="1">return shim.Success(carAsBytes)</span>
+}
+
+/*
+ * Returns all revocation proposals.
+ */
+func (t *CarChaincode) getRevocationProposals(stub shim.ChaincodeStubInterface) pb.Response <span class="cov8" title="1">{
+        response := t.read(stub, revocationProposalIndexStr)
+        index := make(map[string]string)
+        err := json.Unmarshal(response.Payload, &amp;index)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error reading revocation proposal index")
+        }</span>
+
+        <span class="cov8" title="1">return shim.Success(response.Payload)</span>
+}
+
+/*
+ * Creates a revocation proposal.
+ *
+ * Only the owner of a car can request revocation of a car.
+ * A revocation proposal is not a prerequisite, for the DOT
+ * to revoke a car. A car could be revoked inedependently
+ * of this proposal.
+ *
+ * On success,
+ * returns 'nil'.
+ */
+func (t *CarChaincode) revocationProposal(stub shim.ChaincodeStubInterface, username string, vin string) pb.Response <span class="cov8" title="1">{
+        if vin == "" </span><span class="cov0" title="0">{
+                return shim.Error("'revocationProposal' expects a non-empty VIN to do the revocation")
+        }</span>
+
+        // fetch the car from the ledger
+        // this already checks for ownership
+        <span class="cov8" title="1">car, err := t.getCar(stub, username, vin)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Failed to fetch car with vin '" + vin + "' from ledger")
+        }</span>
+
+        // check if the car can be revoked
+        <span class="cov8" title="1">if !IsConfirmed(&amp;car) </span><span class="cov0" title="0">{
+                return shim.Error("You cannot create a revocation proposal for an unconfirmed car.")
+        }</span>
+
+        // fetch all the revocation proposals
+        <span class="cov8" title="1">response := t.read(stub, revocationProposalIndexStr)
+        index := make(map[string]string)
+        err = json.Unmarshal(response.Payload, &amp;index)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error parsing revocation proposal index")
+        }</span>
+
+        // check if a proposal to revoke this car already exists
+        <span class="cov8" title="1">if index[vin] == username </span><span class="cov0" title="0">{
+                return shim.Error("A revocation proposal for that car VIN and user already exists.")
+        }</span>
+
+        // save the users request to revok his car
+        // in the revocation proposal index
+        <span class="cov8" title="1">index[vin] = username
+
+        // save index back to ledger
+        indexAsBytes, _ := json.Marshal(index)
+        err = stub.PutState(revocationProposalIndexStr, indexAsBytes)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error writing revocation proposal index")
+        }</span>
+
+        <span class="cov8" title="1">return shim.Success(nil)</span>
+}
+
+/*
+ * Deletes a car from the ledger.
+ *
+ * Returns 'nil' on success.
+ */
+func (t *CarChaincode) deleteCar(stub shim.ChaincodeStubInterface, vin string) pb.Response <span class="cov8" title="1">{
+        //getting car index
+        carIndex, err := t.getCarIndex(stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Could not get car index")
+        }</span>
+        <span class="cov8" title="1">_, carExisting := carIndex[vin]
+        if !carExisting </span><span class="cov0" title="0">{
+                return shim.Error("Car does not exist in Car Index!")
+        }</span>
+        <span class="cov8" title="1">delete(carIndex, vin)
+
+        // Delete the key from the state in ledger
+        err = stub.DelState(vin)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Failed to delete car state")
+        }</span>
+
+        <span class="cov8" title="1">fmt.Printf("Successfully deleted car with VIN: '%s'\n", vin)
+        return shim.Success(nil)</span>
+}
+
+/*
+ * Returns the numberplate index
+ */
+func (t *CarChaincode) getNumberplateIndex(stub shim.ChaincodeStubInterface) (map[string]string, error) <span class="cov8" title="1">{
+        response := t.read(stub, numberplateIndex)
+        numberplateIndex := make(map[string]string)
+        err := json.Unmarshal(response.Payload, &amp;numberplateIndex)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, errors.New("Error parsing car index")
+        }</span>
+
+        <span class="cov8" title="1">return numberplateIndex, nil</span>
+}
+
+/*
+ * Returns a list of all cars in car index
+ *
+ * On success,
+ * returns a list with cars.
+ */
+func (t *CarChaincode) getAllCars(stub shim.ChaincodeStubInterface) pb.Response <span class="cov8" title="1">{
+        carIndex, err := t.getCarIndex(stub)
+
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error getting car index")
+        }</span>
+
+        <span class="cov8" title="1">var allCarsList []Car
+
+        for k := range carIndex </span><span class="cov8" title="1">{
+                car, err := t.getCarAsDot(stub, k)
+                if err != nil </span><span class="cov0" title="0">{
+                        return shim.Error("Error getting car")
+                }</span>
+                <span class="cov8" title="1">allCarsList = append(allCarsList, car)</span>
+
+        }
+
+        // marshal list
+        <span class="cov8" title="1">allCarsListAsBytes, _ := json.Marshal(allCarsList)
+
+        // return list with all cars
+        return shim.Success(allCarsListAsBytes)</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package main
+
+import (
+        "encoding/json"
+        "errors"
+        "fmt"
+        "strings"
+
+        "github.com/hyperledger/fabric/core/chaincode/shim"
+        pb "github.com/hyperledger/fabric/protos/peer"
+)
+
+/*
+ * Checks for an active car insurance.
+ *
+ * A vehicle can be registered by the DOT, but still lack
+ * an insurance contract. This is the case if the car has no
+ * numberplate (is not confirmed) yet.
+ *
+ * On the other hand the vehicle could already be insured,
+ * but still be waiting for a valid numberplate. This case may
+ * occur when changing numberplates.
+ *
+ * In any case, the car has to be registered before it can be insured.
+ */
+func IsInsured(car *Car) bool <span class="cov8" title="1">{
+        // cannot be insured without car papers
+        if !IsRegistered(car) </span><span class="cov8" title="1">{
+                return false
+        }</span>
+
+        <span class="cov8" title="1">insured := car.Certificate.Insurer != ""
+
+        if insured </span><span class="cov8" title="1">{
+                fmt.Printf("Car with VIN '%s' is insured by company '%s'\n", car.Vin, car.Certificate.Insurer)
+        }</span><span class="cov8" title="1"> else {
+                fmt.Printf("Car with VIN '%s' is not insured\n", car.Vin)
+        }</span>
+
+        <span class="cov8" title="1">return insured</span>
+}
+
+/*
+ * Returns the insurer index
+ */
+func (t *CarChaincode) getInsurerIndex(stub shim.ChaincodeStubInterface) (map[string]Insurer, error) <span class="cov8" title="1">{
+        response := t.read(stub, insurerIndexStr)
+        insurerIndex := make(map[string]Insurer)
+        err := json.Unmarshal(response.Payload, &amp;insurerIndex)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, errors.New("Error parsing insurer index")
+        }</span>
+
+        <span class="cov8" title="1">return insurerIndex, nil</span>
+}
+
+/*
+ * Returns an insurer with a list of insurance proposals.
+ */
+func (t *CarChaincode) getInsurer(stub shim.ChaincodeStubInterface, company string) pb.Response <span class="cov8" title="1">{
+
+        // lowercase insurance company string
+        company = strings.ToLower(company)
+
+        // load all insurers
+        insurerIndex, err := t.getInsurerIndex(stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error reading insurer index")
+        }</span>
+
+        <span class="cov8" title="1">ret := insurerIndex[company]
+        retAsBytes, _ := json.Marshal(ret)
+        return shim.Success(retAsBytes)</span>
+}
+
+/*
+ * Accpets an insurance proposal for a car
+ * and creates an insurance contract. The proposal
+ * will be removed from the ledger afterwards.
+ *
+ * The car needs to be registered.
+ * A car numberplate (confirmation) is not required.
+ *
+ * On success,
+ * returns the removed insurance proposal
+ */
+func (t *CarChaincode) insuranceAccept(stub shim.ChaincodeStubInterface, username string, vin string, company string) pb.Response <span class="cov8" title="1">{
+
+        // lowercase insurance company string
+        company = strings.ToLower(company)
+
+        car, err := t.getCar(stub, username, vin)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error fetching car")
+        }</span>
+
+        <span class="cov8" title="1">insurerIndex, err := t.getInsurerIndex(stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error fetching insurer index")
+        }</span>
+
+        <span class="cov8" title="1">insurer := insurerIndex[company]
+        proposals := insurer.Proposals
+        validProposal := InsureProposal{}
+        var newProposals []InsureProposal
+        for i, proposal := range proposals </span><span class="cov8" title="1">{
+                newProposals = append(newProposals, proposal)
+
+                if proposal.Car == vin &amp;&amp; proposal.User == username </span><span class="cov8" title="1">{
+                        // check if we can create an insurance contract
+                        // we can only create an insurance contract,
+                        // if we are sure the car VIN is approved by the DOT
+                        if !IsRegistered(&amp;car) </span><span class="cov8" title="1">{
+                                return shim.Error("Go register your car first")
+                        }</span>
+
+                        // insure the car
+                        <span class="cov8" title="1">car.Certificate.Insurer = company
+                        carAsBytes, err := json.Marshal(car)
+                        err = stub.PutState(car.Vin, carAsBytes)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return shim.Error("Error writing car")
+                        }</span>
+
+                        // remove proposal
+                        <span class="cov8" title="1">validProposal = proposal
+                        newProposals = newProposals[:i]</span>
+                }
+        }
+
+        // write insurer back to local copy of index
+        <span class="cov8" title="1">insurer.Proposals = newProposals
+        insurerIndex[company] = insurer
+
+        // create an empty index which will hold the new insurer
+        // index, but without competing insurance proposals from
+        // other companies on the same username and vin combination
+        indexWithoutCompetingProposals := make(map[string]Insurer)
+
+        // remove all other proposals for this user and vin
+        for companyName, competitorInsurance := range insurerIndex </span><span class="cov8" title="1">{
+                var newCompetitorProposals []InsureProposal
+                for _, proposal := range competitorInsurance.Proposals </span><span class="cov8" title="1">{
+                        if proposal.User == username &amp;&amp; proposal.Car == vin </span><span class="cov8" title="1">{
+                                // we found another proposal from the same user,
+                                // for the same car at another insurance cmpy
+                                // remove this proposal, because the car is now
+                                // insured and we remove the possibility of this other
+                                // cmpy to accept this proposal
+                        }</span><span class="cov0" title="0"> else {
+                                newCompetitorProposals = append(newCompetitorProposals, proposal)
+                        }</span>
+                }
+                <span class="cov8" title="1">competitorInsurance.Proposals = newCompetitorProposals
+                indexWithoutCompetingProposals[companyName] = competitorInsurance</span>
+        }
+
+        // write udpated insurer index back to ledger
+
+        <span class="cov8" title="1">indexAsBytes, _ := json.Marshal(indexWithoutCompetingProposals)
+        err = stub.PutState(insurerIndexStr, indexAsBytes)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error writing insurer index")
+        }</span>
+
+        <span class="cov8" title="1">propAsBytes, _ := json.Marshal(validProposal)
+        return shim.Success(propAsBytes)</span>
+}
+
+/*
+ * Creates an insurance proposal for an insurance
+ * company 'company' and a car with 'vin'.
+ *
+ * The car does not need to be registered.
+ * A car numberplate is not required.
+ * The proposal will be recorded even if no
+ * insurance company with that name exists.
+ *
+ * On success,
+ * returns the insurance proposal
+ */
+func (t *CarChaincode) insureProposal(stub shim.ChaincodeStubInterface, username string, vin string, company string) pb.Response <span class="cov8" title="1">{
+
+        // lowercase insurance company string
+        company = strings.ToLower(company)
+
+        // load all insurers
+        insurerIndex, err := t.getInsurerIndex(stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error(err.Error())
+        }</span>
+
+        // check if this insurance company even exists
+        // if not, just save the proposal anyway
+        <span class="cov8" title="1">insurer, insurerExisting := insurerIndex[company]
+        if !insurerExisting </span><span class="cov8" title="1">{
+                fmt.Printf("Insurance company '%s' does not exist yet\nSaving your proposal anyway\n", company)
+                // Create a new insurer,
+                // mainly just to save the proposal somewhere
+                insurer = Insurer{Name: company}
+        }</span>
+
+        // check if there is already a proposal
+        // for this car and this insurance company
+        <span class="cov8" title="1">for _, proposal := range insurer.Proposals </span><span class="cov0" title="0">{
+                if proposal.Car == vin </span><span class="cov0" title="0">{
+                        return shim.Error("You have already submitted an inquiry for this car '" + vin + "' to the insurance company '" + company + "'.")
+                }</span>
+        }
+
+        // create the proposal
+        <span class="cov8" title="1">proposal := InsureProposal{User: username,
+                Car: vin}
+
+        // inform the insurer of the new proposal
+        insurer.Proposals = append(insurer.Proposals, proposal)
+        insurerIndex[company] = insurer
+
+        // write udpated insurer index back to ledger
+        indexAsBytes, _ := json.Marshal(insurerIndex)
+        err = stub.PutState(insurerIndexStr, indexAsBytes)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error writing insurer index")
+        }</span>
+
+        <span class="cov8" title="1">proposalAsBytes, _ := json.Marshal(proposal)
+        return shim.Success(proposalAsBytes)</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package main
+
+import (
+        "encoding/json"
+        "errors"
+        "fmt"
+        "strconv"
+
+        "github.com/hyperledger/fabric/core/chaincode/shim"
+        pb "github.com/hyperledger/fabric/protos/peer"
+)
+
+/*
+ * Creates a new user and appends it to the user index.
+ * Returns an error if a user with the desired username already exists.
+ *
+ * On success,
+ * returns the user.
+ */
+func (t *CarChaincode) createUser(stub shim.ChaincodeStubInterface, username string) pb.Response <span class="cov8" title="1">{
+        // check if user with this username already exists
+        _, err := t.getUser(stub, username)
+        if err == nil </span><span class="cov0" title="0">{
+                return shim.Error(fmt.Sprintf("User with username '%s' already exists. Choose another username.", username))
+        }</span>
+
+        // user does not exist yet,
+        // create user
+        <span class="cov8" title="1">fmt.Printf("User '%s' does not exist yet\nSaving new user with that username\n", username)
+        user := User{Name: username, Cars: []string{}, Balance: 0, Offers: []Offer{}}
+
+        userIndex, err := t.getUserIndex(stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error(err.Error())
+        }</span>
+
+        // map the user to the userIndex
+        <span class="cov8" title="1">userIndex[username] = username
+        fmt.Printf("Added user with Username '%s' to user index.\n", username)
+
+        // write udpated user index back to ledger
+        indexAsBytes, _ := json.Marshal(userIndex)
+        err = stub.PutState(userIndexStr, indexAsBytes)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error writing updated user index to ledger")
+        }</span>
+
+        // write new user to ledger
+        <span class="cov8" title="1">err = t.saveUser(stub, user)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error(err.Error())
+        }</span>
+
+        // user creation successfull,
+        // return the user
+        <span class="cov8" title="1">userAsBytes, _ := json.Marshal(user)
+        return shim.Success(userAsBytes)</span>
+}
+
+/*
+ * Deletes a user from the ledger.
+ *
+ * Returns 'nil' on success.
+ */
+func (t *CarChaincode) deleteUser(stub shim.ChaincodeStubInterface, username string, remainingBalanceRecipient string) pb.Response <span class="cov8" title="1">{
+        userIndexMap, err := t.getUserIndex(stub)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error(err.Error())
+        }</span>
+
+        // getting user which shall be deleted
+        <span class="cov8" title="1">userToDelete, err := t.getUser(stub, username)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("User to delete does not exist. Username: '" + username + "'")
+        }</span>
+
+        // getting the user which receives the remaining balance
+        <span class="cov8" title="1">balanceRecipient, err := t.getUser(stub, remainingBalanceRecipient)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("User does not exist. Username: '" + username + "'")
+        }</span>
+
+        // check if user doesn't own a car anymore
+        <span class="cov8" title="1">if len(userToDelete.Cars) != 0 </span><span class="cov0" title="0">{
+                return shim.Error("Deletion of user not possible. User '" + username + "' still owns '" + string(len(userToDelete.Cars)) + "' cars.")
+        }</span>
+
+        // transfer remaining balance to chosen recipient
+        <span class="cov8" title="1">balanceRecipient.Balance += userToDelete.Balance
+        err = t.saveUser(stub, balanceRecipient)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Transfer of remaining balance failed")
+        }</span>
+
+        // delete user from user index
+        <span class="cov8" title="1">delete(userIndexMap, userToDelete.Name)
+
+        // write udpated user index back to ledger
+        indexAsBytes, _ := json.Marshal(userIndexMap)
+        err = stub.PutState(userIndexStr, indexAsBytes)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error writing user index")
+        }</span>
+
+        // Delete the user key from the state in ledger
+        <span class="cov8" title="1">err = stub.DelState("usr_" + userToDelete.Name)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Failed to delete user from state")
+        }</span>
+
+        <span class="cov8" title="1">fmt.Printf("Successfully deleted user with username: '%s'\n", userToDelete.Name)
+        return shim.Success(nil)</span>
+}
+
+/*
+ * Returns the user index
+ */
+func (t *CarChaincode) getUserIndex(stub shim.ChaincodeStubInterface) (map[string]string, error) <span class="cov8" title="1">{
+        response := t.read(stub, userIndexStr)
+        userIndex := make(map[string]string)
+        err := json.Unmarshal(response.Payload, &amp;userIndex)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, errors.New("Error parsing user index")
+        }</span>
+
+        <span class="cov8" title="1">return userIndex, nil</span>
+}
+
+/*
+ * Reads a User from ledger
+ */
+func (t *CarChaincode) getUser(stub shim.ChaincodeStubInterface, username string) (User, error) <span class="cov8" title="1">{
+        response := t.read(stub, "usr_"+username)
+        var user User
+        err := json.Unmarshal(response.Payload, &amp;user)
+        if err != nil </span><span class="cov8" title="1">{
+                return User{}, errors.New(fmt.Sprintf("Could not find user %s", username))
+        }</span>
+
+        <span class="cov8" title="1">return user, nil</span>
+}
+
+/*
+ * Reads a User from ledger
+ */
+func (t *CarChaincode) readUser(stub shim.ChaincodeStubInterface, username string) pb.Response <span class="cov8" title="1">{
+        user, err := t.getUser(stub, username)
+
+        if err != nil </span><span class="cov8" title="1">{
+                return shim.Error(err.Error())
+        }</span>
+
+        <span class="cov8" title="1">userAsBytes, err := json.Marshal(user)
+
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Invalid User format")
+        }</span>
+        <span class="cov8" title="1">return shim.Success(userAsBytes)</span>
+}
+
+/*
+ * Writes updated user back to ledger
+ */
+func (t *CarChaincode) saveUser(stub shim.ChaincodeStubInterface, user User) error <span class="cov8" title="1">{
+        userAsBytes, err := json.Marshal(user)
+
+        if err != nil </span><span class="cov0" title="0">{
+                fmt.Println(user)
+                return errors.New("User has wrong format")
+        }</span>
+
+        <span class="cov8" title="1">err = stub.PutState("usr_"+user.Name, userAsBytes)
+        if err != nil </span><span class="cov0" title="0">{
+                return errors.New("Error writing user back to ledger")
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+/*
+ * Updates User balance
+ *
+ * The update amount (can be positive or negative)
+ * is added to the user balance.
+ *
+ * Expects 'args':
+ *  username              string
+ *  updateAmount          string
+ *
+ * On success,
+ * returns updated user balance
+ */
+func (t *CarChaincode) updateBalance(stub shim.ChaincodeStubInterface, username string, updateAmount string) pb.Response <span class="cov8" title="1">{
+        amount, _ := strconv.Atoi(updateAmount)
+
+        // fetch user
+        user, err := t.getUser(stub, username)
+        if err != nil </span><span class="cov0" title="0">{
+                fmt.Println(err.Error())
+
+                return shim.Error("Error fetching user, balance not updated")
+        }</span>
+
+        // update user balance
+        <span class="cov8" title="1">user.Balance = user.Balance + amount
+
+        // save updated user
+        err = t.saveUser(stub, user)
+        if err != nil </span><span class="cov0" title="0">{
+                return shim.Error("Error writing user, balance not updated")
+        }</span>
+
+        <span class="cov8" title="1">fmt.Printf("Balance of user '" + user.Name + "' successfully updated\n")
+
+        balanceAsBytes := []byte(strconv.Itoa(user.Balance))
+        return shim.Success(balanceAsBytes)</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package main
+
+import (
+    "encoding/json"
+
+    "github.com/hyperledger/fabric/core/chaincode/shim"
+)
+
+/*
+ * Clears an index of type 'map[string]string' on the ledger
+ */
+func clearStringIndex(indexStr string, stub shim.ChaincodeStubInterface) error <span class="cov8" title="1">{
+    index := make(map[string]string)
+
+    jsonAsBytes, err := json.Marshal(index)
+    if err != nil </span><span class="cov0" title="0">{
+        return err
+    }</span>
+
+    <span class="cov8" title="1">return stub.PutState(indexStr, jsonAsBytes)</span>
+}
+
+/*
+ * Clears an index of type 'map[string]Insurer' on the ledger
+ */
+func clearInsurerIndex(indexStr string, stub shim.ChaincodeStubInterface) error <span class="cov8" title="1">{
+    index := make(map[string]Insurer)
+
+    jsonAsBytes, err := json.Marshal(index)
+    if err != nil </span><span class="cov0" title="0">{
+        return err
+    }</span>
+
+    <span class="cov8" title="1">return stub.PutState(indexStr, jsonAsBytes)</span>
+}
+
+/*
+ * Clears an index of type 'map[string]RegistrationProposal' on the ledger
+ */
+func clearRegistrationProposalIndex(indexStr string, stub shim.ChaincodeStubInterface) error <span class="cov8" title="1">{
+    index := make(map[string]RegistrationProposal)
+
+    jsonAsBytes, err := json.Marshal(index)
+    if err != nil </span><span class="cov0" title="0">{
+        return err
+    }</span>
+
+    <span class="cov8" title="1">return stub.PutState(indexStr, jsonAsBytes)</span>
+}
+</pre>
+		
+		</div>
+	
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+
+</body></html>
